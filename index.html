@@ -217,13 +217,13 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .bw-mode .inp-group input{font-size:15px;padding:9px 4px}
 .del-btn{background:none;border:none;color:var(--dim);font-size:20px;cursor:pointer;padding:10px;min-width:44px;min-height:44px;line-height:1;transition:color .15s;display:flex;align-items:center;justify-content:center}
 .del-btn:hover{color:var(--hard)}
-.pr-badge{background:var(--accent-bg);border:1px solid var(--accent-mid);color:var(--accent);font-size:11px;font-weight:800;border-radius:6px;padding:3px 8px;white-space:nowrap;flex-shrink:0;letter-spacing:.3px}
 .bw-total{font-size:12px;font-weight:700;color:var(--gold-hi);white-space:nowrap;align-self:flex-end;padding-bottom:9px;flex-shrink:0}
 .bw-btn{background:none;border:1px solid var(--border);color:var(--text);border-radius:var(--rs);padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;flex-shrink:0}
 .bw-btn:hover{border-color:var(--accent-mid);color:var(--accent)}
 .bw-btn.bw-active{border-color:var(--accent-mid);color:var(--accent);background:var(--accent-bg)}
-.set-bottom{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-.grp-label{font-size:11px;color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap}
+.set-bottom{display:flex;flex-direction:column;gap:6px}
+.set-bottom-row{display:flex;align-items:center;gap:8px}
+.grp-label{font-size:11px;color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.6px;white-space:nowrap;width:42px;flex-shrink:0}
 .btn-grp{display:flex;gap:4px;flex:1}
 .ebtn,.abtn{flex:1;border:1px solid var(--border);background:var(--s1);color:var(--text);border-radius:6px;padding:10px 2px;min-height:44px;font-size:12px;font-weight:700;cursor:pointer;transition:all .12s;white-space:nowrap}
 .ebtn:hover,.abtn:hover{border-color:var(--text);color:var(--text)}
@@ -283,18 +283,6 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .main-tabs{display:flex;background:var(--s2);border-radius:var(--rs);padding:3px;gap:3px;margin-bottom:22px}
 .main-tab{flex:1;border:none;border-radius:5px;padding:9px 0;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;background:none;color:var(--text);letter-spacing:.3px;white-space:nowrap}
 .main-tab.active{background:var(--s1);color:var(--accent);border:1px solid var(--accent-mid)}
-
-/* PR tab */
-.pr-table{width:100%;border-collapse:collapse}
-.pr-table th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
-.pr-table th:not(:first-child){text-align:right}
-.pr-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text);vertical-align:middle}
-.pr-table td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
-.pr-table tr:hover td{background:var(--s2)}
-.pr-name{font-weight:600;color:var(--text)}
-.pr-val{font-weight:700;color:var(--gold-hi)}
-.pr-date{font-size:11px;color:var(--muted)}
-.pr-empty{text-align:center;padding:40px 0;color:var(--muted);font-size:14px}
 
 /* Apnea Analytics */
 .apnea-analytics{display:flex;flex-direction:column;gap:16px}
@@ -594,7 +582,7 @@ async function unlockAudio() {
     window.speechSynthesis.speak(utter);
   }
 }
-let mainTab = 'workouts'; // 'workouts' | 'prs' | 'apnea' | 'fitness'
+let mainTab = 'workouts'; // 'workouts' | 'apnea' | 'fitness'
 const openFtState = new Set(); // open fitness session dates
 
 // ── Date utils ───────────────────────────────────────────
@@ -747,14 +735,12 @@ function _applyToggleBWMode(exId) {
   const updatedEx = wd.plan.days.reduce((f, day) => f || day.exercises.find(e => e.id === exId), null);
   if (!updatedEx) return;
   const sets    = wd.logs?.[exId] || [];
-  const prevLogs = getWeek(shiftWeek(weekKey, -1))?.logs || {};
-  const prevSets = prevLogs[exId] || [];
   const setsList = document.getElementById('sl-' + exId);
   if (!setsList) return;
   const card = setsList.closest('.exercise-card');
   if (!card) return;
   const tmp = document.createElement('div');
-  tmp.innerHTML = renderExercise(di, updatedEx, sets, prevSets);
+  tmp.innerHTML = renderExercise(di, updatedEx, sets);
   const newCard = tmp.firstElementChild;
   if (collapsedExState[weekKey]?.has(exId)) newCard.classList.add('collapsed');
   card.replaceWith(newCard);
@@ -906,6 +892,19 @@ function applyRotation(days) {
 
 // ── HTML helpers ─────────────────────────────────────────
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+// Tokenise an exercise name for fuzzy matching — strips only generic filler words
+// so equipment identifiers like "barbell", "db", "kb" are kept as meaningful tokens.
+const _exTok = s => String(s).toLowerCase()
+  .replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
+  .filter(t => t.length > 1 && !['the','a','an','and','or','on','in','at','to','of','for','with','by','from','as','per'].includes(t));
+const _exMatch = (a, b) => {
+  if (a === b) return true;
+  const ta = _exTok(a), tb = _exTok(b);
+  if (!ta.length || !tb.length) return false;
+  const m = ta.filter(x => tb.some(y => x === y)).length;
+  return m / Math.min(ta.length, tb.length) >= 0.8;
+};
 
 // ── Calendar ─────────────────────────────────────────────
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1088,7 +1087,6 @@ function renderApp() {
   const main = document.getElementById('main');
   const tabs = `<div class="main-tabs">
     <button class="main-tab${mainTab==='workouts'?' active':''}" onclick="switchMainTab('workouts')">Workouts</button>
-    <button class="main-tab${mainTab==='prs'?' active':''}" onclick="switchMainTab('prs')">PRs</button>
     <button class="main-tab${mainTab==='apnea'?' active':''}" onclick="switchMainTab('apnea')">Apnea</button>
     <button class="main-tab${mainTab==='fitness'?' active':''}" onclick="switchMainTab('fitness')">Fitness Tests</button>
   </div>`;
@@ -1096,8 +1094,6 @@ function renderApp() {
     main.innerHTML = tabs + renderFitnessTests();
   } else if (mainTab === 'apnea') {
     main.innerHTML = tabs + renderApneaAnalytics();
-  } else if (mainTab === 'prs') {
-    main.innerHTML = tabs + renderPRs();
   } else if (!wd?.plan) {
     main.innerHTML = tabs + renderUpload();
   } else {
@@ -1110,54 +1106,9 @@ function renderApp() {
   updateScrollBtn();
 }
 
-function recomputeAllPRs() {
-  const data = load();
-  let dirty = false;
-  const added = [], removed = [];
-  for (const [wk, wData] of Object.entries(data.weeks)) {
-    const logs = wData.logs || {};
-    const nameMap = {};
-    (wData.plan?.days || []).forEach(d => d.exercises.forEach(e => { nameMap[e.id] = e.name; }));
-    for (const [exId, sets] of Object.entries(logs)) {
-      const exName = nameMap[exId] || exId;
-      sets.forEach((s, i) => {
-        const w = Number(s.weight) || 0;
-        const r = Number(s.reps)   || 0;
-        if (r <= 0) {
-          if (s.isPR) { s.isPR = false; dirty = true; removed.push(`${exName} (week ${wk}, set ${i+1})`); }
-          return;
-        }
-        const savedWeekKey = weekKey;
-        let isPR = false;
-        try {
-          weekKey = wk;
-          isPR = checkPR(exId, w, r, i);
-        } finally {
-          weekKey = savedWeekKey;
-        }
-        if (!!s.isPR !== isPR) {
-          s.isPR = isPR;
-          dirty = true;
-          if (isPR) added.push(`${exName} — ${w > 0 ? w + ' lbs' : 'BW'} × ${r} reps (week ${wk}, set ${i+1})`);
-          else      removed.push(`${exName} (week ${wk}, set ${i+1})`);
-        }
-      });
-    }
-  }
-  if (dirty) save(data);
-  if (added.length || removed.length) {
-    if (added.length)   console.log('%c[PR Audit] Flags ADDED (' + added.length + '):\n' + added.join('\n'), 'color:#22c55e;font-weight:bold');
-    if (removed.length) console.log('%c[PR Audit] Flags REMOVED (' + removed.length + '):\n' + removed.join('\n'), 'color:#ef4444;font-weight:bold');
-  } else {
-    console.log('%c[PR Audit] All PR flags are up to date — no changes needed.', 'color:#8ea8c3');
-  }
-  return { added, removed };
-}
-
 function handleRefresh(btn) {
   delete openDayState[weekKey];
   delete collapsedExState[weekKey];
-  recomputeAllPRs();
   renderApp();
   btn.classList.add('spinning');
   setTimeout(() => btn.classList.remove('spinning'), 400);
@@ -1350,10 +1301,25 @@ function cdScheduleAll(remaining) {
       cdBellTimeouts.push(setTimeout(() => playBellNow(), Math.max(0, delay)));
     }
   });
-  // Haptic + speech at zero
+  // Buzzer + haptic + speech at zero
   const speakDelay = Math.max(0, remaining);
   cdBellTimeouts.push(setTimeout(() => {
     if (navigator.vibrate) navigator.vibrate([100, 80, 100, 80, 100]);
+    if (audioCtx) {
+      const ctx = audioCtx;
+      const resume = ctx.state !== 'running' ? ctx.resume() : Promise.resolve();
+      resume.then(() => {
+        const t = ctx.currentTime + 0.05;
+        const osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(220, t);
+        gain.gain.setValueAtTime(0.3, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 1.0);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(t); osc.stop(t + 1.0);
+        cdBellNodes.push(osc);
+      }).catch(() => {});
+    }
     speakBreathe();
     _alarmEndTime = 0;
   }, speakDelay));
@@ -1565,7 +1531,7 @@ function exportCSV() {
     return Math.round((day.completedAt - start) / 60000);
   };
 
-  const rows = [['Week','Day','Date','Duration (min)','Exercise','Set #','Weight (lbs)','Reps','Effort','Adjustment','PR'].map(q).join(',')];
+  const rows = [['Week','Day','Date','Duration (min)','Exercise','Set #','Weight (lbs)','Reps','Effort','Adjustment'].map(q).join(',')];
 
   for (const wk of weeks) {
     const wData = data.weeks[wk];
@@ -1589,8 +1555,7 @@ function exportCSV() {
             s.weight !== '' && s.weight != null ? s.weight : '',
             r,
             effortLabel(s.effort),
-            s.adjustment || '',
-            s.isPR === true ? 'Yes' : ''
+            s.adjustment || ''
           ].map(q).join(','));
         });
       });
@@ -1750,23 +1715,6 @@ const DAY_SECTIONS = {
         'Do NOT skip — breath-hold quality directly depends on this reset.',
       ]
     },
-    cardio: {
-      title: 'Cardio Finisher — Zone 1 Echo Bike',
-      time: '53:00 – 60:00 · 7 min',
-      steps: [
-        '7 minutes at easy Zone 1 pace — nasal breathing sustainable, conversational, ~60–65% HRmax. No gasping.',
-        'This builds aerobic base without fatiguing legs or interfering with tomorrow\'s pull session.',
-        'Do not skip: Zone 1 improves mitochondrial density and accelerates surface-interval recovery on actual dive days.',
-      ]
-    },
-    cooldown: {
-      title: 'Cool-Down',
-      steps: [
-        '2 min box breathing: inhale 4 sec → hold 4 sec → exhale 4 sec → hold 4 sec. Repeat 6 cycles.',
-        'Light chest opener: clasp hands behind back, squeeze shoulder blades, expand rib cage — 20 sec.',
-        'LOG: Hold times each round, embedded hold durations, RPE per lift (1–10), bike HR or perceived effort.',
-      ]
-    }
   },
   pull: {
     transition: {
@@ -1777,24 +1725,6 @@ const DAY_SECTIONS = {
         'Sit or lie down. 6-sec nasal inhale, 10-sec pursed-lip exhale. Repeat for 3 minutes before apnea block.',
       ]
     },
-    cardio: {
-      title: 'Cardio Finisher — VHL Hypoventilation on Echo Bike',
-      time: '53:00 – 60:00 · 7 min',
-      steps: [
-        'Voluntary Hypoventilation at Low Lung Volume (VHL) — dual CO2 tolerance + lactate buffering stimulus.',
-        'Protocol: 1 set × 8 rounds. Each round: exhale to FRC (functional residual capacity — a relaxed sigh, NOT a full empty), hold airway closed, sprint hard for 10 seconds, release, breathe normally for 20 sec, repeat.',
-        'Week 1: 8 × 10-sec sprints with 20-sec recovery. This trains repeated-sprint ability and CO2 tolerance simultaneously — the most sport-specific cardio stimulus available in 7 minutes.',
-        'VHL SAFETY: Exhale BEFORE the sprint — never during it. Never hyperventilate before holds. Always on soft ground with someone nearby. Stop if persistent headache develops. Do NOT perform VHL in water.',
-      ]
-    },
-    cooldown: {
-      title: 'Cool-Down',
-      steps: [
-        '6 cycles box breathing (4-4-4-4).',
-        'Lat stretch: dead hang from pull-up bar 2 × 20 sec — body weight opens the lats.',
-        'LOG: All walk times and distances, embedded hold durations, VHL sprint quality (1–10), RPE per lift.',
-      ]
-    }
   },
   legs: {
     transition: {
@@ -1806,64 +1736,9 @@ const DAY_SECTIONS = {
         'Especially important on legs day: the leg-O2-debt means CO2 is already elevated, so the transition converts this into a training advantage rather than a distraction.',
       ]
     },
-    cardio: {
-      title: 'Diaphragm Endurance Work',
-      time: '53:00 – 57:00 · 4 min',
-      steps: [
-        'NO ECHO BIKE TODAY — non-negotiable. Tomorrow is pool day; legs need recovery.',
-        'Box breathing progression: 4-4-4-4 for 1 min → 5-5-5-5 for 1 min → 6-6-6-6 target by Week 4. Strengthens the diaphragm\'s control range under elevated CO2.',
-        'Uddiyana Bandha (diaphragm stretch): exhale fully → suck abdomen in and up → hold 10–15 sec → release. 5 rounds. Improves diaphragm range of motion and rib cage flexibility — directly increases vital capacity over weeks.',
-      ]
-    },
-    cooldown: {
-      title: 'Cool-Down',
-      time: '57:00 – 60:00 · 3 min',
-      steps: [
-        'Pigeon pose or figure-4 stretch: 30 sec each side — hip flexor recovery.',
-        'Intercostal/rib cage stretch: arms overhead, lateral lean — 20 sec each side.',
-        'LOG: Wall-sit reps, SpO2 readings if measured, embedded hold durations, RPE per lift, diaphragm work quality.',
-      ]
-    }
   },
-  pool: {
-    cooldown: {
-      title: 'Pool Cool-Down',
-      time: '50:00 – 60:00 · 10 min',
-      steps: [
-        '200m easy backstroke — chest breathing, full lung expansion.',
-        '3 × 10-sec face immersion with normal exhale — parasympathetic signal to end session.',
-        '5 min poolside: box breathing 4-4-4-4, 6 cycles.',
-        'LOG: All static hold times, dive-simulation round quality, subjective relaxation (1–10), whether you passed 2:00 in pool.',
-      ]
-    }
-  },
+  pool: {},
   recovery: {
-    cardio_zone2: {
-      title: 'Cardio — Zone 2 Steady-State (Week 3)',
-      time: '5:00 – 35:00 · 30 min',
-      steps: [
-        'Regular stationary bike — 30 minutes continuous at Zone 2.',
-        'Target ~65–70% HRmax. Fully nasal breathing throughout — if you must open your mouth, slow down.',
-        'Cadence 80–90 RPM, lower resistance preferred. Push through the entire pedal stroke — not just the downstroke.',
-        'This is not a workout — it is a stimulus. No surges, fully even effort.',
-        'If legs feel heavy from Day 3, reduce resistance, not time.',
-        'Zone 2 builds mitochondrial density and capillarization in leg muscles — the primary fix for walking-apnea regression.',
-      ]
-    },
-    cardio_hiit: {
-      title: 'Cardio — 4×4 Norwegian HIIT (Week 4, alternating)',
-      time: '5:00 – 43:00 · 38 min',
-      steps: [
-        'Alternates with Zone 2 each off day: Zone 2 / 4×4 / Zone 2 / 4×4.',
-        'Warm-up 5 min Zone 1 — nasal breathing, increase pace every 90 sec.',
-        'Interval 1: 4 min at 90–95% HRmax. RPE 8–9, one or two words only.',
-        'Recovery 1: 3 min Zone 1 — full nasal breathing returns by end.',
-        'Intervals 2–4: match Interval 1 output. Interval 3 is the KEY interval — where adaptation happens, do not fade.',
-        'Cool-down 5 min Zone 1 — HR below 100 before stopping.',
-        'Regular bike adjustment: without arm drive, add one resistance level in the final 60 sec of each interval if HR target not reached.',
-        'LOG: Perceived exertion each interval (1–10), whether HR target was reached.',
-      ]
-    },
     diaphragm: {
       title: 'Diaphragm + Breathing Work',
       time: '48:00 – 58:00 · 10 min',
@@ -1872,17 +1747,6 @@ const DAY_SECTIONS = {
         'Uddiyana Bandha — 2 min: Exhale fully → suck abdomen in and up → hold 12–15 sec → release. 5 rounds with 15 sec rest between. Week 3 increases hold from 10 to 12–15 sec. Stretches and strengthens diaphragm full range of motion.',
         'Rib expansion breathing — 2 min: Seated or lying. Inhale expanding ribs laterally — not just front-to-back. Hold 3 sec at full rib expansion. Passive exhale. 10 cycles. Builds intercostal flexibility and lung capacity.',
         'Static nasal breath hold — 2 min: Full 2-min breathe-up. Hold until the first contraction — stop 10 sec before it becomes difficult. Quality practice, not a max attempt. No stress.',
-      ]
-    },
-    cooldown: {
-      title: 'Cool-Down Stretching',
-      time: '58:00 – 65:00 · 7 min',
-      steps: [
-        'Pigeon pose or figure-4: 30 sec each side — hip flexor recovery from legs day and bike.',
-        'Hamstring stretch: seated forward fold or supine single-leg — 30 sec each side.',
-        'Intercostal / rib cage stretch: arms overhead, lateral lean — 20 sec each side.',
-        'Thoracic cat-cow: 10 slow cycles — spine mobility and nervous system cool-down.',
-        'LOG: Walking apnea max time and steps, sub-max walk times, static hold quality (1–10), cardio type and duration, how legs felt during apnea walks.',
       ]
     }
   }
@@ -1919,11 +1783,7 @@ function renderDaySections(dayName) {
   const s = DAY_SECTIONS[type];
   let html = '';
   if (s.transition)    html += renderDaySection(`${type}-trans`,  s.transition.title,    s.transition.time    || '', s.transition.steps);
-  if (s.cardio)        html += renderDaySection(`${type}-cardio`, s.cardio.title,         s.cardio.time        || '', s.cardio.steps);
-  if (s.cardio_zone2)  html += renderDaySection(`${type}-zone2`,  s.cardio_zone2.title,   s.cardio_zone2.time  || '', s.cardio_zone2.steps);
-  if (s.cardio_hiit)   html += renderDaySection(`${type}-hiit`,   s.cardio_hiit.title,    s.cardio_hiit.time   || '', s.cardio_hiit.steps);
   if (s.diaphragm)     html += renderDaySection(`${type}-diaph`,  s.diaphragm.title,      s.diaphragm.time     || '', s.diaphragm.steps);
-  if (s.cooldown)      html += renderDaySection(`${type}-cool`,   s.cooldown.title,       s.cooldown.time      || '', s.cooldown.steps);
   return html;
 }
 
@@ -1954,7 +1814,7 @@ function renderDay(day, di, logs, prevLogs) {
   const { logged, total } = daySetCounts(day, logs);
   const prog = `${logged}/${total} Sets`;
   const pct = total ? Math.round(logged/total*100) : 0;
-  const exHtml = day.exercises.map(ex => renderExercise(di, ex, logs[ex.id]||[], prevLogs[ex.id]||[])).join('');
+  const exHtml = day.exercises.map(ex => renderExercise(di, ex, logs[ex.id]||[])).join('');
   const dateVal = day.date || '';
   const dateDisplay = dateVal ? `<span class="day-date-display">${formatDayDate(dateVal)}</span>` : '';
   const hasPrev    = day.exercises.some(ex => (prevLogs[ex.id] || []).length > 0);
@@ -2257,20 +2117,18 @@ function showExerciseInfo(name) {
   div.addEventListener('click', e => { if (e.target === div) div.remove(); });
 }
 
-function renderExercise(di, ex, sets, prevSets) {
+function renderExercise(di, ex, sets) {
   const target   = [ex.sets?`${ex.sets} sets`:'', ex.reps?`× ${ex.reps} reps`:''].filter(Boolean).join(' ');
-  const validPrevSets = (prevSets || []).filter(
-    s => s.reps !== '' && s.reps !== null && s.reps !== undefined && Number.isFinite(Number(s.reps)) && Number(s.reps) > 0
-  );
-  const resolvedPrev = findPrevSets(ex.name) || validPrevSets;
-  const prev     = resolvedPrev.length ? `<div class="prev-ref">Last week: ${summarizeSets(resolvedPrev)}</div>` : '';
+  const resolvedPrev = findPrevSets(ex.name) || [];
   const hasLoggedSets = sets.some(s => Number.isFinite(Number(s.reps)) && Number(s.reps) > 0);
   const exFillBtn = (!hasLoggedSets && resolvedPrev.length)
     ? `<button class="fill-last-btn" style="font-size:11px;padding:3px 8px" onclick="fillExerciseFromLastWeek(${di},'${esc(ex.id)}')">↩</button>`
     : '';
   const suggestion = !hasLoggedSets ? computeProgression(ex.name) : null;
-  const suggestionHtml = suggestion
-    ? `<div class="prog-suggestion"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>Suggested: ${esc(suggestion)}</div>`
+  // "Last week: X" and trend toggle on the same line
+  const trendToggle = `<span class="trend-toggle" onclick="toggleExerciseTrend('${esc(ex.id)}')" style="cursor:pointer;font-size:11px;color:var(--dim);margin-left:8px;user-select:none" title="Toggle trend chart">▲ trend</span>`;
+  const prev = resolvedPrev.length
+    ? `<div class="prev-ref" style="display:flex;align-items:center;flex-wrap:wrap;gap:0">Last week: ${summarizeSets(resolvedPrev)}${trendToggle}</div>`
     : '';
   const effortHistory = getEffortHistory(ex.name);
   const effortHistoryHtml = effortHistory ? (() => {
@@ -2286,7 +2144,7 @@ function renderExercise(di, ex, sets, prevSets) {
         `<span style="color:var(--text)"> ${t.sets} set${t.sets>1?'s':''} · ${t.reps} reps</span>` +
         `</span>`;
     }).join('');
-    return parts ? `<div class="effort-history"><span class="effort-history-label">Last week</span>${parts}</div>` : '';
+    return parts ? `<div class="effort-history">${parts}</div>` : '';
   })() : '';
   const setsHtml = sets.map((s,i) => renderSet(ex.id,i,s,ex.bwMode)).join('');
   const bwBtn    = `<button class="bw-btn${ex.bwMode?' bw-active':''}" onclick="toggleBWMode('${esc(ex.id)}')">BW</button>`;
@@ -2298,21 +2156,20 @@ function renderExercise(di, ex, sets, prevSets) {
       ${chevron}
       <div class="ex-name-col">
         <div class="ex-name-wrap">
-          <span class="ex-name" onclick="toggleExerciseTrend('${esc(ex.id)}')" style="cursor:pointer">${esc(ex.name)}</span>
+          <span class="ex-name">${esc(ex.name)}</span>
           <button class="edit-icon" onclick="startEditName('${esc(ex.id)}', this.previousElementSibling)" aria-label="Edit exercise name" data-tooltip="Edit name">✏</button>
           ${infoBtn}
           ${exFillBtn}
           ${bwBtn}
           ${delBtn}
         </div>
-        ${(()=>{const rest=getExerciseInfo(ex.name)?.rest;const parts=[];if(target)parts.push(`<span class="ex-target">${esc(target)}</span>`);if(rest)parts.push(`<span class="ex-rest">(Rest ${esc(rest)})</span>`);parts.push(`<span class="ex-1rm" id="1rm-${esc(ex.id)}">${render1RM(ex.id)}</span>`);return `<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:nowrap;overflow:hidden">${parts.join('')}</div>`})()}
+        ${(()=>{const rest=getExerciseInfo(ex.name)?.rest;const parts=[];if(target)parts.push(`<span class="ex-target">${esc(target)}</span>`);if(rest)parts.push(`<span class="ex-rest">(Rest ${esc(rest)})</span>`);if(suggestion)parts.push(`<span class="prog-suggestion" style="margin:0;font-size:11px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>${esc(suggestion)}</span>`);parts.push(`<span class="ex-1rm" id="1rm-${esc(ex.id)}">${render1RM(ex.id)}</span>`);return `<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;overflow:hidden">${parts.join('')}</div>`})()}
       </div>
     </div>
     <div class="ex-body">
       <div class="ex-trend" id="trend-${esc(ex.id)}" style="display:none"></div>
       ${prev}
       ${effortHistoryHtml}
-      ${suggestionHtml}
       <div class="sets-list" id="sl-${ex.id}">${setsHtml}</div>
       <button class="add-set-btn" onclick="handleAdd('${esc(ex.id)}')">+ Log Set</button>
     </div>
@@ -2333,8 +2190,7 @@ function renderSet(exId, idx, s, bwMode) {
   const eId = esc(exId);
   const eb = ['easy','moderate','hard'].map(e=>`<button class="ebtn${s.effort===e?' sel-'+e:''}" onclick="handleBtn('${eId}',${idx},'effort','${e}',this)">${e==='easy'?'Easy':e==='moderate'?'Mod':'Hard'}</button>`).join('');
   const ab = [{v:'increase',l:'↑ More'},{v:'same',l:'= Same'},{v:'decrease',l:'↓ Less'}].map(a=>`<button class="abtn${s.adjustment===a.v?' sel-'+a.v:''}" onclick="handleBtn('${eId}',${idx},'adjustment','${a.v}',this)">${a.l}</button>`).join('');
-  const bottomRow = `<div class="set-bottom"><span class="grp-label">Effort</span><div class="btn-grp">${eb}</div><span class="grp-label">Next</span><div class="btn-grp">${ab}</div></div>`;
-  const prBadge = s.isPR ? '<span class="pr-badge">🏆 PR</span>' : '';
+  const bottomRow = `<div class="set-bottom"><div class="set-bottom-row"><span class="grp-label">Effort</span><div class="btn-grp">${eb}</div></div><div class="set-bottom-row"><span class="grp-label">Next</span><div class="btn-grp">${ab}</div></div></div>`;
   const delBtn  = `<button class="del-btn" onclick="handleDelete('${eId}',${idx})" aria-label="Delete set">×</button>`;
   const hasNote = !!(s.note && s.note.trim());
   const noteRow = `<div class="set-note-row">` +
@@ -2355,7 +2211,7 @@ function renderSet(exId, idx, s, bwMode) {
         <div class="inp-group"><label>Reps</label><input type="number" inputmode="numeric" value="${s.reps||''}" placeholder="0" oninput="handleInput('${eId}',${idx},'reps',this.value)"></div>
       </div>
       <div class="bw-total">= <span>${total}</span> lbs</div>
-      ${prBadge}${delBtn}
+      ${delBtn}
     </div>
     ${bottomRow}
     ${noteRow}
@@ -2369,7 +2225,7 @@ function renderSet(exId, idx, s, bwMode) {
         <div class="inp-group"><label>Weight (lbs)</label><input type="number" inputmode="decimal" value="${s.weight||''}" placeholder="0" oninput="handleInput('${eId}',${idx},'weight',this.value)"></div>
         <div class="inp-group"><label>Reps</label><input type="number" inputmode="numeric" value="${s.reps||''}" placeholder="0" oninput="handleInput('${eId}',${idx},'reps',this.value)"></div>
       </div>
-      ${prBadge}${delBtn}
+      ${delBtn}
     </div>
     ${bottomRow}
     ${noteRow}
@@ -2692,7 +2548,7 @@ function renderApneaAnalytics() {
     .some(h => Object.values(h).some(arr => arr.length > 0));
 
   if (!hasAnyData) {
-    return `<div class="pr-empty">No apnea data logged yet.<br>Complete apnea blocks in your workouts to see trends here.</div>`;
+    return `<div class="empty-state">No apnea data logged yet.<br>Complete apnea blocks in your workouts to see trends here.</div>`;
   }
 
   return `<div class="apnea-analytics">${panels}</div>`;
@@ -3001,118 +2857,6 @@ function saveFitnessRecord() {
   renderApp();
 }
 
-function getAllPRs() {
-  // Returns array of { name, weight, reps, date } — one entry per canonical exercise,
-  // representing the single best set (highest weight, then highest reps as tiebreak).
-  const data = load();
-  const best = {};
-
-  // Sort weeks chronologically so later weeks win the name resolution pass.
-  const sortedWeeks = Object.entries(data.weeks).sort((a, b) => a[0].localeCompare(b[0]));
-
-  // Pass 1: build latestName — most recent week's display name per canonical key.
-  // This prevents a renamed exercise from showing its old name just because its
-  // best-ever set was logged under the previous name.
-  // Custom exercises use name: prefix so they track across weeks by name, not ID.
-  const latestName = {};
-  for (const [, wData] of sortedWeeks) {
-    const days = wData.plan?.days || [];
-    days.forEach(day => {
-      day.exercises.forEach(ex => {
-        let canonKey;
-        const mStd = ex.id.match(/^d(\d+)_e(\d+)$/);
-        if (mStd) {
-          const lc = (day.name || '').toLowerCase();
-          const type = lc.includes('push') ? 'push'
-                     : lc.includes('pull') ? 'pull'
-                     : lc.includes('leg')  ? 'legs'
-                     : 'pool';
-          canonKey = `e${mStd[2]}_${type}`;
-        } else if (ex.id.includes('_custom_')) {
-          canonKey = `name:${ex.name}`;
-        } else {
-          canonKey = ex.id;
-        }
-        latestName[canonKey] = ex.name;
-      });
-    });
-  }
-
-  // Pass 2: find best set per canonical key from raw data (not isPR flags, which can be
-  // stale or missing). Best = highest weight; tiebreak = highest reps. Name from latestName.
-  for (const [wk, wData] of sortedWeeks) {
-    const logs = wData.logs || {};
-    const days = wData.plan?.days || [];
-
-    for (const [exId, sets] of Object.entries(logs)) {
-      const canonKey = (() => {
-        const mStd = exId.match(/^d(\d+)_e(\d+)$/);
-        if (mStd) {
-          const di = parseInt(mStd[1]), ei = mStd[2];
-          const lc = (days[di]?.name || '').toLowerCase();
-          const type = lc.includes('push') ? 'push'
-                     : lc.includes('pull') ? 'pull'
-                     : lc.includes('leg')  ? 'legs'
-                     : 'pool';
-          return `e${ei}_${type}`;
-        }
-        if (exId.includes('_custom_')) {
-          // Find name from this week's plan
-          for (const day of days) {
-            const ex = day.exercises.find(e => e.id === exId);
-            if (ex?.name) return `name:${ex.name}`;
-          }
-        }
-        return exId;
-      })();
-
-      const exName = latestName[canonKey] || '';
-      if (!exName) continue;
-
-      sets.forEach(s => {
-        const w = Number(s.weight) || 0;
-        const r = Number(s.reps)   || 0;
-        if (r <= 0) return;
-        const existing = best[canonKey];
-        const isBetter = !existing
-          || w > existing.weight
-          || (w === existing.weight && r > existing.reps);
-        if (!isBetter) return;
-        let date = '';
-        if (s.ts) {
-          const d = new Date(s.ts);
-          date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        } else {
-          date = wk;
-        }
-        best[canonKey] = { name: exName, weight: w, reps: r, date };
-      });
-    }
-  }
-
-  return Object.values(best).sort((a, b) => a.name.localeCompare(b.name));
-}
-
-function renderPRs() {
-  const prs = getAllPRs();
-  if (!prs.length) {
-    return `<div class="pr-empty">No PRs recorded yet.<br>Log sets to start tracking personal records.</div>`;
-  }
-  const rows = prs.map(p => {
-    const weightStr = p.weight > 0 ? `${p.weight} lbs` : '—';
-    const dateStr   = p.date ? new Date(p.date + 'T12:00:00').toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'}) : '—';
-    return `<tr>
-      <td class="pr-name">${esc(p.name)}</td>
-      <td class="pr-val">${esc(weightStr)}</td>
-      <td class="pr-val">${esc(String(p.reps))}</td>
-      <td class="pr-date">${esc(dateStr)}</td>
-    </tr>`;
-  }).join('');
-  return `<table class="pr-table">
-    <thead><tr><th>Exercise</th><th>Weight</th><th>Reps</th><th>Date</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
-}
 
 function deleteFitnessRecord(idx) {
   showConfirm('Delete test result?', 'This cannot be undone.', () => {
@@ -3224,26 +2968,7 @@ function getExerciseTrend(exId) {
   }
   if (!exName) return [];
 
-  // Collect every ID whose exercise name is a close match to exName.
-  // Uses the same token-overlap approach as getExerciseInfo so minor name
-  // variations across plans ("Bench Press" vs "Barbell Bench Press (flat)")
-  // are treated as the same exercise.
-  // Tokeniser for trend matching — strips only generic filler words, keeps
-  // exercise-specific identifiers like "bench", "press", "squat", "curl" etc.
-  const _trendTokens = s => String(s).toLowerCase()
-    .replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
-    .filter(t => t.length > 1 && !['the','a','an','and','or','on','in','at','to','of','for','with','by','from','as','per','db','dumbbell','barbell','kb','single','double','bilateral','weighted','tempo','varied','grip'].includes(t));
-
-  const exTokens = _trendTokens(exName);
-  const isSameExercise = name => {
-    if (!name) return false;
-    if (name === exName) return true;
-    if (!exTokens.length) return false;
-    const t = _trendTokens(name);
-    if (!t.length) return false;
-    const matches = exTokens.filter(a => t.some(b => a.includes(b) || b.includes(a))).length;
-    return matches / Math.max(exTokens.length, t.length) >= 0.5;
-  };
+  const isSameExercise = name => !!name && _exMatch(exName, name);
 
   const ids = new Set();
   for (const wData of Object.values(data.weeks)) {
@@ -3334,8 +3059,8 @@ function toggleExerciseTrend(exId) {
     panel.style.display = 'block';
     panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-  const nameEl = card?.querySelector('.ex-name');
-  if (nameEl) nameEl.style.borderBottom = isOpen ? '' : '1px solid rgba(250,204,21,.4)';
+  const toggleEl = card?.querySelector('.trend-toggle');
+  if (toggleEl) toggleEl.style.color = isOpen ? 'var(--dim)' : 'var(--accent)';
 }
 
 function formatDayDate(dateStr) {
@@ -3440,7 +3165,7 @@ function confirmAddExercise(di) {
   const ex = addExerciseToDay(di, name);
   if (!ex) return;
   const tmp = document.createElement('div');
-  tmp.innerHTML = renderExercise(di, ex, [], []);
+  tmp.innerHTML = renderExercise(di, ex, []);
   const card = tmp.firstElementChild;
   form.parentNode.insertBefore(card, form);
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3454,19 +3179,6 @@ function confirmAddExercise(di) {
 // or null if no previous data with effort logged exists.
 function getEffortHistory(exName) {
   const data = load();
-  const _tok = s => String(s).toLowerCase()
-    .replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
-    .filter(t => t.length > 1 && !['the','a','an','and','or','on','in','at','to','of','for','with','by','from','as','per','db','dumbbell','barbell','kb','single','double','bilateral','weighted','tempo','varied','grip'].includes(t));
-  const baseToks = _tok(exName);
-  const isMatch = name => {
-    if (!name) return false;
-    if (name === exName) return true;
-    if (!baseToks.length) return false;
-    const t = _tok(name);
-    if (!t.length) return false;
-    const m = baseToks.filter(a => t.some(b => a.includes(b) || b.includes(a))).length;
-    return m / Math.max(baseToks.length, t.length) >= 0.5;
-  };
   const keys = Object.keys(data.weeks).sort().reverse();
   for (const key of keys) {
     if (key === weekKey) continue;
@@ -3475,7 +3187,7 @@ function getEffortHistory(exName) {
     let best = null;
     wData.plan.days.forEach((day, di) => {
       for (const ex of day.exercises) {
-        if (!isMatch(ex.name)) continue;
+        if (!_exMatch(exName, ex.name)) continue;
         const sets = (wData.logs?.[ex.id] || []).filter(
           s => Number.isFinite(Number(s.reps)) && Number(s.reps) > 0
         );
@@ -3551,19 +3263,6 @@ function computeProgression(exName) {
 
 function findPrevSets(exName) {
   const data = load();
-  const _tok = s => String(s).toLowerCase()
-    .replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
-    .filter(t => t.length > 1 && !['the','a','an','and','or','on','in','at','to','of','for','with','by','from','as','per','db','dumbbell','barbell','kb','single','double','bilateral','weighted','tempo','varied','grip'].includes(t));
-  const baseToks = _tok(exName);
-  const isMatch = name => {
-    if (!name) return false;
-    if (name === exName) return true;
-    if (!baseToks.length) return false;
-    const t = _tok(name);
-    if (!t.length) return false;
-    const m = baseToks.filter(a => t.some(b => a.includes(b) || b.includes(a))).length;
-    return m / Math.max(baseToks.length, t.length) >= 0.5;
-  };
   for (const key of Object.keys(data.weeks).sort().reverse()) {
     if (key === weekKey) continue;
     const week = data.weeks[key];
@@ -3571,7 +3270,7 @@ function findPrevSets(exName) {
     let best = null;
     week.plan.days.forEach((day, di) => {
       for (const e of day.exercises) {
-        if (!isMatch(e.name)) continue;
+        if (!_exMatch(exName, e.name)) continue;
         const sets = (week.logs?.[e.id] || []).filter(
           s => s.reps !== '' && s.reps !== null && s.reps !== undefined && Number.isFinite(Number(s.reps)) && Number(s.reps) > 0
         );
@@ -3647,17 +3346,7 @@ function handleAdd(exId) {
 
 function fillExerciseFromLastWeek(di, exId) {
   const exName = getWeek(weekKey)?.plan?.days?.[di]?.exercises?.find(e => e.id === exId)?.name;
-  // Mirror the same dual-source lookup renderExercise uses so the button always works
-  // when the button is shown (name-based first, ID-based fallback for same-week-key exercises)
-  const validFilter = s => s.reps !== '' && s.reps !== null && s.reps !== undefined &&
-    Number.isFinite(Number(s.reps)) && Number(s.reps) > 0;
-  const prevByName = exName ? findPrevSets(exName) : null;
-  const prevById   = (() => {
-    const prevWd = getWeek(shiftWeek(weekKey, -1));
-    if (!prevWd?.logs?.[exId]) return [];
-    return prevWd.logs[exId].filter(validFilter);
-  })();
-  const prevSets = prevByName?.length ? prevByName : prevById;
+  const prevSets = exName ? findPrevSets(exName) : null;
   if (!prevSets?.length) { toast('No previous data found for this exercise'); return; }
   const data = load();
   if (!data.weeks[weekKey]) return;
@@ -3673,7 +3362,7 @@ function fillExerciseFromLastWeek(di, exId) {
   const card = document.getElementById('sl-' + exId)?.closest('.exercise-card');
   if (card) {
     const tmp = document.createElement('div');
-    tmp.innerHTML = renderExercise(di, ex, sets, []);
+    tmp.innerHTML = renderExercise(di, ex, sets);
     card.replaceWith(tmp.firstElementChild);
   }
   refreshProgress();
@@ -3718,110 +3407,6 @@ function fillFromLastWeek(di) {
   renderCalendar();
 }
 
-// ── PR detection ─────────────────────────────────────────
-function getCanonicalKey(exId) {
-  // Standard rotation IDs: d{di}_e{ei}
-  const m = exId.match(/^d(\d+)_e(\d+)$/);
-  if (m) {
-    const di = parseInt(m[1]), ei = m[2];
-    const dayName = getWeek(weekKey)?.plan?.days?.[di]?.name || '';
-    const typeFromName = getTypeName(dayName).toLowerCase();
-    const type = typeFromName || (
-      [0,4].includes(di) ? 'push'
-      : [1,5].includes(di) ? 'pull'
-      : [2,6].includes(di) ? 'legs'
-      : 'pool'
-    );
-    return `e${ei}_${type}`;
-  }
-  // Custom exercise IDs: d{di}_e{ei}_custom_{ts} — use name as canonical key
-  // so the same exercise added in different weeks is tracked as one entity.
-  const mc = exId.match(/^d(\d+)_e\d+_custom_/);
-  if (mc) {
-    const di = parseInt(mc[1]);
-    const plan = getWeek(weekKey)?.plan;
-    const ex = plan?.days?.[di]?.exercises?.find(e => e.id === exId);
-    if (ex?.name) return `name:${ex.name}`;
-  }
-  return exId;
-}
-
-function getCanonicalIds(canonKey) {
-  // Name-based canonical key: scan all weeks for exercise IDs with that name
-  if (canonKey.startsWith('name:')) {
-    const name = canonKey.slice(5);
-    const data = load();
-    const ids = new Set();
-    for (const wData of Object.values(data.weeks)) {
-      for (const day of wData.plan?.days || []) {
-        for (const ex of day.exercises) {
-          if (ex.name === name) ids.add(ex.id);
-        }
-      }
-    }
-    return [...ids];
-  }
-  // Standard rotation canonical key: e{ei}_{type}
-  const m = canonKey.match(/^e(\d+)_(.+)$/);
-  if (!m) return [canonKey]; // unknown format — treat as own ID
-  const [, ei, type] = m;
-  const diArr = type === 'push' ? [0,4]
-              : type === 'pull' ? [1,5]
-              : type === 'legs' ? [2,6]
-              : [3];
-  return diArr.map(di => `d${di}_e${ei}`);
-}
-
-function checkPR(exId, currentWeight, currentReps, idx) {
-  const relatedIds = getCanonicalIds(getCanonicalKey(exId));
-  const data = load();
-  let bestWeight = 0, bestRepsAtWeight = 0, bestRepsBodyweight = 0;
-  for (const [wk, wData] of Object.entries(data.weeks)) {
-    const logs = wData.logs || {};
-    for (const id of relatedIds) {
-      (logs[id] || []).forEach((s, i) => {
-        if (wk === weekKey && id === exId && i === idx) return;
-        const w = Number(s.weight) || 0;
-        const r = Number(s.reps)   || 0;
-        if (r <= 0) return;
-        if (w > bestWeight) bestWeight = w;
-        if (w === 0 && r > bestRepsBodyweight) bestRepsBodyweight = r;
-        if (currentWeight > 0 && w >= currentWeight && r > bestRepsAtWeight)
-          bestRepsAtWeight = r;
-      });
-    }
-  }
-  if (bestWeight === 0 && bestRepsBodyweight === 0 && bestRepsAtWeight === 0) return true;
-  if (currentWeight === 0) return currentReps > 0 && currentReps > bestRepsBodyweight;
-  const weightPR = currentWeight > bestWeight;
-  const repPR    = currentReps   > 0 && currentReps > bestRepsAtWeight;
-  return weightPR || repPR;
-}
-
-function updatePRBadge(exId, idx, isPR) {
-  const row = document.getElementById(`sr-${exId}-${idx}`);
-  if (!row) return;
-  const existing = row.querySelector('.pr-badge');
-  if (isPR && !existing) {
-    const badge = document.createElement('span');
-    badge.className = 'pr-badge';
-    badge.textContent = '🏆 PR';
-    row.querySelector('.set-top').insertBefore(badge, row.querySelector('.del-btn'));
-  } else if (!isPR && existing) {
-    existing.remove();
-  }
-}
-
-function checkAndUpdatePR(exId, idx) {
-  const set = getWeek(weekKey)?.logs?.[exId]?.[idx];
-  if (!set) return;
-  const w = Number(set.weight) || 0;
-  const r = Number(set.reps)   || 0;
-  // Require reps > 0 before evaluating — weight alone is not a complete set
-  const isPR = r > 0 && checkPR(exId, w, r, idx);
-  updateSetLog(weekKey, exId, idx, 'isPR', isPR);
-  updatePRBadge(exId, idx, isPR);
-}
 
 function handleInput(exId, idx, field, val) {
   const n = parseFloat(val);
@@ -3838,7 +3423,6 @@ function handleInput(exId, idx, field, val) {
     }
   }
   refreshProgress(); renderCalendar();
-  if (field === 'weight' || field === 'reps') checkAndUpdatePR(exId, idx);
 }
 
 function handleBWInput(exId, idx, field, val, el) {
@@ -3864,7 +3448,6 @@ function handleBWInput(exId, idx, field, val, el) {
   }
   refreshProgress();
   renderCalendar();
-  checkAndUpdatePR(exId, idx);
 }
 
 function handleBtn(exId, idx, field, val, btn) {
@@ -3911,18 +3494,14 @@ function startEditName(exId, nameEl) {
     updateExerciseName(weekKey, exId, newName);
     const span = document.createElement('span');
     span.className = 'ex-name';
-    span.style.cursor = 'pointer';
     span.textContent = newName;
-    span.onclick = () => toggleExerciseTrend(exId);
     input.replaceWith(span);
   }
   function cancel() {
     committed = true;
     const span = document.createElement('span');
     span.className = 'ex-name';
-    span.style.cursor = 'pointer';
     span.textContent = original;
-    span.onclick = () => toggleExerciseTrend(exId);
     input.replaceWith(span);
   }
 
@@ -4349,7 +3928,6 @@ weekKey = toKey(new Date());
     .pop();
   if (latest) weekKey = latest;
 })();
-recomputeAllPRs();
 // One-time repair: fix stale placeholder ts values that produce bogus durations.
 // For any completed day where earliest logged-set ts predates completedAt by >4h,
 // reset those stale ts values to completedAt so duration is hidden rather than wrong.
@@ -4486,17 +4064,26 @@ function findScrollTarget() {
     // Target: the set row after the most recently completed set
     const nextEl = document.getElementById(`sr-${bestExId}-${bestIdx + 1}`);
     if (nextEl) return nextEl;
-    // No next set — scroll to the Add Set button for that exercise
+    // No next set — check for an open (expanded) apnea block in the same day card
+    const exCard = document.getElementById('sl-' + bestExId)?.closest('.day-card');
+    if (exCard) {
+      const openApnea = exCard.querySelector('.apnea-block:not(.apnea-collapsed) .apnea-body');
+      if (openApnea) return openApnea;
+    }
+    // Fall back to the Add Set button for that exercise
     const list = document.getElementById('sl-' + bestExId);
     if (list) return list.nextElementSibling; // add-set-btn
   }
 
-  // Nothing logged — scroll to first open day card
+  // Nothing logged — scroll to first open day card, or open apnea block
   const wd2 = getWeek(weekKey);
   if (!wd2?.plan?.days) return null;
   for (let di = 0; di < wd2.plan.days.length; di++) {
     const card = document.getElementById('dc' + di);
-    if (card?.classList.contains('open')) return card;
+    if (!card?.classList.contains('open')) continue;
+    const openApnea = card.querySelector('.apnea-block:not(.apnea-collapsed) .apnea-body');
+    if (openApnea) return openApnea;
+    return card;
   }
   return null;
 }
