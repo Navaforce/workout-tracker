@@ -24,7 +24,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap');
 :root {
   --bg:#06090f; --s1:#0d1522; --s2:#12202f; --border:#1c3048;
-  --text:#edf2f7; --muted:#8ea8c3; --dim:#4d6b85;
+  --text:#edf2f7; --muted:#9bbad4; --dim:#4d6b85;
   --accent:#00A1E0; --accent-bg:rgba(0,161,224,.1); --accent-mid:rgba(0,161,224,.35);
   --easy:#22c55e; --moderate:#f59e0b; --hard:#ef4444;
   --increase:#3b82f6; --same:#536778; --decrease:#f97316;
@@ -156,7 +156,7 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .mark-complete-btn:hover{border-color:var(--easy);color:var(--easy);background:rgba(34,197,94,.08)}
 .mark-complete-btn.completed{background:rgba(34,197,94,.12);border-color:var(--easy);color:var(--easy)}
 .day-date-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0}
-.day-date-display{font-size:12px;color:var(--gold-hi);font-weight:700}
+.day-date-display{font-size:12px;color:var(--muted);font-weight:700}
 .day-date-btn{background:none;border:none;color:var(--gold-mid);cursor:pointer;padding:10px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:color .15s;flex-shrink:0;position:relative}
 .day-date-btn:hover{color:var(--gold)}
 .day-date-input{position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;pointer-events:auto;cursor:pointer;font-size:16px}
@@ -192,8 +192,8 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .edit-icon{color:var(--gold-mid);font-size:12px;cursor:pointer;opacity:0;transition:opacity .15s;flex-shrink:0;padding:10px;min-width:44px;min-height:44px;border-radius:4px;background:none;border:none;display:flex;align-items:center;justify-content:center}
 .ex-name-wrap:hover .edit-icon{opacity:1}
 .edit-icon:hover{color:var(--gold)}
-.ex-target{font-size:15px;color:var(--gold-hi);font-weight:600;white-space:nowrap}
-.ex-rest{font-size:15px;color:var(--gold-hi);font-weight:600;white-space:nowrap}
+.ex-target{font-size:15px;color:var(--text);font-weight:600;white-space:nowrap}
+.ex-rest{font-size:15px;color:var(--muted);font-weight:600;white-space:nowrap}
 .ex-1rm{font-size:11px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .day-duration{font-size:11px;color:var(--easy);font-weight:700;white-space:nowrap;display:block;margin-top:2px}
 .prev-ref{font-size:12px;color:var(--text);font-style:italic;margin-bottom:6px}
@@ -251,7 +251,7 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .add-ex-input:focus{border-color:var(--accent)}
 
 /* Apnea block */
-.apnea-block{padding:14px 18px;border-top:1px solid var(--gold-lo)}
+.apnea-block{padding:14px 18px;border-top:2px solid var(--border);background:var(--bg)}
 .apnea-header{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;letter-spacing:.3px;color:var(--gold-hi);display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;-webkit-user-select:none;margin:-4px;padding:4px;min-height:44px;border-radius:6px;transition:background .15s}
 .apnea-header:hover{background:var(--gold-lo)}
 .apnea-chevron{color:var(--gold-hi);font-size:16px;transition:transform .2s;line-height:1;transform:rotate(90deg)}
@@ -260,7 +260,7 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .apnea-block.apnea-collapsed .apnea-body{display:none}
 .apnea-sub-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:12px 0 6px}
 .apnea-row{background:var(--bg);border:1px solid var(--border);border-radius:var(--rs);padding:9px 12px;margin-bottom:5px;display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap}
-.apnea-round-num{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--gold-hi);min-width:60px;align-self:flex-end;padding-bottom:2px;letter-spacing:.5px;text-transform:uppercase}
+.apnea-round-num{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--muted);min-width:60px;align-self:flex-end;padding-bottom:2px;letter-spacing:.5px;text-transform:uppercase}
 .apnea-targets{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;padding-bottom:2px}
 .apnea-target{font-size:13px;color:var(--text);font-style:normal;white-space:nowrap}
 .apnea-inp{display:flex;flex-direction:column;gap:3px}
@@ -280,9 +280,10 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .raw-section.open .raw-content{display:block}
 
 /* Main tabs */
-.main-tabs{display:flex;background:var(--s2);border-radius:var(--rs);padding:3px;gap:3px;margin-bottom:22px}
-.main-tab{flex:1;border:none;border-radius:5px;padding:9px 0;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;background:none;color:var(--text);letter-spacing:.3px;white-space:nowrap}
-.main-tab.active{background:var(--s1);color:var(--accent);border:1px solid var(--accent-mid)}
+.main-tabs{display:flex;background:transparent;border-bottom:2px solid var(--border);padding:0;gap:0;margin-bottom:22px}
+.main-tab{flex:1;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;border-radius:0;padding:10px 0;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:color .15s,border-color .15s;background:none;color:var(--muted);letter-spacing:.3px;white-space:nowrap}
+.main-tab:hover{color:var(--text)}
+.main-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 
 /* Apnea Analytics */
 .apnea-analytics{display:flex;flex-direction:column;gap:16px}
@@ -383,7 +384,8 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .delete-workout-btn:hover{border-color:var(--hard);color:var(--hard)}
 .week-note-wrap{margin-bottom:18px}
 .week-note-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--dim);margin-bottom:5px}
-.week-note-input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:9px 12px;resize:vertical;min-height:54px;outline:none;transition:border-color .15s;line-height:1.5;box-sizing:border-box}
+.week-note-input{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:var(--rs);color:var(--text);font-family:'Barlow',sans-serif;font-size:13px;padding:9px 12px;resize:none;height:36px;min-height:36px;overflow:hidden;outline:none;transition:border-color .15s,height .2s ease;line-height:1.5;box-sizing:border-box}
+.week-note-input:focus,.week-note-input.has-content{height:72px;resize:vertical}
 .week-note-input:focus{border-color:var(--accent-mid)}
 .week-note-input::placeholder{color:var(--dim)}
 .hist-note{font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
@@ -1135,7 +1137,8 @@ function renderApp() {
     <button class="main-tab${mainTab==='workouts'?' active':''}" onclick="switchMainTab('workouts')">Workouts</button>
     <button class="main-tab${mainTab==='prs'?' active':''}" onclick="switchMainTab('prs')">PRs</button>
     <button class="main-tab${mainTab==='apnea'?' active':''}" onclick="switchMainTab('apnea')">Apnea</button>
-    <button class="main-tab${mainTab==='fitness'?' active':''}" onclick="switchMainTab('fitness')">Fitness Tests</button>
+    <button class="main-tab${mainTab==='fitness'?' active':''}" onclick="switchMainTab('fitness')">Fitness</button>
+    <button class="main-tab${mainTab==='history'?' active':''}" onclick="switchMainTab('history')">History</button>
   </div>`;
   if (mainTab === 'fitness') {
     main.innerHTML = tabs + renderFitnessTests();
@@ -1143,10 +1146,12 @@ function renderApp() {
     main.innerHTML = tabs + renderApneaAnalytics();
   } else if (mainTab === 'prs') {
     main.innerHTML = tabs + renderPRs();
+  } else if (mainTab === 'history') {
+    main.innerHTML = tabs + renderHistory();
   } else if (!wd?.plan) {
     main.innerHTML = tabs + renderUpload();
   } else {
-    main.innerHTML = tabs + renderWorkout(wd) + renderHistory();
+    main.innerHTML = tabs + renderWorkout(wd);
   }
   renderSidebar();
   updateExportBtn();
@@ -1655,7 +1660,7 @@ function renderUpload() {
   ]
 }</pre>
     </details>
-  </div>` + renderHistory();
+  </div>`;
 }
 
 function renderWorkout(wd) {
@@ -1667,7 +1672,7 @@ function renderWorkout(wd) {
   const daysHtml = plan.days.map((d,i) => renderDay(d,i,logs,prevLogs)).join('');
   const weekNoteHtml = `<div class="week-note-wrap">
     <div class="week-note-label">Week Notes</div>
-    <textarea class="week-note-input" placeholder="Injury context, travel, deload intent, anything relevant for this week…" oninput="saveWeekNote(this.value)">${esc(note)}</textarea>
+    <textarea class="week-note-input${note?' has-content':''}" placeholder="Injury context, travel, deload intent, anything relevant for this week…" oninput="saveWeekNote(this.value)">${esc(note)}</textarea>
   </div>`;
   return deleteBtn + weekNoteHtml + daysHtml;
 }
