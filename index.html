@@ -197,8 +197,8 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .ex-1rm{font-size:11px;color:var(--accent);font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .day-duration{font-size:11px;color:var(--easy);font-weight:700;white-space:nowrap;display:block;margin-top:2px}
 .prev-ref{font-size:12px;color:var(--text);font-style:italic;margin-bottom:6px}
-.prog-suggestion{font-size:12px;color:var(--accent);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:5px}
-.prog-suggestion svg{flex-shrink:0;opacity:.8}
+.prog-suggestion{font-size:12px;color:var(--accent);font-weight:700}
+.prog-suggestion svg{flex-shrink:0;opacity:.8;stroke:var(--accent)}
 .effort-history{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
 .effort-history-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);flex-shrink:0;margin-right:2px}
 .effort-week{display:inline-flex;align-items:center;gap:5px;background:var(--s2);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:12px;white-space:nowrap}
@@ -399,6 +399,17 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .scroll-btn.visible{opacity:1;pointer-events:auto}
 .scroll-btn:hover{border-color:var(--accent-mid);color:var(--accent)}
 
+/* PR tab */
+.pr-table{width:100%;border-collapse:collapse}
+.pr-table th{font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+.pr-table th:not(:first-child){text-align:right}
+.pr-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px;color:var(--text);vertical-align:middle}
+.pr-table td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pr-table tr:hover td{background:var(--s2)}
+.pr-name{font-weight:600;color:var(--text)}
+.pr-val{font-weight:700;color:var(--gold-hi)}
+.pr-date{font-size:11px;color:var(--muted)}
+
 /* Misc */
 .empty-state{text-align:center;padding:40px 20px;color:var(--muted);font-size:15px}
 #file-input{display:none}
@@ -582,7 +593,7 @@ async function unlockAudio() {
     window.speechSynthesis.speak(utter);
   }
 }
-let mainTab = 'workouts'; // 'workouts' | 'apnea' | 'fitness'
+let mainTab = 'workouts'; // 'workouts' | 'prs' | 'apnea' | 'fitness'
 const openFtState = new Set(); // open fitness session dates
 
 // ── Date utils ───────────────────────────────────────────
@@ -1087,6 +1098,7 @@ function renderApp() {
   const main = document.getElementById('main');
   const tabs = `<div class="main-tabs">
     <button class="main-tab${mainTab==='workouts'?' active':''}" onclick="switchMainTab('workouts')">Workouts</button>
+    <button class="main-tab${mainTab==='prs'?' active':''}" onclick="switchMainTab('prs')">PRs</button>
     <button class="main-tab${mainTab==='apnea'?' active':''}" onclick="switchMainTab('apnea')">Apnea</button>
     <button class="main-tab${mainTab==='fitness'?' active':''}" onclick="switchMainTab('fitness')">Fitness Tests</button>
   </div>`;
@@ -1094,6 +1106,8 @@ function renderApp() {
     main.innerHTML = tabs + renderFitnessTests();
   } else if (mainTab === 'apnea') {
     main.innerHTML = tabs + renderApneaAnalytics();
+  } else if (mainTab === 'prs') {
+    main.innerHTML = tabs + renderPRs();
   } else if (!wd?.plan) {
     main.innerHTML = tabs + renderUpload();
   } else {
@@ -2125,27 +2139,30 @@ function renderExercise(di, ex, sets) {
     ? `<button class="fill-last-btn" style="font-size:11px;padding:3px 8px" onclick="fillExerciseFromLastWeek(${di},'${esc(ex.id)}')">↩</button>`
     : '';
   const suggestion = !hasLoggedSets ? computeProgression(ex.name) : null;
-  // "Last week: X" and trend toggle on the same line
-  const trendToggle = `<span class="trend-toggle" onclick="toggleExerciseTrend('${esc(ex.id)}')" style="cursor:pointer;font-size:11px;color:var(--dim);margin-left:8px;user-select:none" title="Toggle trend chart">▲ trend</span>`;
-  const prev = resolvedPrev.length
-    ? `<div class="prev-ref" style="display:flex;align-items:center;flex-wrap:wrap;gap:0">Last week: ${summarizeSets(resolvedPrev)}${trendToggle}</div>`
-    : '';
+  // Single info row: "Last week: X · effort pills · ▲ trend"
+  const trendToggle = `<span class="trend-toggle" onclick="toggleExerciseTrend('${esc(ex.id)}')" style="cursor:pointer;font-size:11px;color:var(--dim);margin-left:6px;user-select:none;flex-shrink:0" title="Toggle trend chart">▲ trend</span>`;
   const effortHistory = getEffortHistory(ex.name);
-  const effortHistoryHtml = effortHistory ? (() => {
+  const effortPills = effortHistory ? (() => {
     const { tiers } = effortHistory;
-    const parts = [
-      { key: 'easy',     label: 'Easy',     color: 'var(--easy)'     },
-      { key: 'moderate', label: 'Moderate', color: 'var(--moderate)' },
-      { key: 'hard',     label: 'Hard',     color: 'var(--hard)'     },
+    return [
+      { key: 'easy', label: 'Easy', color: 'var(--easy)' },
+      { key: 'moderate', label: 'Mod', color: 'var(--moderate)' },
+      { key: 'hard', label: 'Hard', color: 'var(--hard)' },
     ].filter(p => tiers[p.key].sets > 0).map(p => {
       const t = tiers[p.key];
-      return `<span class="effort-week" style="border-color:${p.color}20">` +
+      return `<span class="effort-week" style="border-color:${p.color}20;padding:1px 6px;font-size:11px">` +
         `<span style="color:${p.color};font-weight:800">${p.label}</span>` +
-        `<span style="color:var(--text)"> ${t.sets} set${t.sets>1?'s':''} · ${t.reps} reps</span>` +
+        `<span style="color:var(--muted)"> ${t.sets}×${t.reps}</span>` +
         `</span>`;
     }).join('');
-    return parts ? `<div class="effort-history">${parts}</div>` : '';
   })() : '';
+  const prev = resolvedPrev.length
+    ? `<div class="prev-ref" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px;margin-top:4px">` +
+      `<span>Last week: ${summarizeSets(resolvedPrev)}</span>` +
+      (effortPills ? `<span style="display:flex;gap:5px;flex-wrap:wrap">${effortPills}</span>` : '') +
+      trendToggle +
+      `</div>`
+    : '';
   const setsHtml = sets.map((s,i) => renderSet(ex.id,i,s,ex.bwMode)).join('');
   const bwBtn    = `<button class="bw-btn${ex.bwMode?' bw-active':''}" onclick="toggleBWMode('${esc(ex.id)}')">BW</button>`;
   const delBtn   = `<button class="ex-del-btn" data-exname="${esc(ex.name)}" onclick="handleDeleteExercise(${di},'${esc(ex.id)}',this.dataset.exname)" aria-label="Delete exercise" data-tooltip="Delete exercise"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>`;
@@ -2163,13 +2180,25 @@ function renderExercise(di, ex, sets) {
           ${bwBtn}
           ${delBtn}
         </div>
-        ${(()=>{const rest=getExerciseInfo(ex.name)?.rest;const parts=[];if(target)parts.push(`<span class="ex-target">${esc(target)}</span>`);if(rest)parts.push(`<span class="ex-rest">(Rest ${esc(rest)})</span>`);if(suggestion)parts.push(`<span class="prog-suggestion" style="margin:0;font-size:11px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>${esc(suggestion)}</span>`);parts.push(`<span class="ex-1rm" id="1rm-${esc(ex.id)}">${render1RM(ex.id)}</span>`);return `<div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;overflow:hidden">${parts.join('')}</div>`})()}
+        ${(()=>{
+          const rest = getExerciseInfo(ex.name)?.rest;
+          const line1 = [];
+          if (target) line1.push(`<span class="ex-target">${esc(target)}</span>`);
+          if (rest)   line1.push(`<span class="ex-rest">(Rest ${esc(rest)})</span>`);
+          line1.push(`<span class="ex-1rm" id="1rm-${esc(ex.id)}">${render1RM(ex.id)}</span>`);
+          const line2 = suggestion
+            ? `<div style="display:flex;align-items:center;gap:5px;margin-top:3px">` +
+              `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12,5 19,12 12,19"/></svg>` +
+              `<span class="prog-suggestion" style="margin:0;font-size:12px">${esc(suggestion)}</span>` +
+              `</div>`
+            : '';
+          return `<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap">${line1.join('')}</div>${line2}`;
+        })()}
       </div>
     </div>
     <div class="ex-body">
       <div class="ex-trend" id="trend-${esc(ex.id)}" style="display:none"></div>
       ${prev}
-      ${effortHistoryHtml}
       <div class="sets-list" id="sl-${ex.id}">${setsHtml}</div>
       <button class="add-set-btn" onclick="handleAdd('${esc(ex.id)}')">+ Log Set</button>
     </div>
@@ -2857,6 +2886,72 @@ function saveFitnessRecord() {
   renderApp();
 }
 
+
+// ── PR tab ───────────────────────────────────────────────
+// Scans all logged sets, groups by exercise name (fuzzy match via _exMatch),
+// and returns one entry per unique exercise: the set with the highest weight
+// (reps as tiebreak). No stored flags — computed fresh each time the tab opens.
+function getAllPRs() {
+  const data = load();
+  const buckets = []; // { name, weight, reps, weekKey }
+
+  // Process weeks oldest-first so newer weeks win name ties
+  const sortedWeeks = Object.entries(data.weeks).sort((a, b) => a[0].localeCompare(b[0]));
+
+  for (const [wk, wData] of sortedWeeks) {
+    const logs = wData.logs || {};
+    const nameMap = {};
+    (wData.plan?.days || []).forEach(d => d.exercises.forEach(e => { nameMap[e.id] = e.name; }));
+
+    for (const [exId, sets] of Object.entries(logs)) {
+      const name = nameMap[exId];
+      if (!name) continue;
+
+      let bucket = buckets.find(b => _exMatch(b.name, name));
+      if (!bucket) {
+        bucket = { name, weight: 0, reps: 0, weekKey: wk };
+        buckets.push(bucket);
+      }
+
+      sets.forEach(s => {
+        const w = Number(s.weight) || 0;
+        const r = Number(s.reps)   || 0;
+        if (r <= 0) return;
+        if (w > bucket.weight || (w === bucket.weight && r > bucket.reps)) {
+          bucket.weight  = w;
+          bucket.reps    = r;
+          bucket.weekKey = wk;
+          bucket.name    = name; // keep most recent name for this best set
+        }
+      });
+    }
+  }
+
+  return buckets
+    .filter(b => b.weight > 0 || b.reps > 0)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderPRs() {
+  const prs = getAllPRs();
+  if (!prs.length) {
+    return `<div class="empty-state">No data yet — log sets to see your PRs here.</div>`;
+  }
+  const rows = prs.map(p => {
+    const weightStr = p.weight > 0 ? `${p.weight} lbs` : 'BW';
+    const wkStr = p.weekKey ? weekLabel(p.weekKey) : '—';
+    return `<tr>
+      <td class="pr-name">${esc(p.name)}</td>
+      <td class="pr-val">${esc(weightStr)}</td>
+      <td class="pr-val">${esc(String(p.reps))}</td>
+      <td class="pr-date">${esc(wkStr)}</td>
+    </tr>`;
+  }).join('');
+  return `<table class="pr-table">
+    <thead><tr><th>Exercise</th><th>Best Weight</th><th>Reps</th><th>Week</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
 
 function deleteFitnessRecord(idx) {
   showConfirm('Delete test result?', 'This cannot be undone.', () => {
