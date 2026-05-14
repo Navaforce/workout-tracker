@@ -89,7 +89,7 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 @media(max-width:768px){
   .app-layout{flex-direction:column}
   .cal-sidebar{width:100%;height:auto;position:static;border-right:none;border-bottom:1px solid var(--border);padding:14px}
-  .cal-grid{grid-auto-rows:80px}
+  .cal-grid{grid-auto-rows:60px}
 }
 .sidebar-toggle{display:flex;background:var(--s2);border-radius:var(--rs);padding:3px;gap:3px;margin-bottom:12px;flex-shrink:0}
 .sidebar-tab{flex:1;border-radius:5px;padding:9px 0;min-height:44px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;background:none;color:var(--text);border:1px solid transparent;letter-spacing:.3px;-webkit-user-select:none;user-select:none}
@@ -161,15 +161,15 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .day-date-btn:hover{color:var(--gold)}
 .day-date-input{position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;pointer-events:auto;cursor:pointer;font-size:16px}
 .day-progress{font-size:12px;color:var(--text);font-weight:700;white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums}
-.day-progress-track{height:3px;background:var(--border);position:relative;flex-shrink:0}
-.day-progress-fill{height:100%;background:var(--gold);position:absolute;top:0;left:0;transition:width .4s ease}
+.day-progress-track{height:5px;background:var(--border);position:relative;flex-shrink:0;border-radius:3px;overflow:hidden}
+.day-progress-fill{height:100%;background:var(--gold);position:absolute;top:0;left:0;transition:width .4s ease;border-radius:3px}
 .day-chevron{color:var(--gold-mid);font-size:20px;transition:transform .2s;line-height:1;flex-shrink:0}
 .day-card.open .day-chevron{transform:rotate(90deg);color:var(--gold)}
 .day-body{display:none}
 .day-card.open .day-body{display:block}
 
 /* Exercises */
-.exercise-card{border-bottom:1px solid rgba(250,204,21,.18);padding:16px 18px}
+.exercise-card{border-bottom:1px solid rgba(250,204,21,.28);padding:16px 18px}
 .exercise-card:last-child{border-bottom:none}
 .ex-collapse-btn{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:4px;display:flex;align-items:center;flex-shrink:0;transition:color .15s}
 .ex-collapse-btn:hover{color:var(--text)}
@@ -207,7 +207,7 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .sets-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
 .set-row{background:var(--s2);border-radius:var(--rs);padding:12px 14px;border:1px solid var(--border)}
 .set-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-.set-num{font-family:'Barlow Condensed',sans-serif;font-size:13px;font-weight:700;color:var(--text);min-width:42px;letter-spacing:.5px;text-transform:uppercase}
+.set-num{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--muted);min-width:42px;letter-spacing:.5px;text-transform:uppercase}
 .set-inputs{display:flex;gap:8px;flex:1}
 .inp-group{flex:1}
 .inp-group label{font-size:12px;color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px}
@@ -488,10 +488,20 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 /* Ensure set note input is 16px to prevent iOS zoom */
 .set-note-input{font-size:16px}
 
+/* Header overflow menu for low-freq sync buttons */
+.header-overflow{position:relative;flex-shrink:0}
+.header-overflow-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:var(--rs);padding:5px 9px;min-width:34px;min-height:34px;cursor:pointer;font-size:18px;display:none;align-items:center;justify-content:center;line-height:1;transition:all .15s}
+.header-overflow-btn:hover{border-color:var(--accent-mid);color:var(--accent)}
+.header-overflow-menu{display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:6px;z-index:200;min-width:160px;gap:4px;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.header-overflow-menu.open{display:flex}
+.header-overflow-menu button{background:none;border:1px solid var(--border);color:var(--text);border-radius:var(--rs);padding:10px 14px;font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;cursor:pointer;text-align:left;white-space:nowrap;transition:all .15s;display:flex;align-items:center;gap:8px}
+.header-overflow-menu button:hover{border-color:var(--accent-mid);color:var(--accent)}
+#sync-status-menu{font-size:11px;color:var(--muted);padding:4px 14px 2px;white-space:nowrap}
+
 @media(max-width:768px){
-  main{padding:12px 14px;overflow-x:hidden}
+  main{padding:8px 10px;overflow-x:hidden}
   .set-inputs{gap:6px}
-  .set-row{padding:14px}
+  .set-row{padding:12px 12px}
   .timer-display{font-size:56px}
   .day-header{padding:12px 14px;gap:8px}
   .apnea-row{gap:6px}
@@ -504,6 +514,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   .export-btn{padding:5px 8px}
   .upload-btn{padding:5px 8px;display:flex;align-items:center}
   .upload-btn-label{display:none}
+  /* hide push/pull/sync inline; show overflow toggle */
+  .header-sync-inline{display:none!important}
+  .header-overflow-btn{display:flex}
+  /* tighten exercise cards on mobile */
+  .exercise-card{padding:12px 12px}
+  .add-ex-form{padding:8px 12px 4px}
 }
 
 /* Touch devices: show hover-hidden elements always, enable tap tooltips */
@@ -527,9 +543,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <button onclick="navWeek(1)" aria-label="Next week">›</button>
     <button id="today-btn" class="today-btn" onclick="jumpToWeek(toKey(new Date()))" aria-label="Go to current week"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></button>
   </div>
-  <button class="export-btn" onclick="pushToCloud()" title="Push to cloud" aria-label="Push to cloud">↑</button>
-  <button class="export-btn" onclick="pullFromCloud()" title="Pull from cloud" aria-label="Pull from cloud">↓</button>
-  <span id="sync-status" style="font-size:11px;color:var(--text);white-space:nowrap"></span>
+  <button class="export-btn header-sync-inline" onclick="pushToCloud()" title="Push to cloud" aria-label="Push to cloud">↑</button>
+  <button class="export-btn header-sync-inline" onclick="pullFromCloud()" title="Pull from cloud" aria-label="Pull from cloud">↓</button>
+  <span id="sync-status" class="header-sync-inline" style="font-size:11px;color:var(--text);white-space:nowrap"></span>
   <button class="refresh-btn" title="Refresh" aria-label="Refresh" onclick="handleRefresh(this)">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="23,4 23,10 17,10"/>
@@ -544,6 +560,14 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     </svg>
   </button>
   <button class="upload-btn" onclick="triggerUpload()" title="Upload JSON" aria-label="Upload JSON"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span class="upload-btn-label"> Upload JSON</span></button>
+  <div class="header-overflow">
+    <button class="header-overflow-btn" onclick="toggleHeaderOverflow(this)" aria-label="More options" aria-haspopup="true">⋯</button>
+    <div class="header-overflow-menu" id="header-overflow-menu" role="menu">
+      <div id="sync-status-menu"></div>
+      <button onclick="pushToCloud();closeHeaderOverflow()" role="menuitem">↑ Push to cloud</button>
+      <button onclick="pullFromCloud();closeHeaderOverflow()" role="menuitem">↓ Pull from cloud</button>
+    </div>
+  </div>
 </header>
 <div class="app-layout">
   <aside class="cal-sidebar" id="cal-sidebar" role="complementary"></aside>
@@ -906,15 +930,26 @@ const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g
 
 // Tokenise an exercise name for fuzzy matching — strips only generic filler words
 // so equipment identifiers like "barbell", "db", "kb" are kept as meaningful tokens.
+const _exStem = t => {
+  const abbr = { db: 'dumbbell', kb: 'kettlebell', bb: 'barbell' };
+  t = abbr[t] || t;
+  if (t.length > 4 && !t.endsWith('ss') && t.endsWith('s')) t = t.slice(0, -1);
+  return t;
+};
 const _exTok = s => String(s).toLowerCase()
   .replace(/[^a-z0-9 ]/g,' ').split(/\s+/)
-  .filter(t => t.length > 1 && !['the','a','an','and','or','on','in','at','to','of','for','with','by','from','as','per'].includes(t));
+  .filter(t => t.length > 1 && !['the','a','an','and','or','on','in','at','to','of','for','with','by','from','as','per'].includes(t))
+  .map(_exStem);
 const _exMatch = (a, b) => {
   if (a === b) return true;
   const ta = _exTok(a), tb = _exTok(b);
   if (!ta.length || !tb.length) return false;
-  const m = ta.filter(x => tb.some(y => x === y)).length;
-  return m / Math.min(ta.length, tb.length) >= 0.8;
+  const m = ta.filter(x => tb.includes(x)).length;
+  // bigram pairs (adjacent tokens concatenated + stemmed) to handle split vs compound spellings
+  const biA = ta.slice(0,-1).map((_,i) => _exStem(ta[i]+ta[i+1]));
+  const biB = tb.slice(0,-1).map((_,i) => _exStem(tb[i]+tb[i+1]));
+  const mBi = biA.filter(x => tb.includes(x)).length + biB.filter(x => ta.includes(x)).length;
+  return (m + mBi) / Math.min(ta.length, tb.length) >= 0.8;
 };
 
 // ── Calendar ─────────────────────────────────────────────
@@ -1718,39 +1753,9 @@ const DAY_WARMUP = {
 };
 
 const DAY_SECTIONS = {
-  push: {
-    transition: {
-      title: 'Parasympathetic Transition',
-      time: '37:00 – 40:00 · 3 min',
-      steps: [
-        'Sit or lie down. Eyes closed.',
-        '6-sec nasal inhale → 10-sec pursed-lip exhale. Repeat for 3 full minutes.',
-        'This shifts the nervous system from sympathetic (lifting) to parasympathetic (breath-hold ready). Heart rate should drop noticeably.',
-        'Do NOT skip — breath-hold quality directly depends on this reset.',
-      ]
-    },
-  },
-  pull: {
-    transition: {
-      title: 'Parasympathetic Transition',
-      time: '37:00 – 40:00 · 3 min',
-      steps: [
-        'Same as Day 1. After KB swings and carries, HR will be elevated — give it the full 3 minutes.',
-        'Sit or lie down. 6-sec nasal inhale, 10-sec pursed-lip exhale. Repeat for 3 minutes before apnea block.',
-      ]
-    },
-  },
-  legs: {
-    transition: {
-      title: 'Parasympathetic Transition',
-      time: '37:00 – 40:00 · 3 min',
-      steps: [
-        'Lie on your back. After heavy leg work, blood pools in lower extremities — the supine position aids venous return.',
-        '6-sec nasal inhale, 10-sec exhale. 3 full minutes.',
-        'Especially important on legs day: the leg-O2-debt means CO2 is already elevated, so the transition converts this into a training advantage rather than a distraction.',
-      ]
-    },
-  },
+  push: {},
+  pull: {},
+  legs: {},
   pool: {},
   recovery: {
     diaphragm: {
@@ -1796,7 +1801,6 @@ function renderDaySections(dayName) {
   if (!type) return '';
   const s = DAY_SECTIONS[type];
   let html = '';
-  if (s.transition)    html += renderDaySection(`${type}-trans`,  s.transition.title,    s.transition.time    || '', s.transition.steps);
   if (s.diaphragm)     html += renderDaySection(`${type}-diaph`,  s.diaphragm.title,      s.diaphragm.time     || '', s.diaphragm.steps);
   return html;
 }
@@ -3926,6 +3930,24 @@ async function pullFromCloud() {
     if (pushBtn) pushBtn.disabled = false;
     if (pullBtn) pullBtn.disabled = false;
   }
+}
+
+// ── Header overflow menu ─────────────────────────────────
+function toggleHeaderOverflow(btn) {
+  const menu = document.getElementById('header-overflow-menu');
+  menu.classList.toggle('open');
+  if (menu.classList.contains('open')) {
+    const ms = document.getElementById('sync-status-menu');
+    if (ms) ms.textContent = document.getElementById('sync-status').textContent;
+    setTimeout(() => document.addEventListener('click', _closeOverflowOutside, {once:true}), 0);
+  }
+}
+function closeHeaderOverflow() {
+  document.getElementById('header-overflow-menu').classList.remove('open');
+}
+function _closeOverflowOutside(e) {
+  const wrap = document.querySelector('.header-overflow');
+  if (wrap && !wrap.contains(e.target)) closeHeaderOverflow();
 }
 
 // ── Toast ────────────────────────────────────────────────
