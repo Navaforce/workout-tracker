@@ -40,7 +40,7 @@ header{position:sticky;top:0;z-index:100;background:var(--s1);border-bottom:2px 
 header::after{content:'';position:absolute;bottom:-1px;left:0;width:3px;top:0;background:var(--accent)}
 header h1{font-family:'Barlow Condensed',sans-serif;font-size:22px;font-weight:800;letter-spacing:.8px;white-space:nowrap;color:var(--accent);text-transform:uppercase}
 .week-nav{display:flex;align-items:center;gap:6px;flex:1;justify-content:center}
-.week-nav button{background:var(--s2);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:var(--rs);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.week-nav button{background:var(--s2);border:1px solid var(--border);color:var(--text);width:32px;height:32px;border-radius:var(--rs);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;min-width:44px;min-height:44px}
 .week-nav button:hover{background:var(--accent-bg);border-color:var(--accent-mid);color:var(--accent)}
 #week-label{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;min-width:130px;text-align:center;letter-spacing:.2px}
 .upload-btn{background:var(--accent);color:#fff;border:none;border-radius:var(--rs);padding:8px 14px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s;letter-spacing:.3px}
@@ -94,6 +94,16 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .sidebar-toggle{display:flex;background:var(--s2);border-radius:var(--rs);padding:3px;gap:3px;margin-bottom:12px;flex-shrink:0}
 .sidebar-tab{flex:1;border-radius:5px;padding:9px 0;min-height:44px;font-family:'Barlow',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;background:none;color:var(--text);border:1px solid transparent;letter-spacing:.3px;-webkit-user-select:none;user-select:none}
 .sidebar-tab.active{background:var(--s1);color:var(--accent);border-color:var(--accent-mid)}
+.sidebar-collapse-btn{display:none;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 8px;min-width:44px;min-height:44px;align-items:center;justify-content:center;flex-shrink:0;transition:color .15s}
+.sidebar-collapse-btn:hover{color:var(--text)}
+.sidebar-body{display:contents}
+@media(max-width:768px){
+  .sidebar-collapse-btn{display:flex}
+  .sidebar-body{display:flex;flex-direction:column;gap:10px;overflow:hidden}
+  .cal-sidebar.sidebar-collapsed .sidebar-body{display:none}
+  .cal-sidebar.sidebar-collapsed{padding-bottom:4px}
+  .cal-sidebar.sidebar-collapsed .sidebar-toggle{margin-bottom:0}
+}
 #cal-view{display:flex;flex-direction:column;flex:1;min-height:0;gap:10px}
 #timer-view{display:flex;flex-direction:column;flex:1;min-height:0}
 .timer-display{font-family:'Barlow Condensed',sans-serif;font-size:72px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;text-align:center;letter-spacing:-1px;margin:20px 0;line-height:1}
@@ -268,7 +278,7 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .apnea-inp input{background:var(--s1);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:16px;font-weight:600;padding:7px 8px;outline:none;width:80px;text-align:center;-moz-appearance:textfield;transition:border-color .15s}
 .apnea-inp input::-webkit-outer-spin-button,.apnea-inp input::-webkit-inner-spin-button{-webkit-appearance:none}
 .apnea-inp input:focus{border-color:var(--accent)}
-.apnea-inp input[data-apnea-field="notes"]{width:260px;text-align:left}
+.apnea-inp input[data-apnea-field="notes"]{width:260px;text-align:left;max-width:100%}
 
 /* Raw text */
 .raw-section{margin-top:18px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
@@ -284,6 +294,8 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .main-tab{flex:1;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;border-radius:0;padding:10px 0;font-family:'Barlow',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:color .15s,border-color .15s;background:none;color:var(--muted);letter-spacing:.3px;white-space:nowrap}
 .main-tab:hover{color:var(--text)}
 .main-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-short{display:none}
+.tab-full{display:inline}
 
 /* Apnea Analytics */
 .apnea-analytics{display:flex;flex-direction:column;gap:16px}
@@ -388,12 +400,12 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .week-note-input:focus,.week-note-input.has-content{height:72px;resize:vertical}
 .week-note-input:focus{border-color:var(--accent-mid)}
 .week-note-input::placeholder{color:var(--dim)}
-.hist-note{font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:300px}
+.hist-note{font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:60%}
 .btn-delete{background:var(--hard);color:#fff;border-color:var(--hard)!important}
 
 
 /* Toast */
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--s1);border:1px solid var(--accent-mid);color:var(--text);padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600;z-index:1000;transition:transform .3s ease;pointer-events:none;letter-spacing:.2px}
+.toast{position:fixed;bottom:max(24px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(80px);background:var(--s1);border:1px solid var(--accent-mid);color:var(--text);padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600;z-index:1000;transition:transform .3s ease;pointer-events:none;letter-spacing:.2px}
 .toast.show{transform:translateX(-50%) translateY(0)}
 
 /* Scroll button */
@@ -428,7 +440,7 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .refresh-btn:hover{border-color:var(--accent-mid);color:var(--accent)}
 @keyframes spin-once{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 .refresh-btn.spinning svg{animation:spin-once 0.4s ease}
-.today-btn{background:none;border:1px solid var(--accent-mid);color:var(--accent);border-radius:var(--rs);padding:4px 7px;width:auto;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;margin-left:10px;display:flex;align-items:center;justify-content:center}
+.today-btn{background:none;border:1px solid var(--accent-mid);color:var(--accent);border-radius:var(--rs);padding:4px 7px;width:auto;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap;margin-left:10px;display:flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
 .today-btn:hover{border-color:var(--accent);background:var(--accent-bg)}
 .cal-home-btn{background:none;border:1px solid var(--accent-mid);color:var(--accent);width:26px;height:26px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .cal-home-btn:hover{border-color:var(--accent);background:var(--accent-bg)}
@@ -522,6 +534,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   /* tighten exercise cards on mobile */
   .exercise-card{padding:12px 12px}
   .add-ex-form{padding:8px 12px 4px}
+  /* abbreviated tab labels */
+  .tab-full{display:none}
+  .tab-short{display:inline}
+  /* apnea notes full width */
+  .apnea-inp input[data-apnea-field="notes"]{width:100%}
 }
 
 /* Touch devices: show hover-hidden elements always, enable tap tooltips */
@@ -589,7 +606,8 @@ let calYear = new Date().getFullYear();
 let calMo   = new Date().getMonth(); // 0-indexed
 const openDayState = {}; // weekKey → Set of open day indices (in-memory only)
 const collapsedExState = {}; // weekKey → Set of collapsed exIds (in-memory only)
-let sidebarTab  = 'calendar'; // 'calendar' | 'timer'
+let sidebarTab        = 'calendar'; // 'calendar' | 'timer'
+let sidebarCollapsed  = false; // mobile only — collapses sidebar body
 let timerMode   = 'stopwatch'; // 'stopwatch' | 'countdown'
 let swElapsed   = 0;   let swRunning  = false; let swInterval  = null;
 let cdRemaining = 0;   let cdRunning  = false; let cdInterval  = null; let cdPreset = 0; let cdLastDuration = 0; let cdResetOnce = false;
@@ -1134,11 +1152,11 @@ function renderApp() {
   const wd = getWeek(weekKey);
   const main = document.getElementById('main');
   const tabs = `<div class="main-tabs">
-    <button class="main-tab${mainTab==='workouts'?' active':''}" onclick="switchMainTab('workouts')">Workouts</button>
-    <button class="main-tab${mainTab==='prs'?' active':''}" onclick="switchMainTab('prs')">PRs</button>
-    <button class="main-tab${mainTab==='apnea'?' active':''}" onclick="switchMainTab('apnea')">Apnea</button>
-    <button class="main-tab${mainTab==='fitness'?' active':''}" onclick="switchMainTab('fitness')">Fitness</button>
-    <button class="main-tab${mainTab==='history'?' active':''}" onclick="switchMainTab('history')">History</button>
+    <button class="main-tab${mainTab==='workouts'?' active':''}" onclick="switchMainTab('workouts')"><span class="tab-full">Workouts</span><span class="tab-short">Log</span></button>
+    <button class="main-tab${mainTab==='prs'?' active':''}" onclick="switchMainTab('prs')"><span class="tab-full">PRs</span><span class="tab-short">PRs</span></button>
+    <button class="main-tab${mainTab==='apnea'?' active':''}" onclick="switchMainTab('apnea')"><span class="tab-full">Apnea</span><span class="tab-short">Apnea</span></button>
+    <button class="main-tab${mainTab==='fitness'?' active':''}" onclick="switchMainTab('fitness')"><span class="tab-full">Fitness</span><span class="tab-short">Fit</span></button>
+    <button class="main-tab${mainTab==='history'?' active':''}" onclick="switchMainTab('history')"><span class="tab-full">History</span><span class="tab-short">Hist</span></button>
   </div>`;
   if (mainTab === 'fitness') {
     main.innerHTML = tabs + renderFitnessTests();
@@ -1230,11 +1248,18 @@ function updateTimerDisplay() {
   }
 }
 
+function toggleSidebarCollapse() {
+  sidebarCollapsed = !sidebarCollapsed;
+  renderSidebar();
+}
+
 function renderSidebar() {
   const sidebar = document.getElementById('cal-sidebar');
   if (!sidebar) return;
   const calOn = sidebarTab === 'calendar';
   const swOn  = timerMode  === 'stopwatch';
+  if (sidebarCollapsed) sidebar.classList.add('sidebar-collapsed');
+  else sidebar.classList.remove('sidebar-collapsed');
   const presetsHtml = cdPresets.map((p, i) =>
     `<button class="cd-preset${cdPreset===p.ms?' active':''}" onclick="cdSetPreset(${p.ms})">` +
     `${esc(p.label)}` +
@@ -1246,7 +1271,9 @@ function renderSidebar() {
     <div class="sidebar-toggle">
       <button class="sidebar-tab${calOn?' active':''}" onclick="switchSidebarTab('calendar')">${calIcon}</button>
       <button class="sidebar-tab${!calOn?' active':''}" onclick="switchSidebarTab('timer')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;vertical-align:middle"><circle cx="12" cy="13" r="8"/><polyline points="12,9 12,13 14.5,15.5"/><line x1="9" y1="2" x2="15" y2="2"/></svg>Timer</button>
+      <button class="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" aria-label="${sidebarCollapsed?'Expand':'Collapse'} sidebar">${sidebarCollapsed?'▾':'▴'}</button>
     </div>
+    <div class="sidebar-body">
     <div id="cal-view" style="display:${calOn?'flex':'none'};flex-direction:column;flex:1;min-height:0;gap:10px"></div>
     <div id="timer-view" style="display:${!calOn?'flex':'none'};flex-direction:column;flex:1;min-height:0">
       <div class="timer-mode-toggle">
@@ -1275,6 +1302,7 @@ function renderSidebar() {
           <button id="cd-reset-btn" class="timer-btn-secondary" onclick="cdReset()">${cdResetOnce?'Zero':'Reset'}</button>
         </div>
       </div>
+    </div>
     </div>`;
   renderCalendar();
 }
