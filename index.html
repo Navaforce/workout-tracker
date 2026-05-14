@@ -1114,7 +1114,7 @@ function resolveDayDate(wk, day, di, logs) {
   }
   const d = new Date(wk + 'T12:00:00');
   d.setDate(d.getDate() + di);
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function jumpToDateWeek(dateStr) {
@@ -2171,15 +2171,15 @@ function showExerciseInfo(name) {
 
 function renderExercise(di, ex, sets) {
   const target   = [ex.sets?`${ex.sets} sets`:'', ex.reps?`× ${ex.reps} reps`:''].filter(Boolean).join(' ');
-  const resolvedPrev = findPrevSets(ex.name) || [];
+  const resolvedPrev = findPrevSets(ex.name, di) || [];
   const hasLoggedSets = sets.some(s => Number.isFinite(Number(s.reps)) && Number(s.reps) > 0);
   const exFillBtn = (!hasLoggedSets && resolvedPrev.length)
     ? `<button class="fill-last-btn" style="font-size:11px;padding:3px 8px" onclick="fillExerciseFromLastWeek(${di},'${esc(ex.id)}')">↩</button>`
     : '';
-  const suggestion = !hasLoggedSets ? computeProgression(ex.name) : null;
-  // Single info row: "Last week: X · effort pills · ▲ trend"
+  const suggestion = !hasLoggedSets ? computeProgression(ex.name, di) : null;
+  // Single info row: "Last session: X · effort pills · ▲ trend"
   const trendToggle = `<span class="trend-toggle" onclick="toggleExerciseTrend('${esc(ex.id)}')" style="cursor:pointer;font-size:11px;color:var(--dim);margin-left:6px;user-select:none;flex-shrink:0" title="Toggle trend chart">▲ trend</span>`;
-  const effortHistory = getEffortHistory(ex.name);
+  const effortHistory = getEffortHistory(ex.name, di);
   const effortPills = effortHistory ? (() => {
     const { tiers } = effortHistory;
     return [
@@ -2196,7 +2196,7 @@ function renderExercise(di, ex, sets) {
   })() : '';
   const prev = resolvedPrev.length
     ? `<div class="prev-ref" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px;margin-top:4px">` +
-      `<span>Last week: ${summarizeSets(resolvedPrev)}</span>` +
+      `<span>Last session: ${summarizeSets(resolvedPrev)}</span>` +
       (effortPills ? `<span style="display:flex;gap:5px;flex-wrap:wrap">${effortPills}</span>` : '') +
       trendToggle +
       `</div>`
@@ -2476,20 +2476,28 @@ function getApneaHistory(dayType, roundKeys, field) {
   const result = {};
   roundKeys.forEach(rk => { result[rk] = []; });
 
+  // Build a global di→type map from all weeks' plans so apnea_logs stored in
+  // plan-less weeks (same edge case as PR bug) are still resolved correctly.
+  const diTypeMap = {};
+  Object.values(data.weeks).forEach(wData => {
+    (wData.plan?.days || []).forEach((day, di) => {
+      if (diTypeMap[di]) return; // already resolved from another week
+      const lc = day.name.toLowerCase();
+      if (lc.includes('push'))                            diTypeMap[di] = 'push';
+      else if (lc.includes('pull'))                       diTypeMap[di] = 'pull';
+      else if (lc.includes('leg'))                        diTypeMap[di] = 'legs';
+      else if (lc.includes('pool'))                       diTypeMap[di] = 'pool';
+    });
+  });
+
   const sorted = Object.keys(data.weeks).sort();
   for (const wk of sorted) {
     const wData = data.weeks[wk];
-    if (!wData?.apnea_logs || !wData?.plan?.days) continue;
-    // Find the day index matching the type
-    wData.plan.days.forEach((day, di) => {
-      const lc = day.name.toLowerCase();
-      const matches = dayType === 'push'     ? lc.includes('push')
-                    : dayType === 'pull'     ? lc.includes('pull')
-                    : dayType === 'legs'     ? lc.includes('leg')
-                    : dayType === 'pool'     ? lc.includes('pool')
-                    : false;
-      if (!matches) return;
-      const log = wData.apnea_logs[di] || {};
+    if (!wData?.apnea_logs) continue;
+    // Find all day indices matching the requested dayType
+    Object.entries(wData.apnea_logs).forEach(([diStr, log]) => {
+      const di = Number(diStr);
+      if (diTypeMap[di] !== dayType) return;
       roundKeys.forEach(rk => {
         const raw = log[rk]?.[field];
         const sec = parseMSS(raw);
@@ -2634,16 +2642,6 @@ const FT_METRICS = [
   { key: 'echoBike',       label: 'Echo Bike 5-min',          unit: 'cal',  isTime: false, higherIsBetter: true,  placeholder: 'e.g. 70'   },
 ];
 
-const FT_TARGETS = {
-  staticApnea:    { baseline: '2:36',      m1: '2:45–2:55', m3: '3:20+' },
-  walkingApnea:   { baseline: '1:25*',     m1: '1:50–2:00', m3: '2:15–2:25' },
-  pullUps:        { baseline: '19',        m1: '20–21',     m3: '24+' },
-  postPullUpHold: { baseline: '35 sec',    m1: '40–45 sec', m3: '55+ sec' },
-  pushUps:        { baseline: '75',        m1: '77–79',     m3: '85+' },
-  bss:            { baseline: 'L19 / R19', m1: 'L21 / R21', m3: 'L25+ / R25+' },
-  postSquatHold:  { baseline: '25 sec',    m1: '30–35 sec', m3: '45+ sec' },
-  echoBike:       { baseline: '70 cal',    m1: '73–75 cal', m3: '80+ cal' },
-};
 
 // Numeric thresholds for progress bar rendering. Values are the minimum to reach that tier.
 // Time metrics in seconds. bss is combined (L+R).
@@ -2713,13 +2711,6 @@ function renderFitnessTests() {
   const records = loadFitness(); // newest first
   const prs = ftGetPRs(records);
 
-  // Entry form
-  const fields = FT_METRICS.map(m => {
-    if (m.key === 'bssL' || m.key === 'bssR') {
-      // Render both L and R side by side — handled together below
-    }
-    return null;
-  });
   // Build fields grid — group bssL+bssR together
   let fieldHtml = `<div class="ft-field ft-date-field"><label>Date</label><input type="date" id="ft-date" value="${new Date().toISOString().slice(0,10)}"></div>`;
   let i = 0;
@@ -2751,7 +2742,6 @@ function renderFitnessTests() {
     { label: 'Echo Bike 5-min',          key: 'echoBike',       prKey: 'echoBike',       isTime: false },
   ].map(({ label, key, prKey, isTime }) => {
     const tv = FT_TARGET_VALS[key];
-    const t  = FT_TARGETS[key];
     const prVal = prs[prKey];
     const hasPR = prVal !== null && prVal !== undefined && Number.isFinite(Number(prVal));
     const cur = hasPR ? Number(prVal) : null;
@@ -2912,8 +2902,10 @@ function saveFitnessRecord() {
     const el = document.getElementById('ft-' + m.key);
     const v = el?.value.trim();
     const n = m.isTime ? parseMSS(v) : parseFloat(v);
-    results[m.key] = (v && Number.isFinite(Number(n))) ? n : '';
-    if (v && Number.isFinite(Number(n))) anyValue = true;
+    // parseMSS returns null for invalid input (e.g. seconds > 59) — treat as empty
+    const valid = n !== null && n !== '' && Number.isFinite(Number(n));
+    results[m.key] = (v && valid) ? n : '';
+    if (v && valid) anyValue = true;
   });
   if (!anyValue) { toast('Enter at least one result'); return; }
   const records = loadFitness();
@@ -2933,16 +2925,24 @@ function getAllPRs() {
   const data = load();
   const buckets = []; // { name, weight, reps, weekKey }
 
-  // Process weeks oldest-first so newer weeks win name ties
+  // Build a global nameMap across ALL weeks' plans so that sets logged in a
+  // plan-less week (e.g. weekKey navigated past the upload week) are still
+  // resolved. Newer weeks overwrite older ones so the most-recent name wins.
+  const globalNameMap = {};
+  Object.values(data.weeks).forEach(wData =>
+    (wData.plan?.days || []).forEach(d =>
+      d.exercises.forEach(e => { globalNameMap[e.id] = e.name; })
+    )
+  );
+
+  // Process weeks oldest-first so newer weeks win on equal-weight ties
   const sortedWeeks = Object.entries(data.weeks).sort((a, b) => a[0].localeCompare(b[0]));
 
   for (const [wk, wData] of sortedWeeks) {
     const logs = wData.logs || {};
-    const nameMap = {};
-    (wData.plan?.days || []).forEach(d => d.exercises.forEach(e => { nameMap[e.id] = e.name; }));
 
     for (const [exId, sets] of Object.entries(logs)) {
-      const name = nameMap[exId];
+      const name = globalNameMap[exId];
       if (!name) continue;
 
       let bucket = buckets.find(b => _exMatch(b.name, name));
@@ -3310,15 +3310,15 @@ function confirmAddExercise(di) {
 // Returns the most recent week's logged sets for an exercise, aggregated by effort tier.
 // Returns { easy, moderate, hard } where each entry is { sets, reps } counts,
 // or null if no previous data with effort logged exists.
-function getEffortHistory(exName) {
+function getEffortHistory(exName, currentDi) {
   const data = load();
   const keys = Object.keys(data.weeks).sort().reverse();
   for (const key of keys) {
-    if (key === weekKey) continue;
     const wData = data.weeks[key];
     if (!wData?.plan?.days) continue;
     let best = null;
     wData.plan.days.forEach((day, di) => {
+      if (key === weekKey && currentDi !== undefined && di >= currentDi) return;
       for (const ex of day.exercises) {
         if (!_exMatch(exName, ex.name)) continue;
         const sets = (wData.logs?.[ex.id] || []).filter(
@@ -3343,8 +3343,8 @@ function getEffortHistory(exName) {
 
 // Returns a suggestion string like "→ 185 lbs × 8 reps" based on last week's
 // effort + adjustment signals, or null if insufficient data.
-function computeProgression(exName) {
-  const prev = findPrevSets(exName);
+function computeProgression(exName, currentDi) {
+  const prev = findPrevSets(exName, currentDi);
   if (!prev?.length) return null;
 
   // Only consider sets with valid reps and at least effort or adjustment recorded
@@ -3375,33 +3375,33 @@ function computeProgression(exName) {
 
   let sugWeight = baseWeight;
   let sugReps   = baseReps;
-  let reason    = '';
 
   if (adj === 'increase') {
     sugWeight = baseWeight + increment;
-    reason = '↑ increase';
   } else if (adj === 'decrease') {
     sugWeight = Math.max(0, baseWeight - increment);
-    reason = '↓ decrease';
   } else {
     // same adjustment — use effort to guide reps
-    if (eff === 'easy')     { sugReps = baseReps + 2; reason = '= same · easy'; }
-    else if (eff === 'hard') { reason = '= same · hard'; }
-    else                     { sugReps = baseReps + 1; reason = '= same · moderate'; }
+    if (eff === 'easy')      sugReps = baseReps + 2;
+    else if (eff !== 'hard') sugReps = baseReps + 1;
   }
 
   const weightStr = sugWeight > 0 ? `${sugWeight} lbs` : 'BW';
   return `${weightStr} × ${sugReps} reps`;
 }
 
-function findPrevSets(exName) {
+function findPrevSets(exName, currentDi) {
   const data = load();
+  // Search all weeks newest-first. For the current week, only consider days
+  // with a lower day-index than the caller's day (same-week earlier session).
   for (const key of Object.keys(data.weeks).sort().reverse()) {
-    if (key === weekKey) continue;
     const week = data.weeks[key];
     if (!week?.plan?.days) continue;
     let best = null;
     week.plan.days.forEach((day, di) => {
+      // Within current week skip the same-or-later day to avoid reading the
+      // exercise's own (possibly pre-filled) sets as "previous" data.
+      if (key === weekKey && currentDi !== undefined && di >= currentDi) return;
       for (const e of day.exercises) {
         if (!_exMatch(exName, e.name)) continue;
         const sets = (week.logs?.[e.id] || []).filter(
@@ -3430,7 +3430,7 @@ function autoPopulateSets(di, exId) {
   );
   if (hasLoggedSets) return;
   if (existingSets.length > 0) return; // already populated (e.g. by fill button) — don't clobber
-  const prevSetsFound = findPrevSets(ex.name);
+  const prevSetsFound = findPrevSets(ex.name, di);
   const setsToCreate = prevSetsFound ? prevSetsFound.length : targetSets;
   for (let i = 0; i < setsToCreate; i++) {
     const prev = prevSetsFound?.[i];
@@ -3479,7 +3479,7 @@ function handleAdd(exId) {
 
 function fillExerciseFromLastWeek(di, exId) {
   const exName = getWeek(weekKey)?.plan?.days?.[di]?.exercises?.find(e => e.id === exId)?.name;
-  const prevSets = exName ? findPrevSets(exName) : null;
+  const prevSets = exName ? findPrevSets(exName, di) : null;
   if (!prevSets?.length) { toast('No previous data found for this exercise'); return; }
   const data = load();
   if (!data.weeks[weekKey]) return;
@@ -3509,6 +3509,9 @@ function fillFromLastWeek(di) {
   const wd = getWeek(weekKey);
   if (!wd?.plan?.days?.[di]) return;
   const day = wd.plan.days[di];
+  // Bail if any exercise in this day already has sets (prevents double-fill on rapid tap)
+  const hasAnySets = day.exercises.some(ex => (wd.logs?.[ex.id] || []).length > 0);
+  if (hasAnySets) return;
   const prevLogs = prevWd.logs;
   day.exercises.forEach(ex => {
     (prevLogs[ex.id] || []).forEach(prevSet => {
