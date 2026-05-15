@@ -215,9 +215,12 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 
 /* Sets */
 .sets-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
-.set-row{background:var(--s2);border-radius:var(--rs);padding:12px 14px;border:1px solid var(--border)}
+.set-row{background:var(--s2);border-radius:var(--rs);padding:12px 14px;border:1px solid var(--border);transition:border-color .2s}
+.set-row.is-pr{border-color:var(--gold-mid)}
 .set-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .set-num{font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;color:var(--muted);min-width:42px;letter-spacing:.5px;text-transform:uppercase}
+.set-pr-badge{display:none;font-family:'Barlow Condensed',sans-serif;font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);background:var(--gold-lo);border:1px solid var(--gold-mid);border-radius:4px;padding:1px 6px;white-space:nowrap;flex-shrink:0}
+.set-row.is-pr .set-pr-badge{display:inline-block}
 .set-inputs{display:flex;gap:8px;flex:1}
 .inp-group{flex:1}
 .inp-group label{font-size:12px;color:var(--text);font-weight:700;text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px}
@@ -2278,6 +2281,7 @@ function renderSet(exId, idx, s, bwMode) {
         <div class="inp-group"><label>Reps</label><input type="number" inputmode="numeric" value="${s.reps||''}" placeholder="0" oninput="handleInput('${eId}',${idx},'reps',this.value)"></div>
       </div>
       <div class="bw-total">= <span>${total}</span> lbs</div>
+      <span class="set-pr-badge">PR</span>
       ${delBtn}
     </div>
     ${bottomRow}
@@ -2292,6 +2296,7 @@ function renderSet(exId, idx, s, bwMode) {
         <div class="inp-group"><label>Weight (lbs)</label><input type="number" inputmode="decimal" value="${s.weight||''}" placeholder="0" oninput="handleInput('${eId}',${idx},'weight',this.value)"></div>
         <div class="inp-group"><label>Reps</label><input type="number" inputmode="numeric" value="${s.reps||''}" placeholder="0" oninput="handleInput('${eId}',${idx},'reps',this.value)"></div>
       </div>
+      <span class="set-pr-badge">PR</span>
       ${delBtn}
     </div>
     ${bottomRow}
@@ -3695,10 +3700,42 @@ function render1RM(exId) {
   return v > 0 ? `~${v} lbs 1RM` : '';
 }
 
+// Returns { weight, reps } best across all weeks except weekKey, or null if no history.
+// Accepts pre-loaded data and a pre-built globalNameMap to avoid redundant localStorage reads.
+function getHistoricalBest(exId, data, globalNameMap) {
+  const exName = globalNameMap[exId];
+  if (!exName) return null;
+  let bestW = 0, bestR = 0;
+  for (const [wk, wData] of Object.entries(data.weeks)) {
+    if (wk === weekKey) continue;
+    const logs = wData.logs || {};
+    for (const [id, sets] of Object.entries(logs)) {
+      const idName = globalNameMap[id];
+      if (!idName || !_exMatch(exName, idName)) continue;
+      for (const s of sets) {
+        const w = Number(s.weight) || 0;
+        const r = Number(s.reps)   || 0;
+        if (r <= 0) continue;
+        if (w > bestW || (w === bestW && r > bestR)) { bestW = w; bestR = r; }
+      }
+    }
+  }
+  return (bestW > 0 || bestR > 0) ? { weight: bestW, reps: bestR } : null;
+}
+
 function refreshProgress() {
   const wd = getWeek(weekKey);
   if (!wd?.plan) return;
   const logs = wd.logs || {};
+  // Build nameMap and load data once for all PR badge checks this call
+  const allData = load();
+  const globalNameMap = {};
+  Object.values(allData.weeks).forEach(wData =>
+    (wData.plan?.days || []).forEach(d =>
+      d.exercises.forEach(e => { globalNameMap[e.id] = e.name; })
+    )
+  );
+  const prCache = {}; // exId → historical best, memoised per call
   wd.plan.days.forEach((d,i) => {
     const { logged, total } = daySetCounts(d, logs);
     const el = document.getElementById('prog'+i);
@@ -3708,6 +3745,24 @@ function refreshProgress() {
     d.exercises.forEach(ex => {
       const rmEl = document.getElementById('1rm-' + ex.id);
       if (rmEl) rmEl.textContent = render1RM(ex.id);
+      if (!(ex.id in prCache)) prCache[ex.id] = getHistoricalBest(ex.id, allData, globalNameMap);
+      const hist = prCache[ex.id];
+      let prClaimed = false;
+      (logs[ex.id] || []).forEach((s, idx) => {
+        const row = document.getElementById(`sr-${ex.id}-${idx}`);
+        if (!row) return;
+        const w = Number(s.weight) || 0;
+        const r = Number(s.reps)   || 0;
+        const beatsPrior = r > 0 && (
+          hist === null ||
+          w > hist.weight ||
+          (w === hist.weight && r > hist.reps)
+        );
+        // Only the first set that beats the historical best gets the badge
+        const isPR = beatsPrior && !prClaimed;
+        if (isPR) prClaimed = true;
+        row.classList.toggle('is-pr', isPR);
+      });
     });
   });
   updateScrollBtn();
