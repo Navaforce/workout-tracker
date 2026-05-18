@@ -167,9 +167,6 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .mark-complete-btn.completed{background:rgba(34,197,94,.12);border-color:var(--easy);color:var(--easy)}
 .day-date-wrap{display:flex;align-items:center;gap:5px;flex-shrink:0}
 .day-date-display{font-size:12px;color:var(--muted);font-weight:700}
-.day-date-btn{background:none;border:none;color:var(--gold-mid);cursor:pointer;padding:10px;min-width:44px;min-height:44px;display:flex;align-items:center;justify-content:center;border-radius:4px;transition:color .15s;flex-shrink:0;position:relative}
-.day-date-btn:hover{color:var(--gold)}
-.day-date-input{position:absolute;opacity:0;top:0;left:0;width:100%;height:100%;pointer-events:auto;cursor:pointer;font-size:16px}
 .day-progress{font-size:12px;color:var(--text);font-weight:700;white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums}
 .day-progress-track{height:5px;background:var(--border);position:relative;flex-shrink:0;border-radius:3px;overflow:hidden}
 .day-progress-fill{height:100%;background:var(--gold);position:absolute;top:0;left:0;transition:width .4s ease;border-radius:3px}
@@ -470,8 +467,8 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
 .ex-info-chip{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;color:var(--text)}
 
 /* Custom tooltips — bright white, replaces native title tooltips on icon buttons */
-.day-info-btn,.day-del-btn,.ex-info-btn,.ex-del-btn,.ex-collapse-btn,.edit-icon,.day-date-btn{position:relative}
-.day-info-btn[data-tooltip]::after,.day-del-btn[data-tooltip]::after,.ex-info-btn[data-tooltip]::after,.ex-del-btn[data-tooltip]::after,.ex-collapse-btn[data-tooltip]::after,.edit-icon[data-tooltip]::after,.day-date-btn[data-tooltip]::after{
+.day-info-btn,.day-del-btn,.ex-info-btn,.ex-del-btn,.ex-collapse-btn,.edit-icon{position:relative}
+.day-info-btn[data-tooltip]::after,.day-del-btn[data-tooltip]::after,.ex-info-btn[data-tooltip]::after,.ex-del-btn[data-tooltip]::after,.ex-collapse-btn[data-tooltip]::after,.edit-icon[data-tooltip]::after{
   content:attr(data-tooltip);
   position:absolute;
   bottom:calc(100% + 6px);
@@ -492,8 +489,8 @@ main{flex:1;min-width:0;padding:22px 24px;overflow-y:auto;-webkit-overflow-scrol
   transition:opacity .15s;
   z-index:50;
 }
-.day-info-btn[data-tooltip]:hover::after,.day-del-btn[data-tooltip]:hover::after,.ex-info-btn[data-tooltip]:hover::after,.ex-del-btn[data-tooltip]:hover::after,.ex-collapse-btn[data-tooltip]:hover::after,.edit-icon[data-tooltip]:hover::after,.day-date-btn[data-tooltip]:hover::after,
-.day-info-btn.tooltip-visible::after,.day-del-btn.tooltip-visible::after,.ex-info-btn.tooltip-visible::after,.ex-del-btn.tooltip-visible::after,.ex-collapse-btn.tooltip-visible::after,.edit-icon.tooltip-visible::after,.day-date-btn.tooltip-visible::after{opacity:1}
+.day-info-btn[data-tooltip]:hover::after,.day-del-btn[data-tooltip]:hover::after,.ex-info-btn[data-tooltip]:hover::after,.ex-del-btn[data-tooltip]:hover::after,.ex-collapse-btn[data-tooltip]:hover::after,.edit-icon[data-tooltip]:hover::after,
+.day-info-btn.tooltip-visible::after,.day-del-btn.tooltip-visible::after,.ex-info-btn.tooltip-visible::after,.ex-del-btn.tooltip-visible::after,.ex-collapse-btn.tooltip-visible::after,.edit-icon.tooltip-visible::after{opacity:1}
 
 /* iOS touch behavior */
 button,svg,img{-webkit-touch-callout:none}
@@ -552,7 +549,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   .cd-preset .preset-del{display:flex}
   .day-info-btn[data-tooltip]::after,.day-del-btn[data-tooltip]::after,.ex-info-btn[data-tooltip]::after,
   .ex-del-btn[data-tooltip]::after,.ex-collapse-btn[data-tooltip]::after,
-  .edit-icon[data-tooltip]::after,.day-date-btn[data-tooltip]::after{transition:none}
+  .edit-icon[data-tooltip]::after{transition:none}
 }
 </style>
 </head>
@@ -566,9 +563,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <button onclick="navWeek(1)" aria-label="Next week">›</button>
     <button id="today-btn" class="today-btn" onclick="jumpToWeek(toKey(new Date()))" aria-label="Go to current week"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg></button>
   </div>
-  <button class="export-btn header-sync-inline" onclick="pushToCloud()" title="Push to cloud" aria-label="Push to cloud">↑</button>
-  <button class="export-btn header-sync-inline" onclick="pullFromCloud()" title="Pull from cloud" aria-label="Pull from cloud">↓</button>
-  <span id="sync-status" class="header-sync-inline" style="font-size:11px;color:var(--text);white-space:nowrap"></span>
+  <span id="sync-status" class="header-sync-inline" style="font-size:11px;color:var(--muted);white-space:nowrap"></span>
   <button class="refresh-btn" title="Refresh" aria-label="Refresh" onclick="handleRefresh(this)">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="23,4 23,10 17,10"/>
@@ -587,8 +582,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
     <button class="header-overflow-btn" onclick="toggleHeaderOverflow(this)" aria-label="More options" aria-haspopup="true">⋯</button>
     <div class="header-overflow-menu" id="header-overflow-menu" role="menu">
       <div id="sync-status-menu"></div>
-      <button onclick="pushToCloud();closeHeaderOverflow()" role="menuitem">↑ Push to cloud</button>
-      <button onclick="pullFromCloud();closeHeaderOverflow()" role="menuitem">↓ Pull from cloud</button>
+      <button onclick="syncNow();closeHeaderOverflow()" role="menuitem">⟳ Sync now</button>
     </div>
   </div>
 </header>
@@ -674,7 +668,7 @@ function isCurrentWeek(key) { return key === toKey(new Date()); }
 
 // ── Storage ──────────────────────────────────────────────
 function load() { try { return JSON.parse(localStorage.getItem(STORE)) || {weeks:{}}; } catch { return {weeks:{}}; } }
-function save(data) { localStorage.setItem(STORE, JSON.stringify(data)); }
+function save(data) { localStorage.setItem(STORE, JSON.stringify(data)); scheduleSync(); }
 
 const FT_STORE = 'wt_fitness';
 function loadFitness() { try { return JSON.parse(localStorage.getItem(FT_STORE)) || []; } catch { return []; } }
@@ -686,9 +680,10 @@ function saveDayStatuses(map) { localStorage.setItem(DAY_STATUS_STORE, JSON.stri
 function cycleDayStatus(dateStr) {
   const map = loadDayStatuses();
   const cur = map[dateStr];
-  if (!cur)            map[dateStr] = 'rest';
-  else if (cur === 'rest') map[dateStr] = 'injury';
-  else                 delete map[dateStr];
+  // Auto-rest days (no explicit status) go to injury on first click.
+  // Injury clears back to auto-rest. Explicit rest (legacy) goes to injury.
+  if (!cur || cur === 'rest') map[dateStr] = 'injury';
+  else                        delete map[dateStr];
   saveDayStatuses(map);
   renderCalendar();
 }
@@ -699,13 +694,36 @@ function savePlan(key, plan, raw) {
   // Preserve per-day runtime state (completed, completedAt, startedAt, date override)
   // so uploading a new plan doesn't wipe completion status.
   const existingDays = data.weeks[key].plan?.days || [];
+  // Build a map of exId→bwMode from the existing plan so we can carry it forward
+  // when a new JSON overwrites the plan (bwMode lives on the exercise object).
+  const prevBWMap = {};
+  existingDays.forEach(d => d.exercises?.forEach(e => {
+    if (e.bwMode) prevBWMap[e.id] = true;
+  }));
+  // Also inherit bwMode from the most recent prior week for exercises that match by name
+  const prevWeekKeys = Object.keys(data.weeks).filter(k => k < key).sort();
+  const prevWeekKey  = prevWeekKeys[prevWeekKeys.length - 1];
+  const prevWeekBWNames = new Set();
+  if (prevWeekKey) {
+    (data.weeks[prevWeekKey]?.plan?.days || []).forEach(d =>
+      d.exercises?.forEach(e => { if (e.bwMode) prevWeekBWNames.add(e.name.toLowerCase().trim()); })
+    );
+  }
   plan.days.forEach((day, i) => {
     const prev = existingDays[i];
-    if (!prev) return;
-    if (prev.completed  !== undefined) day.completed  = prev.completed;
-    if (prev.completedAt !== undefined) day.completedAt = prev.completedAt;
-    if (prev.startedAt  !== undefined) day.startedAt  = prev.startedAt;
-    if (prev.date       !== undefined) day.date       = prev.date;
+    if (prev) {
+      if (prev.completed   !== undefined) day.completed   = prev.completed;
+      if (prev.completedAt !== undefined) day.completedAt = prev.completedAt;
+      if (prev.startedAt   !== undefined) day.startedAt   = prev.startedAt;
+      if (prev.date        !== undefined) day.date        = prev.date;
+    }
+    // Carry bwMode forward: explicit current-week setting takes precedence,
+    // then same-week prior plan, then name match from previous week.
+    day.exercises?.forEach(e => {
+      if (e.bwMode) return; // already set in the uploaded JSON
+      if (prevBWMap[e.id]) { e.bwMode = true; return; }
+      if (prevWeekBWNames.has(e.name.toLowerCase().trim())) e.bwMode = true;
+    });
   });
   data.weeks[key].plan = plan;
   data.weeks[key].raw = raw;
@@ -1039,29 +1057,32 @@ function renderCalendar() {
     const entry     = calData.get(dateStr);
     const isToday   = dateStr === todayISO;
     const dayStatus = dayStatuses[dateStr]; // 'rest' | 'injury' | undefined
+    // Past days with no workout auto-display as rest (unless explicitly set to injury)
+    const isPast = dateStr < todayISO;
+    const effectiveStatus = dayStatus || (!entry && isPast ? 'rest' : undefined);
     const cls = ['cal-cell',
-      entry    ? 'cal-has-data' : '',
-      isToday  ? 'cal-today'   : '',
-      dayStatus === 'rest'   ? 'cal-rest'   : '',
-      dayStatus === 'injury' ? 'cal-injury' : '',
+      entry             ? 'cal-has-data' : '',
+      isToday           ? 'cal-today'    : '',
+      effectiveStatus === 'rest'   ? 'cal-rest'   : '',
+      effectiveStatus === 'injury' ? 'cal-injury' : '',
     ].filter(Boolean).join(' ');
     const click = entry ? `onclick="jumpToDateWeek('${dateStr}')"` : '';
 
     // Day status cycle button (always shown on non-empty cells; on hover for empty)
-    const statusLabel = dayStatus === 'rest' ? 'Rest day — click to set injury'
-                      : dayStatus === 'injury' ? 'Injury day — click to clear'
+    const statusLabel = effectiveStatus === 'rest' ? 'Rest day — click to set injury'
+                      : effectiveStatus === 'injury' ? 'Injury day — click to clear'
                       : 'Mark as rest or injury day';
-    const statusBtnIcon = dayStatus === 'rest'
+    const statusBtnIcon = effectiveStatus === 'rest'
       ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>`
-      : dayStatus === 'injury'
+      : effectiveStatus === 'injury'
       ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
       : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
-    const cycleBtn = `<button class="cal-day-status-btn${dayStatus ? ' active' : ''}" title="${statusLabel}" onclick="event.stopPropagation();cycleDayStatus('${dateStr}')">${statusBtnIcon}</button>`;
+    const cycleBtn = `<button class="cal-day-status-btn${effectiveStatus ? ' active' : ''}" title="${statusLabel}" onclick="event.stopPropagation();cycleDayStatus('${dateStr}')">${statusBtnIcon}</button>`;
 
     // Large centred icon for rest/injury days (overlay on empty cells)
-    const overlayIcon = !entry && dayStatus === 'rest'
+    const overlayIcon = !entry && effectiveStatus === 'rest'
       ? `<div class="cal-day-status-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></div>`
-      : !entry && dayStatus === 'injury'
+      : !entry && effectiveStatus === 'injury'
       ? `<div class="cal-day-status-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>`
       : '';
 
@@ -1881,8 +1902,7 @@ function renderDay(day, di, logs, prevLogs) {
   const prog = `${logged}/${total} Sets`;
   const pct = total ? Math.round(logged/total*100) : 0;
   const exHtml = day.exercises.map(ex => renderExercise(di, ex, logs[ex.id]||[])).join('');
-  const dateVal = day.date || '';
-  const dateDisplay = dateVal ? `<span class="day-date-display">${formatDayDate(dateVal)}</span>` : '';
+  const dateDisplay = day.date ? `<span class="day-date-display">${formatDayDate(day.date)}</span>` : '';
   const hasPrev    = day.exercises.some(ex => (prevLogs[ex.id] || []).length > 0);
   const hasCurrent = day.exercises.some(ex => (logs[ex.id]     || []).length > 0);
   const fillBtn = (hasPrev && !hasCurrent)
@@ -1929,14 +1949,6 @@ function renderDay(day, di, logs, prevLogs) {
       ${dayDelBtn}
       <div class="day-date-wrap">
         ${dateDisplay}
-        <button class="day-date-btn" onclick="event.stopPropagation()" aria-label="Set date" data-tooltip="Set date">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
-          <input type="date" id="date-${di}" class="day-date-input" value="${dateVal}"
-                 onchange="event.stopPropagation();handleDayDate(${di},this.value)"
-                 onclick="event.stopPropagation()">
-        </button>
       </div>
       ${fillBtn}
       ${progressArea}
@@ -2293,10 +2305,16 @@ function renderExercise(di, ex, sets) {
 }
 
 function summarizeSets(sets) {
-  const ws = sets.map(s=>s.weight).filter(w => w !== '' && w !== null && w !== undefined && Number.isFinite(Number(w)));
+  const isBW = sets.some(s => s.bw != null);
   const rs = sets.map(s=>s.reps).filter(Boolean);
   const parts = [];
-  if (ws.length) parts.push(Math.max(...ws)+'lbs');
+  if (isBW) {
+    const maxAdded = Math.max(...sets.map(s => Number(s.bwAdded) || 0));
+    parts.push(maxAdded > 0 ? `BW+${maxAdded}lbs` : 'BW');
+  } else {
+    const ws = sets.map(s=>s.weight).filter(w => w !== '' && w !== null && w !== undefined && Number.isFinite(Number(w)));
+    if (ws.length) parts.push(Math.max(...ws)+'lbs');
+  }
   if (rs.length) parts.push(rs.join('/')+ ' reps');
   parts.push(sets.length+' sets');
   return parts.join(' · ');
@@ -3006,18 +3024,22 @@ function getAllPRs() {
         const w = Number(s.weight) || 0;
         const r = Number(s.reps)   || 0;
         if (r <= 0) return;
-        if (w > bucket.weight || (w === bucket.weight && r > bucket.reps)) {
+        // BW-only sets (no added weight) still count — compare by reps
+        const isBW = s.bw != null && (Number(s.bwAdded) || 0) === 0;
+        if (w > bucket.weight || (w === bucket.weight && r > bucket.reps) ||
+            (isBW && bucket.weight === 0 && r > bucket.reps)) {
           bucket.weight  = w;
           bucket.reps    = r;
+          bucket.isBW    = isBW && w === 0;
           bucket.weekKey = wk;
-          bucket.name    = name; // keep most recent name for this best set
+          bucket.name    = name;
         }
       });
     }
   }
 
   return buckets
-    .filter(b => b.weight > 0 || b.reps > 0)
+    .filter(b => b.reps > 0) // include BW-only (weight=0) as long as reps were logged
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
@@ -3027,7 +3049,7 @@ function renderPRs() {
     return `<div class="empty-state">No data yet — log sets to see your PRs here.</div>`;
   }
   const rows = prs.map(p => {
-    const weightStr = p.weight > 0 ? `${p.weight} lbs` : 'BW';
+    const weightStr = p.isBW ? 'BW' : p.weight > 0 ? `${p.weight} lbs` : 'BW';
     const wkStr = p.weekKey ? weekLabel(p.weekKey) : '—';
     return `<tr>
       <td class="pr-name">${esc(p.name)}</td>
@@ -3252,34 +3274,6 @@ function formatDayDate(dateStr) {
   return d.toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric'});
 }
 
-function openDatePicker(di) {
-  const input = document.getElementById('date-' + di);
-  if (!input) return;
-  try { input.showPicker(); } catch { input.click(); }
-}
-
-function handleDayDate(di, value) {
-  const data = load();
-  const week = data.weeks[weekKey];
-  if (week?.plan?.days?.[di] != null) {
-    week.plan.days[di].date = value;
-    save(data);
-  }
-  const wrap = document.querySelector(`#dc${di} .day-date-wrap`);
-  if (!wrap) return;
-  let display = wrap.querySelector('.day-date-display');
-  if (value) {
-    if (!display) {
-      display = document.createElement('span');
-      display.className = 'day-date-display';
-      wrap.insertBefore(display, wrap.firstChild);
-    }
-    display.textContent = formatDayDate(value);
-  } else if (display) {
-    display.remove();
-  }
-  renderCalendar();
-}
 
 function toggleDayComplete(di) {
   const data = load();
@@ -3312,7 +3306,6 @@ function toggleDayComplete(di) {
   }
   save(data);
   uiFeedback();
-  if (day.completed) pushToCloud();
   const wd = getWeek(weekKey);
   const logs = wd.logs || {};
   const prevLogs = getWeek(shiftWeek(weekKey, -1))?.logs || {};
@@ -3363,8 +3356,13 @@ function confirmAddExercise(di) {
   if (!name) return;
   const ex = addExerciseToDay(di, name);
   if (!ex) return;
+  // Run auto-populate so previous week's sets are pre-filled and
+  // "Last session" appears in the header immediately after adding.
+  autoPopulateSets(di, ex.id);
+  // Re-read sets after potential populate
+  const sets = getWeek(weekKey)?.logs?.[ex.id] || [];
   const tmp = document.createElement('div');
-  tmp.innerHTML = renderExercise(di, ex, []);
+  tmp.innerHTML = renderExercise(di, ex, sets);
   const card = tmp.firstElementChild;
   form.parentNode.insertBefore(card, form);
   card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3430,28 +3428,43 @@ function computeProgression(exName, currentDi) {
   const adj = Object.entries(adjCount).sort((a,b) => b[1]-a[1])[0]?.[0];
   const eff = Object.entries(effCount).sort((a,b) => b[1]-a[1])[0]?.[0];
 
-  // Use median weight and most common reps as the baseline
+  // Detect BW mode: sets have a bw field or weight equals bw (added=0)
+  const isBWEx = valid.some(s => s.bw != null);
+  // Use median weight and most common reps as the baseline.
+  // BW exercises: use bwAdded (the loaded portion) for increment logic;
+  // canonical weight still stored for PR comparison.
+  const repsArr = valid.map(s => Number(s.reps)).filter(r => r > 0).sort((a,b) => a-b);
+  if (!repsArr.length) return null;
+  const baseReps = repsArr[Math.floor(repsArr.length / 2)];
+
+  if (isBWEx) {
+    const addedArr = valid.map(s => Number(s.bwAdded) || 0).sort((a,b) => a-b);
+    const baseAdded = addedArr[Math.floor(addedArr.length / 2)];
+    const increment = baseAdded < 25 ? 2.5 : 5;
+    let sugAdded = baseAdded;
+    let sugReps  = baseReps;
+    if (adj === 'increase')      sugAdded = baseAdded + increment;
+    else if (adj === 'decrease') sugAdded = Math.max(0, baseAdded - increment);
+    else {
+      if (eff === 'easy')      sugReps = baseReps + 2;
+      else if (eff !== 'hard') sugReps = baseReps + 1;
+    }
+    const addedStr = sugAdded > 0 ? ` + ${sugAdded} lbs` : '';
+    return `BW${addedStr} × ${sugReps} reps`;
+  }
+
   const weights = valid.map(s => Number(s.weight) || 0).filter(w => w > 0).sort((a,b) => a-b);
-  const repsArr  = valid.map(s => Number(s.reps)).filter(r => r > 0).sort((a,b) => a-b);
-  if (!weights.length || !repsArr.length) return null;
-
+  if (!weights.length) return null;
   const baseWeight = weights[Math.floor(weights.length / 2)];
-  const baseReps   = repsArr[Math.floor(repsArr.length / 2)];
   const increment  = baseWeight < 50 ? 2.5 : 5;
-
   let sugWeight = baseWeight;
   let sugReps   = baseReps;
-
-  if (adj === 'increase') {
-    sugWeight = baseWeight + increment;
-  } else if (adj === 'decrease') {
-    sugWeight = Math.max(0, baseWeight - increment);
-  } else {
-    // same adjustment — use effort to guide reps
+  if (adj === 'increase')      sugWeight = baseWeight + increment;
+  else if (adj === 'decrease') sugWeight = Math.max(0, baseWeight - increment);
+  else {
     if (eff === 'easy')      sugReps = baseReps + 2;
     else if (eff !== 'hard') sugReps = baseReps + 1;
   }
-
   const weightStr = sugWeight > 0 ? `${sugWeight} lbs` : 'BW';
   return `${weightStr} × ${sugReps} reps`;
 }
@@ -3500,13 +3513,16 @@ function autoPopulateSets(di, exId) {
   const setsToCreate = prevSetsFound ? prevSetsFound.length : targetSets;
   for (let i = 0; i < setsToCreate; i++) {
     const prev = prevSetsFound?.[i];
-    addSetLog(weekKey, exId, {
+    const setObj = {
       weight:     prev?.weight     ?? '',
       reps:       prev?.reps       ?? '',
       effort:     prev?.effort     || '',
       adjustment: prev?.adjustment || '',
       ts: Date.now()
-    });
+    };
+    // Carry bw/bwAdded split so BW mode sets pre-fill correctly
+    if (ex.bwMode && prev?.bw != null) { setObj.bw = prev.bw; setObj.bwAdded = prev.bwAdded ?? 0; }
+    addSetLog(weekKey, exId, setObj);
   }
   const updatedWd = getWeek(weekKey);
   const sets = updatedWd.logs?.[exId] || [];
@@ -3524,11 +3540,15 @@ function handleAdd(exId) {
   const now = Date.now();
   const newSet = {weight: last?.weight||'', reps: last?.reps||'', effort: last?.effort||'', adjustment:'', ts: now};
   const idx    = addSetLog(weekKey, exId, newSet);
-  // stamp startedAt on the day object the first time a set is added
+  // Only stamp day.date here (not startedAt — that requires explicit user confirmation)
   const data = load();
   const _di = data.weeks[weekKey]?.plan?.days?.findIndex(d => d.exercises?.some(e => e.id === exId)) ?? -1;
-  if (_di !== -1 && !data.weeks[weekKey].plan.days[_di].startedAt) {
-    data.weeks[weekKey].plan.days[_di].startedAt = now;
+  if (_di !== -1) {
+    const _day = data.weeks[weekKey].plan.days[_di];
+    if (!_day.date) {
+      const _dt = new Date(now);
+      _day.date = `${_dt.getFullYear()}-${String(_dt.getMonth()+1).padStart(2,'0')}-${String(_dt.getDate()).padStart(2,'0')}`;
+    }
     save(data);
   }
   const bwMode = getBWMode(exId);
@@ -3550,9 +3570,12 @@ function fillExerciseFromLastWeek(di, exId) {
   const data = load();
   if (!data.weeks[weekKey]) return;
   data.weeks[weekKey].logs = data.weeks[weekKey].logs || {};
-  data.weeks[weekKey].logs[exId] = prevSets.map(p => ({
-    weight: p.weight ?? '', reps: p.reps ?? '', effort: p.effort || '', adjustment: p.adjustment || '', ts: Date.now()
-  }));
+  const isBW = !!getWeek(weekKey)?.plan?.days?.flatMap(d => d.exercises).find(e => e.id === exId)?.bwMode;
+  data.weeks[weekKey].logs[exId] = prevSets.map(p => {
+    const s = { weight: p.weight ?? '', reps: p.reps ?? '', effort: p.effort || '', adjustment: p.adjustment || '', ts: Date.now() };
+    if (isBW && p.bw != null) { s.bw = p.bw; s.bwAdded = p.bwAdded ?? 0; }
+    return s;
+  });
   save(data);
   uiFeedback();
   const wd = getWeek(weekKey);
@@ -3616,15 +3639,49 @@ function handleInput(exId, idx, field, val) {
   if (field === 'reps' && !isNaN(n) && n > 0) {
     const now = Date.now();
     updateSetLog(weekKey, exId, idx, 'ts', now);
-    // Stamp day startedAt on first rep entry of the day
     const data = load();
     const di = data.weeks[weekKey]?.plan?.days?.findIndex(d => d.exercises?.some(e => e.id === exId)) ?? -1;
     if (di !== -1) {
       const day = data.weeks[weekKey].plan.days[di];
-      if (!day.startedAt) { day.startedAt = now; save(data); }
+      if (!day.date) {
+        const dt = new Date(now);
+        day.date = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+      }
+      save(data);
+      // Show start-workout modal on first real rep entry if not yet started
+      if (!day.startedAt) showStartWorkoutModal(weekKey, di);
     }
   }
   refreshProgress(); renderCalendar();
+}
+
+function showStartWorkoutModal(wk, di) {
+  // Only show once per day — if modal is already open for this day, skip
+  if (document.getElementById('start-workout-modal')) return;
+  const div = document.createElement('div');
+  div.className = 'confirm-overlay';
+  div.id = 'start-workout-modal';
+  div.innerHTML = `<div class="confirm-box">
+    <div class="confirm-title">Start workout timer?</div>
+    <div class="confirm-msg">Tap Start to begin timing this session. Duration is measured from now to when you mark the day complete.</div>
+    <div class="confirm-btns">
+      <button class="btn-cancel" onclick="document.getElementById('start-workout-modal').remove()">Not yet</button>
+      <button class="btn-confirm" onclick="confirmStartWorkout('${wk}',${di})">Start</button>
+    </div>
+  </div>`;
+  document.body.appendChild(div);
+  // Clicking the backdrop dismisses without starting
+  div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+}
+
+function confirmStartWorkout(wk, di) {
+  document.getElementById('start-workout-modal')?.remove();
+  const data = load();
+  const day = data.weeks[wk]?.plan?.days?.[di];
+  if (!day || day.startedAt) return;
+  day.startedAt = Date.now();
+  save(data);
+  uiFeedback();
 }
 
 function handleBWInput(exId, idx, field, val, el) {
@@ -3638,7 +3695,8 @@ function handleBWInput(exId, idx, field, val, el) {
     const total = n + added;
     const span = row.querySelector('.bw-total span');
     if (span) span.textContent = total;
-    updateSetLog(weekKey, exId, idx, 'weight', total || '');
+    // Always write canonical weight — even when added=0, bw itself is the weight
+    updateSetLog(weekKey, exId, idx, 'weight', total > 0 ? total : n);
   } else if (field === 'weight') {
     updateSetLog(weekKey, exId, idx, 'bwAdded', n);
     const bwInput = row.querySelector('[data-field="bw"]');
@@ -3646,7 +3704,7 @@ function handleBWInput(exId, idx, field, val, el) {
     const total = bw + n;
     const span  = row.querySelector('.bw-total span');
     if (span) span.textContent = total;
-    updateSetLog(weekKey, exId, idx, 'weight', total || '');
+    updateSetLog(weekKey, exId, idx, 'weight', total > 0 ? total : bw);
   }
   refreshProgress();
   renderCalendar();
@@ -3777,11 +3835,14 @@ function getHistoricalBest(exId, data, globalNameMap) {
         const w = Number(s.weight) || 0;
         const r = Number(s.reps)   || 0;
         if (r <= 0) continue;
+        // BW-only sets: weight may be 0 if bwAdded=0 but bodyweight wasn't saved
+        // to canonical weight. Treat reps-only improvement as a PR for pure BW.
         if (w > bestW || (w === bestW && r > bestR)) { bestW = w; bestR = r; }
       }
     }
   }
-  return (bestW > 0 || bestR > 0) ? { weight: bestW, reps: bestR } : null;
+  // Return null only if truly nothing was found (not just no added weight)
+  return bestR > 0 ? { weight: bestW, reps: bestR } : null;
 }
 
 function refreshProgress() {
@@ -3992,123 +4053,115 @@ function handleDeleteWorkout(key) {
   );
 }
 
-// ── Cloud Sync ────────────────────────────────────────────
-async function pushToCloud() {
-  const pushBtn = document.querySelector('[onclick="pushToCloud()"]');
-  const pullBtn = document.querySelector('[onclick="pullFromCloud()"]');
-  const status  = document.getElementById('sync-status');
-  if (pushBtn) pushBtn.disabled = true;
-  if (pullBtn) pullBtn.disabled = true;
-  if (status)  status.textContent = 'Pushing…';
+// ── Cloud Sync (week-level merge) ────────────────────────
+// Each week is stored as its own row: (user_id, week_key).
+// Sync merges by taking the week with more logged sets when
+// both local and cloud have data for the same week key.
+// Auto-syncs on open and after every write (debounced).
 
-  try {
-    const payload = localStorage.getItem(STORE) || '{}';
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/workout_data?on_conflict=user_id`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'resolution=merge-duplicates,return=minimal'
-      },
-      body: JSON.stringify({
-        user_id: SUPABASE_USER,
-        data: JSON.parse(payload),
-        synced_at: new Date().toISOString()
-      })
-    });
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`${response.status}: ${err}`);
-    }
-    const now = new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
-    if (status) status.textContent = `Pushed ${now}`;
-    uiFeedback();
-    toast('Pushed to cloud ✓');
-  } catch(err) {
-    if (status) status.textContent = 'Push failed';
-    toast(`Push failed: ${err.message}`);
-  } finally {
-    if (pushBtn) pushBtn.disabled = false;
-    if (pullBtn) pullBtn.disabled = false;
-  }
+let _syncTimer = null;
+let _syncBusy = false;
+
+function scheduleSync() {
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(() => syncNow(), 3000);
 }
 
-async function pullFromCloud() {
-  const pushBtn = document.querySelector('[onclick="pushToCloud()"]');
-  const pullBtn = document.querySelector('[onclick="pullFromCloud()"]');
-  const status  = document.getElementById('sync-status');
-  if (pushBtn) pushBtn.disabled = true;
-  if (pullBtn) pullBtn.disabled = true;
-  if (status)  status.textContent = 'Pulling…';
+function _syncStatus(msg, color) {
+  const el = document.getElementById('sync-status');
+  const menu = document.getElementById('sync-status-menu');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--muted)'; }
+  if (menu) menu.textContent = msg;
+}
 
+function _countSets(wData) {
+  const logs = wData.logs || {};
+  return Object.values(logs).flat().filter(s => {
+    const r = Number(s.reps);
+    return Number.isFinite(r) && r > 0;
+  }).length;
+}
+
+async function syncNow(silent) {
+  if (_syncBusy) return;
+  _syncBusy = true;
+  if (!silent) _syncStatus('Syncing…', 'var(--muted)');
   try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/workout_data?user_id=eq.${SUPABASE_USER}&order=synced_at.desc&limit=1`,
-      {
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`
+    // 1. Fetch all cloud weeks for this user
+    const resp = await fetch(
+      `${SUPABASE_URL}/rest/v1/workout_data?user_id=eq.${SUPABASE_USER}&select=week_key,data,synced_at`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    if (!resp.ok) throw new Error(`${resp.status}`);
+    const cloudRows = await resp.json();
+    const cloudMap = {};
+    cloudRows.forEach(r => { cloudMap[r.week_key] = r.data; });
+
+    const local = load();
+    const allKeys = new Set([...Object.keys(local.weeks), ...Object.keys(cloudMap)]);
+    const toUpsert = [];
+    let localDirty = false;
+
+    for (const wk of allKeys) {
+      const localWk  = local.weeks[wk];
+      const cloudWk  = cloudMap[wk];
+      if (localWk && cloudWk) {
+        // Both exist — keep whichever has more logged sets; ties go to cloud
+        const localSets = _countSets(localWk);
+        const cloudSets = _countSets(cloudWk);
+        if (cloudSets > localSets) {
+          local.weeks[wk] = cloudWk;
+          localDirty = true;
+        } else if (localSets > cloudSets) {
+          toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
         }
+        // equal: no-op
+      } else if (localWk && !cloudWk) {
+        toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
+      } else if (!localWk && cloudWk) {
+        local.weeks[wk] = cloudWk;
+        localDirty = true;
       }
-    );
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`${response.status}: ${err}`);
     }
-    const rows = await response.json();
-    if (!rows.length) {
-      toast('No cloud data found — push from desktop first');
-      if (status) status.textContent = 'Nothing to pull';
-      return;
+
+    if (localDirty) {
+      save(local);
+      syncCalToWeek();
+      renderApp();
     }
-    const cloudData = rows[0].data;
-    const syncedAt  = new Date(rows[0].synced_at).toLocaleString('en-US', {
-      month:'short', day:'numeric', hour:'numeric', minute:'2-digit'
-    });
-    showConfirm(
-      'Replace local data?',
-      `This will replace your local data with the cloud version last pushed on ${syncedAt}. Your current local data will be overwritten.`,
-      () => {
-        localStorage.setItem(STORE, JSON.stringify(cloudData));
-        // Re-run key migration on pulled data (may have been pushed from a device
-        // that hadn't migrated yet), then apply the same fallback logic as startup.
-        (function() {
-          const d = load(); let dirty = false;
-          for (const oldKey of Object.keys(d.weeks)) {
-            const correctKey = toKey(new Date(oldKey + 'T12:00:00'));
-            if (correctKey !== oldKey && !d.weeks[correctKey]) {
-              d.weeks[correctKey] = d.weeks[oldKey];
-              delete d.weeks[oldKey];
-              dirty = true;
-            }
-          }
-          if (dirty) save(d);
-        })();
-        weekKey = toKey(new Date());
-        // If current week has no plan, jump to most recent week that does.
-        if (!getWeek(weekKey)?.plan) {
-          const d = load();
-          const latest = Object.keys(d.weeks).filter(k => d.weeks[k]?.plan?.days?.length).sort().pop();
-          if (latest) weekKey = latest;
+
+    // 2. Upsert local-only or newer-local weeks to cloud
+    if (toUpsert.length) {
+      const upsertResp = await fetch(
+        `${SUPABASE_URL}/rest/v1/workout_data?on_conflict=user_id,week_key`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+            'Prefer': 'resolution=merge-duplicates,return=minimal'
+          },
+          body: JSON.stringify(toUpsert)
         }
-        syncCalToWeek();
-        renderApp();
-        uiFeedback();
-        toast('Pulled from cloud ✓');
-        if (status) status.textContent = `Pulled ${new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'})}`;
-      },
-      'Replace',
-      true
-    );
+      );
+      if (!upsertResp.ok) throw new Error(`upsert ${upsertResp.status}`);
+    }
+
+    const now = new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
+    _syncStatus(`Synced ${now}`, 'var(--muted)');
+    if (!silent) uiFeedback();
   } catch(err) {
-    if (status) status.textContent = 'Pull failed';
-    toast(`Pull failed: ${err.message}`);
+    _syncStatus('Sync failed', 'var(--hard)');
+    if (!silent) toast(`Sync failed: ${err.message}`);
   } finally {
-    if (pushBtn) pushBtn.disabled = false;
-    if (pullBtn) pullBtn.disabled = false;
+    _syncBusy = false;
   }
 }
+
+// Keep pushToCloud/pullFromCloud as no-ops so any lingering references don't error
+function pushToCloud() { syncNow(); }
+function pullFromCloud() { syncNow(); }
 
 // ── Header overflow menu ─────────────────────────────────
 function toggleHeaderOverflow(btn) {
@@ -4142,6 +4195,7 @@ function toast(msg) {
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') {
     renderApp();
+    syncNow(true);
     acquireWakeLock();
     // Re-arm the audio pipeline after iOS interrupts it on backgrounding
     if (audioCtx && audioCtx.state === 'suspended') {
@@ -4164,7 +4218,7 @@ document.addEventListener('visibilitychange', () => {
     releaseWakeLock();
   }
 });
-window.addEventListener('focus', () => renderApp());
+window.addEventListener('focus', () => { renderApp(); syncNow(true); });
 
 // ── Wake lock ─────────────────────────────────────────────
 let _wakeLock = null;
@@ -4227,11 +4281,13 @@ weekKey = toKey(new Date());
 // on initial load and after a fallback. calYear/calMo default to today's date
 // which can point to the wrong month if weekKey was pushed back to a prior week.
 syncCalToWeek();
-// One-time repair: fix days where repairStalePlaceholderTs (now removed) corrupted real
-// set timestamps by collapsing them all to a single value. Signature: any day with logged
-// sets where every ts is identical (physically impossible for real training). Works
-// regardless of completion status — the upload bug wiped completedAt on some devices.
-// Derive day.date from week key + day index to restore distinct calendar positions.
+// One-time repair: assign day.date to every logged day that is missing one.
+// Covers three corruption cases from the old repairStalePlaceholderTs bug:
+//   1. All set timestamps collapsed to a single value (detect + positional fallback)
+//   2. No timestamps at all (positional fallback)
+//   3. Day was logged but date was never written (first-rep date write missing)
+// Positional fallback: week Monday + day index. Not perfect but puts days on
+// distinct dates so the calendar can display them. User can correct via date picker.
 (function repairCollapsedTimestamps() {
   const data = load();
   let dirty = false;
@@ -4239,20 +4295,25 @@ syncCalToWeek();
     if (!wData.plan?.days) continue;
     const logs = wData.logs || {};
     wData.plan.days.forEach((day, di) => {
-      if (day.date) return; // already has a date, nothing to repair
-      const allSets = day.exercises.flatMap(ex =>
+      if (day.date) return;
+      const loggedSets = day.exercises.flatMap(ex =>
         (logs[ex.id] || []).filter(s => {
           const r = Number(s.reps);
-          return s.ts && Number.isFinite(r) && r > 0;
+          return Number.isFinite(r) && r > 0;
         })
       );
-      if (allSets.length < 2) return; // need at least 2 sets to detect collapse
-      const firstTs = allSets[0].ts;
-      const allCollapsed = allSets.every(s => s.ts === firstTs);
-      if (!allCollapsed) return;
-      // Derive date from week key + day index (positional fallback)
-      const d = new Date(wk + 'T12:00:00');
-      d.setDate(d.getDate() + di);
+      if (loggedSets.length === 0) return;
+      // Try to derive from timestamps — use earliest valid ts
+      const validTs = loggedSets.map(s => s.ts).filter(t => t && Number.isFinite(t));
+      const uniqueTs = new Set(validTs);
+      let chosenTs = null;
+      // If all timestamps are identical (collapsed corruption), don't trust them
+      if (validTs.length > 0 && uniqueTs.size > 1) {
+        chosenTs = Math.min(...validTs);
+      }
+      const d = chosenTs
+        ? new Date(chosenTs)
+        : (() => { const x = new Date(wk + 'T12:00:00'); x.setDate(x.getDate() + di); return x; })();
       day.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
       dirty = true;
     });
@@ -4299,6 +4360,7 @@ syncCalToWeek();
 })();
 
 renderApp();
+syncNow(true);
 
 // ── Fitness test monthly reminder ─────────────────────────
 (function checkFitnessTestReminder() {
