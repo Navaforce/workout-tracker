@@ -4228,9 +4228,10 @@ weekKey = toKey(new Date());
 // which can point to the wrong month if weekKey was pushed back to a prior week.
 syncCalToWeek();
 // One-time repair: fix days where repairStalePlaceholderTs (now removed) corrupted real
-// set timestamps by resetting them all to completedAt. Signature: completed day whose
-// every logged set has ts === completedAt. In that case day.date was never auto-set,
-// so derive it from week key + day index to restore distinct calendar positions.
+// set timestamps by collapsing them all to a single value. Signature: any day with logged
+// sets where every ts is identical (physically impossible for real training). Works
+// regardless of completion status — the upload bug wiped completedAt on some devices.
+// Derive day.date from week key + day index to restore distinct calendar positions.
 (function repairCollapsedTimestamps() {
   const data = load();
   let dirty = false;
@@ -4238,16 +4239,16 @@ syncCalToWeek();
     if (!wData.plan?.days) continue;
     const logs = wData.logs || {};
     wData.plan.days.forEach((day, di) => {
-      if (!day.completed || !day.completedAt || day.date) return;
+      if (day.date) return; // already has a date, nothing to repair
       const allSets = day.exercises.flatMap(ex =>
         (logs[ex.id] || []).filter(s => {
           const r = Number(s.reps);
-          return Number.isFinite(r) && r > 0;
+          return s.ts && Number.isFinite(r) && r > 0;
         })
       );
-      if (allSets.length === 0) return;
-      // Corrupted signature: every logged set has ts equal to completedAt
-      const allCollapsed = allSets.every(s => s.ts === day.completedAt);
+      if (allSets.length < 2) return; // need at least 2 sets to detect collapse
+      const firstTs = allSets[0].ts;
+      const allCollapsed = allSets.every(s => s.ts === firstTs);
       if (!allCollapsed) return;
       // Derive date from week key + day index (positional fallback)
       const d = new Date(wk + 'T12:00:00');
