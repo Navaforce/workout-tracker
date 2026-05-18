@@ -3295,6 +3295,21 @@ function toggleDayComplete(di) {
   day.completed = !day.completed;
   if (day.completed && !day.completedAt) day.completedAt = Date.now();
   else if (!day.completed) delete day.completedAt;
+  // Auto-set day.date from earliest logged set timestamp if not manually set
+  if (day.completed && !day.date) {
+    const logs = data.weeks[weekKey]?.logs || {};
+    let earliest = day.completedAt;
+    day.exercises.forEach(ex => {
+      (logs[ex.id] || []).forEach(s => {
+        const r = Number(s.reps);
+        if (s.ts && s.ts < earliest && Number.isFinite(r) && r > 0) earliest = s.ts;
+      });
+    });
+    if (earliest < day.completedAt) {
+      const d = new Date(earliest);
+      day.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+  }
   save(data);
   uiFeedback();
   if (day.completed) pushToCloud();
@@ -4208,31 +4223,10 @@ weekKey = toKey(new Date());
     .pop();
   if (latest) weekKey = latest;
 })();
-// One-time repair: fix stale placeholder ts values that produce bogus durations.
-// For any completed day where earliest logged-set ts predates completedAt by >4h,
-// reset those stale ts values to completedAt so duration is hidden rather than wrong.
-(function repairStalePlaceholderTs() {
-  const FOUR_HOURS = 4 * 60 * 60 * 1000;
-  const data = load();
-  let dirty = false;
-  for (const wData of Object.values(data.weeks)) {
-    if (!wData.plan?.days) continue;
-    const logs = wData.logs || {};
-    for (const day of wData.plan.days) {
-      if (!day.completed || !day.completedAt) continue;
-      for (const ex of day.exercises) {
-        for (const s of (logs[ex.id] || [])) {
-          const r = Number(s.reps);
-          if (s.ts && Number.isFinite(r) && r > 0 && (day.completedAt - s.ts) > FOUR_HOURS) {
-            s.ts = day.completedAt;
-            dirty = true;
-          }
-        }
-      }
-    }
-  }
-  if (dirty) save(data);
-})();
+// Sync calendar month to weekKey so workouts always appear in the correct month
+// on initial load and after a fallback. calYear/calMo default to today's date
+// which can point to the wrong month if weekKey was pushed back to a prior week.
+syncCalToWeek();
 (function seedFitnessBaseline() {
   if (loadFitness().length > 0) return;
   saveFitness([
