@@ -696,6 +696,17 @@ function getWeek(key) { return load().weeks[key] || null; }
 function savePlan(key, plan, raw) {
   const data = load();
   if (!data.weeks[key]) data.weeks[key] = {logs:{}};
+  // Preserve per-day runtime state (completed, completedAt, startedAt, date override)
+  // so uploading a new plan doesn't wipe completion status.
+  const existingDays = data.weeks[key].plan?.days || [];
+  plan.days.forEach((day, i) => {
+    const prev = existingDays[i];
+    if (!prev) return;
+    if (prev.completed  !== undefined) day.completed  = prev.completed;
+    if (prev.completedAt !== undefined) day.completedAt = prev.completedAt;
+    if (prev.startedAt  !== undefined) day.startedAt  = prev.startedAt;
+    if (prev.date       !== undefined) day.date       = prev.date;
+  });
   data.weeks[key].plan = plan;
   data.weeks[key].raw = raw;
   save(data);
@@ -2111,6 +2122,41 @@ const EXERCISE_INFO = {
     sets: '3 × 20–30 sec/side', rest: '60s', day: 'Legs — C2',
     cues: 'NEW Week 3: replaces Dead Bugs — significantly harder adductor/core chain exercise. Lie on your side. Top foot rests on a bench at knee height. Bottom leg hangs free. Lift hips off floor by contracting the adductor of your top leg — body forms a straight line. Hold 20–30 sec. Trains adductor/core tension used for streamlining underwater. After final set: exhale hold 30 sec → begin 90-sec transition.',
     hold: 'EXHALE hold — 30 sec · After final set only\nExhale hold 30 sec → begin 90-sec parasympathetic transition.'
+  },
+  'Incline Barbell Press': {
+    sets: '3 × 8–10', rest: '2:30', day: 'Push — A1',
+    cues: 'NEW Week 5: replaces flat bench — new upper-chest angle after 4 weeks of flat. Incline at 30–45°. Bar to upper chest, full lockout. 185 lb starting point (incline is harder than flat — drop to 175 lb if needed after set 1). 3-sec eccentric. Rack → rest 30 sec → exhale hold 35 sec.',
+    hold: 'EXHALE hold — 35 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 35 sec → breathe → resume rest.'
+  },
+  'Bodyweight Dips': {
+    sets: '2 × max–5', rest: '2:00', day: 'Push — B1',
+    cues: 'Unweighted. Stop 5 reps short of failure — if max is ~28, stop at ~23. Lower until upper arms parallel floor. Forward lean = chest focus, upright = triceps. Week 5 introduces load (10–15 lb) to re-enter hypertrophy rep range after 4 weeks of bodyweight endurance.',
+    hold: 'EXHALE hold — 30 sec · After ALL sets\nRack → rest 30 sec → exhale hold 30 sec → breathe → resume rest.'
+  },
+  'Cable Chest Fly': {
+    sets: '3 × 12–15', rest: '75s', day: 'Push — C1',
+    cues: 'NEW Week 5. Cable crossover or pec deck. Cables at shoulder height, slight forward lean. Arms sweep forward and together — squeeze hard at center. Keep slight bend in elbows throughout. Moderate load — this is a stretch/contraction isolation, not a strength movement. Feel the pec, not the front delt.',
+    hold: 'EXHALE hold — 35 sec · After final set only\nExhale hold 35 sec → begin transition.'
+  },
+  'T-Bar Row': {
+    sets: '3 × 10–12', rest: '2:00', day: 'Pull — B1',
+    cues: 'NEW Week 5: replaces chest-supported row for one session — hits mid-back thickness from a different angle. Load barbell into a corner (or use T-bar machine). Straddle bar, hinge to ~45°, grip near the plates with both hands. Row toward sternum. Back neutral throughout. Start moderate — this may be new. Return to chest-supported row on Day 6.',
+    hold: 'INHALE hold — 40 sec · After ALL sets\nRest 30 sec → full inhale → hold 40 sec → breathe → resume rest.'
+  },
+  'Hip Thrust': {
+    sets: '3 × 12–15', rest: '90s', day: 'Legs — B2',
+    cues: 'NEW Week 5: replaces Cable Pull-Through — highest glute EMG of any exercise, zero axial spinal load. Upper back on bench, bar or DB across hips. Drive hips to ceiling — hard glute squeeze at the top. Back stays on bench throughout. Start moderate — feel the glute contraction, not the lower back.',
+    hold: 'No hold — glute contraction demands full focus.'
+  },
+  'Sumo Deadlift': {
+    sets: '3 × 10', rest: '90s', day: 'Legs — C1',
+    cues: 'NEW Week 5. Wide stance, toes ~45° out. Grip inside the knees. Hinge at hips and knees simultaneously — drive floor away. Full lockout at top. 135 lb is technique practice, not a max effort. Wide stance reduces lower-back moment arm — back-safe bilateral hip hinge. Back stays neutral throughout. No grinding.',
+    hold: 'No hold — bilateral hinge requires full focus.'
+  },
+  'Chest-Supported Incline Row': {
+    sets: '3 × 10–12', rest: '2:00', day: 'Pull — B1',
+    cues: 'Face-down on incline bench, chest fully supported. Row from dead hang to hip — elbow drives back and up, not out to side. Load: 65 lb (Week 4) → 70 lb (Week 5 Day 6). Fully isolates pulling muscles, eliminates lower-back fatigue.',
+    hold: 'INHALE hold — 35–40 sec · After ALL sets\nRest 30 sec → full inhale → hold → breathe → resume rest.'
   },
 };
 const _EXERCISE_INFO_LOWER = Object.fromEntries(Object.entries(EXERCISE_INFO).map(([k,v]) => [k.toLowerCase().trim(), v]));
@@ -3793,7 +3839,12 @@ function processFile(file) {
       const program = JSON.parse(e.target.result);
       const days = applyRotation(parseJSON(program));
       const exCount = days.reduce((s,d) => s + d.exercises.length, 0);
-      savePlan(weekKey, {days}, '');
+      // Always save to the true current week — never to a fallback display week,
+      // so uploading a new plan never overwrites a prior week's data.
+      const uploadKey = toKey(new Date());
+      savePlan(uploadKey, {days}, '');
+      weekKey = uploadKey;
+      syncCalToWeek();
       if (days.length) uiFeedback();
       toast(days.length ? `Loaded ${days.length} day${days.length>1?'s':''}, ${exCount} exercises` : 'No exercises found — check JSON format');
       renderApp();
@@ -4005,7 +4056,27 @@ async function pullFromCloud() {
       `This will replace your local data with the cloud version last pushed on ${syncedAt}. Your current local data will be overwritten.`,
       () => {
         localStorage.setItem(STORE, JSON.stringify(cloudData));
+        // Re-run key migration on pulled data (may have been pushed from a device
+        // that hadn't migrated yet), then apply the same fallback logic as startup.
+        (function() {
+          const d = load(); let dirty = false;
+          for (const oldKey of Object.keys(d.weeks)) {
+            const correctKey = toKey(new Date(oldKey + 'T12:00:00'));
+            if (correctKey !== oldKey && !d.weeks[correctKey]) {
+              d.weeks[correctKey] = d.weeks[oldKey];
+              delete d.weeks[oldKey];
+              dirty = true;
+            }
+          }
+          if (dirty) save(d);
+        })();
         weekKey = toKey(new Date());
+        // If current week has no plan, jump to most recent week that does.
+        if (!getWeek(weekKey)?.plan) {
+          const d = load();
+          const latest = Object.keys(d.weeks).filter(k => d.weeks[k]?.plan?.days?.length).sort().pop();
+          if (latest) weekKey = latest;
+        }
         syncCalToWeek();
         renderApp();
         uiFeedback();
