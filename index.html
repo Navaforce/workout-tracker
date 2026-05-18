@@ -3540,17 +3540,7 @@ function handleAdd(exId) {
   const now = Date.now();
   const newSet = {weight: last?.weight||'', reps: last?.reps||'', effort: last?.effort||'', adjustment:'', ts: now};
   const idx    = addSetLog(weekKey, exId, newSet);
-  // Only stamp day.date here (not startedAt — that requires explicit user confirmation)
-  const data = load();
-  const _di = data.weeks[weekKey]?.plan?.days?.findIndex(d => d.exercises?.some(e => e.id === exId)) ?? -1;
-  if (_di !== -1) {
-    const _day = data.weeks[weekKey].plan.days[_di];
-    if (!_day.date) {
-      const _dt = new Date(now);
-      _day.date = `${_dt.getFullYear()}-${String(_dt.getMonth()+1).padStart(2,'0')}-${String(_dt.getDate()).padStart(2,'0')}`;
-    }
-    save(data);
-  }
+  // day.date is only stamped when real reps are entered (handleInput) — not here
   const bwMode = getBWMode(exId);
   const list   = document.getElementById('sl-'+exId);
   if (list) {
@@ -4092,7 +4082,7 @@ async function syncNow(silent) {
       `${SUPABASE_URL}/rest/v1/workout_data?user_id=eq.${SUPABASE_USER}&select=week_key,data,synced_at`,
       { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
     );
-    if (!resp.ok) throw new Error(`${resp.status}`);
+    if (!resp.ok) { const t = await resp.text(); throw new Error(`fetch ${resp.status}: ${t}`); }
     const cloudRows = await resp.json();
     const cloudMap = {};
     cloudRows.forEach(r => { cloudMap[r.week_key] = r.data; });
@@ -4130,8 +4120,10 @@ async function syncNow(silent) {
       renderApp();
     }
 
-    // 2. Upsert local-only or newer-local weeks to cloud
-    if (toUpsert.length) {
+    // 2. Upsert local-only or newer-local weeks to cloud one row at a time.
+    // Batching all rows in one POST requires the table's composite PK to be set up
+    // correctly in Supabase — upsert row-by-row is more tolerant of schema edge cases.
+    for (const row of toUpsert) {
       const upsertResp = await fetch(
         `${SUPABASE_URL}/rest/v1/workout_data?on_conflict=user_id,week_key`,
         {
@@ -4142,10 +4134,13 @@ async function syncNow(silent) {
             'Authorization': `Bearer ${SUPABASE_KEY}`,
             'Prefer': 'resolution=merge-duplicates,return=minimal'
           },
-          body: JSON.stringify(toUpsert)
+          body: JSON.stringify(row)
         }
       );
-      if (!upsertResp.ok) throw new Error(`upsert ${upsertResp.status}`);
+      if (!upsertResp.ok) {
+        const errText = await upsertResp.text();
+        throw new Error(`upsert ${upsertResp.status}: ${errText}`);
+      }
     }
 
     const now = new Date().toLocaleTimeString('en-US', {hour:'numeric', minute:'2-digit'});
@@ -4295,22 +4290,28 @@ syncCalToWeek();
     if (!wData.plan?.days) continue;
     const logs = wData.logs || {};
     wData.plan.days.forEach((day, di) => {
-      if (day.date) return;
-      const loggedSets = day.exercises.flatMap(ex =>
-        (logs[ex.id] || []).filter(s => {
-          const r = Number(s.reps);
-          return Number.isFinite(r) && r > 0;
-        })
-      );
-      if (loggedSets.length === 0) return;
-      // Try to derive from timestamps — use earliest valid ts
-      const validTs = loggedSets.map(s => s.ts).filter(t => t && Number.isFinite(t));
+      const allSets = day.exercises.flatMap(ex => logs[ex.id] || []);
+      // A day is "actually worked" only if at least one set has effort or adjustment
+      // recorded — auto-populated sets have reps but never have effort/adjustment.
+      const workedSets = allSets.filter(s => {
+        const r = Number(s.reps);
+        return Number.isFinite(r) && r > 0 && (s.effort || s.adjustment);
+      });
+
+      if (workedSets.length === 0) {
+        // Not actually worked — clear any stale date that was set by handleAdd
+        // or by a prior version of this repair (e.g. Days 5-7 auto-populate issue)
+        if (day.date) { delete day.date; dirty = true; }
+        return;
+      }
+
+      if (day.date) return; // already has a valid date
+
+      // Derive date from earliest worked-set timestamp; fall back to positional
+      const validTs = workedSets.map(s => s.ts).filter(t => t && Number.isFinite(t));
       const uniqueTs = new Set(validTs);
       let chosenTs = null;
-      // If all timestamps are identical (collapsed corruption), don't trust them
-      if (validTs.length > 0 && uniqueTs.size > 1) {
-        chosenTs = Math.min(...validTs);
-      }
+      if (validTs.length > 0 && uniqueTs.size > 1) chosenTs = Math.min(...validTs);
       const d = chosenTs
         ? new Date(chosenTs)
         : (() => { const x = new Date(wk + 'T12:00:00'); x.setDate(x.getDate() + di); return x; })();
