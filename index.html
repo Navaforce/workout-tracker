@@ -3517,13 +3517,13 @@ function autoPopulateSets(di, exId) {
   const setsToCreate = prevSetsFound ? prevSetsFound.length : targetSets;
   for (let i = 0; i < setsToCreate; i++) {
     const prev = prevSetsFound?.[i];
+    // Only pre-fill weight — reps intentionally left blank so these sets are never
+    // mistaken for real logged sets by calendar, date, PR, or duration logic.
     const setObj = {
-      weight:     prev?.weight     ?? '',
-      reps:       prev?.reps       ?? '',
-      effort:     prev?.effort     || '',
-      adjustment: prev?.adjustment || '',
-      ts: Date.now(),
-      prefilled:  true
+      weight: prev?.weight ?? '',
+      reps:   '',
+      effort: '', adjustment: '',
+      ts: Date.now(), prefilled: true
     };
     if (ex.bwMode && prev?.bw != null) { setObj.bw = prev.bw; setObj.bwAdded = prev.bwAdded ?? 0; }
     addSetLog(weekKey, exId, setObj);
@@ -3566,7 +3566,7 @@ function fillExerciseFromLastWeek(di, exId) {
   data.weeks[weekKey].logs = data.weeks[weekKey].logs || {};
   const isBW = !!getWeek(weekKey)?.plan?.days?.flatMap(d => d.exercises).find(e => e.id === exId)?.bwMode;
   data.weeks[weekKey].logs[exId] = prevSets.map(p => {
-    const s = { weight: p.weight ?? '', reps: p.reps ?? '', effort: p.effort || '', adjustment: p.adjustment || '', ts: Date.now(), prefilled: true };
+    const s = { weight: p.weight ?? '', reps: p.reps ?? '', effort: p.effort || '', adjustment: p.adjustment || '', ts: Date.now() };
     if (isBW && p.bw != null) { s.bw = p.bw; s.bwAdded = p.bwAdded ?? 0; }
     return s;
   });
@@ -3603,8 +3603,7 @@ function fillFromLastWeek(di) {
         reps:       prevSet.reps       ?? '',
         effort:     prevSet.effort     || '',
         adjustment: prevSet.adjustment || '',
-        ts:         Date.now(),
-        prefilled:  true
+        ts:         Date.now()
       });
     });
   });
@@ -4279,6 +4278,25 @@ weekKey = toKey(new Date());
 // on initial load and after a fallback. calYear/calMo default to today's date
 // which can point to the wrong month if weekKey was pushed back to a prior week.
 syncCalToWeek();
+// Repair: clear reps/effort/adjustment from any prefilled sets that still have reps
+// from before auto-populate was changed to weight-only. Ensures isRealSet() is correct
+// for all existing data without requiring a manual re-log.
+(function repairPrefilledSets() {
+  const data = load();
+  let dirty = false;
+  for (const wData of Object.values(data.weeks)) {
+    const logs = wData.logs || {};
+    for (const sets of Object.values(logs)) {
+      for (const s of sets) {
+        if (s.prefilled && (s.reps !== '' || s.effort || s.adjustment)) {
+          s.reps = ''; s.effort = ''; s.adjustment = '';
+          dirty = true;
+        }
+      }
+    }
+  }
+  if (dirty) save(data);
+})();
 // One-time repair: assign day.date to every logged day that is missing one.
 // Covers three corruption cases from the old repairStalePlaceholderTs bug:
 //   1. All set timestamps collapsed to a single value (detect + positional fallback)
