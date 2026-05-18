@@ -669,6 +669,12 @@ function isCurrentWeek(key) { return key === toKey(new Date()); }
 // ── Storage ──────────────────────────────────────────────
 function load() { try { return JSON.parse(localStorage.getItem(STORE)) || {weeks:{}}; } catch { return {weeks:{}}; } }
 function save(data) { localStorage.setItem(STORE, JSON.stringify(data)); scheduleSync(); }
+// A set is "real" (user actually logged it) when reps > 0 AND prefilled is not true.
+// prefilled is set on auto-populate/fill-from-last-week and cleared when user edits reps.
+const isRealSet = s => {
+  const r = Number(s.reps);
+  return Number.isFinite(r) && r > 0 && !s.prefilled;
+};
 
 const FT_STORE = 'wt_fitness';
 function loadFitness() { try { return JSON.parse(localStorage.getItem(FT_STORE)) || []; } catch { return []; } }
@@ -1026,7 +1032,7 @@ function getCalendarData() {
     const logs = wData.logs || {};
     wData.plan.days.forEach((day, di) => {
       const logged = day.exercises.reduce((sum, ex) =>
-        sum + (logs[ex.id] || []).filter(s => Number.isFinite(Number(s.reps)) && Number(s.reps) > 0).length, 0);
+        sum + (logs[ex.id] || []).filter(isRealSet).length, 0);
       if (logged === 0) return;
       const total = day.exercises.reduce((sum, ex) => sum + (parseInt(ex.sets) || 0), 0);
       const dateKey = resolveDayDate(wk, day, di, logs);
@@ -1754,7 +1760,7 @@ function getDayBadge(name, small) {
 
 function daySetCounts(day, logs) {
   const logged = day.exercises.reduce((sum, ex) =>
-    sum + (logs[ex.id] || []).filter(s => s.reps !== '' && s.reps !== null && s.reps !== undefined && Number.isFinite(Number(s.reps)) && s.reps > 0).length, 0);
+    sum + (logs[ex.id] || []).filter(isRealSet).length, 0);
   const total = day.exercises.reduce((sum, ex) => {
     const n = parseInt(ex.sets);
     return sum + (Number.isFinite(n) ? n : 0);
@@ -3021,10 +3027,9 @@ function getAllPRs() {
       }
 
       sets.forEach(s => {
+        if (!isRealSet(s)) return;
         const w = Number(s.weight) || 0;
         const r = Number(s.reps)   || 0;
-        if (r <= 0) return;
-        // BW-only sets (no added weight) still count — compare by reps
         const isBW = s.bw != null && (Number(s.bwAdded) || 0) === 0;
         if (w > bucket.weight || (w === bucket.weight && r > bucket.reps) ||
             (isBW && bucket.weight === 0 && r > bucket.reps)) {
@@ -3289,20 +3294,16 @@ function toggleDayComplete(di) {
   day.completed = !day.completed;
   if (day.completed && !day.completedAt) day.completedAt = Date.now();
   else if (!day.completed) delete day.completedAt;
-  // Auto-set day.date from earliest *worked* set timestamp (effort or adjustment required —
-  // excludes auto-populated placeholder sets which have reps but no effort/adjustment).
-  // Falls back to completedAt date so the day always lands on the correct calendar day.
-  if (day.completed && !day.date) {
+  // Set day.date from earliest real (non-prefilled) set timestamp.
+  // Falls back to completedAt so the day always lands on the right calendar date.
+  if (day.completed) {
     const logs = data.weeks[weekKey]?.logs || {};
     let earliest = day.completedAt;
     day.exercises.forEach(ex => {
       (logs[ex.id] || []).forEach(s => {
-        const r = Number(s.reps);
-        if (s.ts && s.ts < earliest && Number.isFinite(r) && r > 0 && (s.effort || s.adjustment))
-          earliest = s.ts;
+        if (isRealSet(s) && s.ts && s.ts < earliest) earliest = s.ts;
       });
     });
-    // Use completedAt date as fallback — always correct even if no effort was logged
     const ref = earliest < day.completedAt ? earliest : day.completedAt;
     const d = new Date(ref);
     day.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -3521,9 +3522,9 @@ function autoPopulateSets(di, exId) {
       reps:       prev?.reps       ?? '',
       effort:     prev?.effort     || '',
       adjustment: prev?.adjustment || '',
-      ts: Date.now()
+      ts: Date.now(),
+      prefilled:  true
     };
-    // Carry bw/bwAdded split so BW mode sets pre-fill correctly
     if (ex.bwMode && prev?.bw != null) { setObj.bw = prev.bw; setObj.bwAdded = prev.bwAdded ?? 0; }
     addSetLog(weekKey, exId, setObj);
   }
@@ -3565,7 +3566,7 @@ function fillExerciseFromLastWeek(di, exId) {
   data.weeks[weekKey].logs = data.weeks[weekKey].logs || {};
   const isBW = !!getWeek(weekKey)?.plan?.days?.flatMap(d => d.exercises).find(e => e.id === exId)?.bwMode;
   data.weeks[weekKey].logs[exId] = prevSets.map(p => {
-    const s = { weight: p.weight ?? '', reps: p.reps ?? '', effort: p.effort || '', adjustment: p.adjustment || '', ts: Date.now() };
+    const s = { weight: p.weight ?? '', reps: p.reps ?? '', effort: p.effort || '', adjustment: p.adjustment || '', ts: Date.now(), prefilled: true };
     if (isBW && p.bw != null) { s.bw = p.bw; s.bwAdded = p.bwAdded ?? 0; }
     return s;
   });
@@ -3602,7 +3603,8 @@ function fillFromLastWeek(di) {
         reps:       prevSet.reps       ?? '',
         effort:     prevSet.effort     || '',
         adjustment: prevSet.adjustment || '',
-        ts: Date.now()
+        ts:         Date.now(),
+        prefilled:  true
       });
     });
   });
@@ -3632,6 +3634,7 @@ function handleInput(exId, idx, field, val) {
   if (field === 'reps' && !isNaN(n) && n > 0) {
     const now = Date.now();
     updateSetLog(weekKey, exId, idx, 'ts', now);
+    updateSetLog(weekKey, exId, idx, 'prefilled', false);
     const data = load();
     const di = data.weeks[weekKey]?.plan?.days?.findIndex(d => d.exercises?.some(e => e.id === exId)) ?? -1;
     if (di !== -1) {
@@ -3781,13 +3784,12 @@ function getDayDuration(di) {
   if (day.startedAt && day.startedAt < day.completedAt && (day.completedAt - day.startedAt) <= MAX_MS) {
     return fmtDuration(day.completedAt - day.startedAt);
   }
-  // Fall back to earliest logged-set ts within the cap
+  // Fall back to earliest real (non-prefilled) set ts within the cap
   const logs = wd.logs || {};
   let earliest = day.completedAt;
   day.exercises.forEach(ex => {
     (logs[ex.id] || []).forEach(s => {
-      const r = Number(s.reps);
-      if (s.ts && s.ts < earliest && Number.isFinite(r) && r > 0 && (day.completedAt - s.ts) <= MAX_MS)
+      if (isRealSet(s) && s.ts && s.ts < earliest && (day.completedAt - s.ts) <= MAX_MS)
         earliest = s.ts;
     });
   });
@@ -3825,11 +3827,9 @@ function getHistoricalBest(exId, data, globalNameMap) {
       const idName = globalNameMap[id];
       if (!idName || !_exMatch(exName, idName)) continue;
       for (const s of sets) {
+        if (!isRealSet(s)) continue;
         const w = Number(s.weight) || 0;
         const r = Number(s.reps)   || 0;
-        if (r <= 0) continue;
-        // BW-only sets: weight may be 0 if bwAdded=0 but bodyweight wasn't saved
-        // to canonical weight. Treat reps-only improvement as a PR for pure BW.
         if (w > bestW || (w === bestW && r > bestR)) { bestW = w; bestR = r; }
       }
     }
@@ -4286,35 +4286,26 @@ syncCalToWeek();
 //   3. Day was logged but date was never written (first-rep date write missing)
 // Positional fallback: week Monday + day index. Not perfect but puts days on
 // distinct dates so the calendar can display them. User can correct via date picker.
-(function repairCollapsedTimestamps() {
+(function repairDayDates() {
   const data = load();
   let dirty = false;
   for (const [wk, wData] of Object.entries(data.weeks)) {
     if (!wData.plan?.days) continue;
     const logs = wData.logs || {};
     wData.plan.days.forEach((day, di) => {
-      const allSets = day.exercises.flatMap(ex => logs[ex.id] || []);
-      // A day is "actually worked" only if at least one set has effort or adjustment
-      // recorded — auto-populated sets have reps but never have effort/adjustment.
-      const workedSets = allSets.filter(s => {
-        const r = Number(s.reps);
-        return Number.isFinite(r) && r > 0 && (s.effort || s.adjustment);
-      });
+      const realSets = day.exercises.flatMap(ex => (logs[ex.id] || []).filter(isRealSet));
 
-      if (workedSets.length === 0) {
-        // Not actually worked — clear any stale date that was set by handleAdd
-        // or by a prior version of this repair (e.g. Days 5-7 auto-populate issue)
+      if (realSets.length === 0) {
+        // No real logged sets — clear any stale date (from handleAdd, old repair, etc.)
         if (day.date) { delete day.date; dirty = true; }
         return;
       }
 
-      if (day.date) return; // already has a valid date
+      if (day.date) return; // already correctly set
 
-      // Derive date from earliest worked-set timestamp; fall back to positional
-      const validTs = workedSets.map(s => s.ts).filter(t => t && Number.isFinite(t));
-      const uniqueTs = new Set(validTs);
-      let chosenTs = null;
-      if (validTs.length > 0 && uniqueTs.size > 1) chosenTs = Math.min(...validTs);
+      // Derive from earliest real set timestamp; fall back to positional
+      const validTs = realSets.map(s => s.ts).filter(t => t && Number.isFinite(t));
+      const chosenTs = validTs.length ? Math.min(...validTs) : null;
       const d = chosenTs
         ? new Date(chosenTs)
         : (() => { const x = new Date(wk + 'T12:00:00'); x.setDate(x.getDate() + di); return x; })();
