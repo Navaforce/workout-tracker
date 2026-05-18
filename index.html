@@ -3289,20 +3289,23 @@ function toggleDayComplete(di) {
   day.completed = !day.completed;
   if (day.completed && !day.completedAt) day.completedAt = Date.now();
   else if (!day.completed) delete day.completedAt;
-  // Auto-set day.date from earliest logged set timestamp if not manually set
+  // Auto-set day.date from earliest *worked* set timestamp (effort or adjustment required —
+  // excludes auto-populated placeholder sets which have reps but no effort/adjustment).
+  // Falls back to completedAt date so the day always lands on the correct calendar day.
   if (day.completed && !day.date) {
     const logs = data.weeks[weekKey]?.logs || {};
     let earliest = day.completedAt;
     day.exercises.forEach(ex => {
       (logs[ex.id] || []).forEach(s => {
         const r = Number(s.reps);
-        if (s.ts && s.ts < earliest && Number.isFinite(r) && r > 0) earliest = s.ts;
+        if (s.ts && s.ts < earliest && Number.isFinite(r) && r > 0 && (s.effort || s.adjustment))
+          earliest = s.ts;
       });
     });
-    if (earliest < day.completedAt) {
-      const d = new Date(earliest);
-      day.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    }
+    // Use completedAt date as fallback — always correct even if no effort was logged
+    const ref = earliest < day.completedAt ? earliest : day.completedAt;
+    const d = new Date(ref);
+    day.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   save(data);
   uiFeedback();
