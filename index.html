@@ -41,11 +41,11 @@ input:focus, textarea:focus { border-color: var(--accent); }
   display: flex; align-items: center; padding: 0 12px; gap: 8px;
 }
 #header-left { display: flex; align-items: center; gap: 8px; min-width: 80px; }
-#header-center { flex: 1; text-align: center; font-size: 14px; color: var(--muted); }
+#header-center { flex: 1; text-align: center; font-size: 14px; color: var(--text); }
 #header-right { display: flex; align-items: center; gap: 8px; min-width: 80px; justify-content: flex-end; }
 .hdr-btn {
   min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center;
-  font-size: 20px; border-radius: var(--rs); color: var(--muted);
+  font-size: 20px; border-radius: var(--rs); color: var(--text);
   transition: color 0.15s;
 }
 .hdr-btn:active { color: var(--text); }
@@ -53,7 +53,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 #back-btn { font-size: 22px; }
 #workout-title { font-size: 14px; text-align: center; }
 #workout-title .day-type-badge { font-weight: 800; }
-#sync-status { font-size: 12px; color: var(--muted); }
+#sync-status { font-size: 12px; color: var(--text); }
 
 /* ── Screens ── */
 .screen { position: fixed; top: 56px; left: 0; right: 0; bottom: 0; overflow-y: auto; display: none; }
@@ -65,7 +65,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-tab {
   flex: 1; height: 44px; border-radius: var(--rs);
   background: var(--s1); border: 1px solid var(--border);
-  font-weight: 600; font-size: 15px; color: var(--muted);
+  font-weight: 600; font-size: 15px; color: var(--text);
   transition: all 0.15s;
 }
 .cal-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
@@ -73,10 +73,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
 /* Month grid */
 #month-view { }
 .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
-.month-nav-btn { min-width: 44px; min-height: 44px; font-size: 20px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.month-nav-btn { min-width: 44px; min-height: 44px; font-size: 20px; display: flex; align-items: center; justify-content: center; color: var(--text); }
 .month-title { font-size: 18px; font-weight: 700; }
 .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-.dow-header { text-align: center; font-size: 11px; color: var(--dim); padding: 4px 0; font-weight: 600; }
+.dow-header { text-align: center; font-size: 11px; color: var(--text); padding: 4px 0; font-weight: 600; }
 .cal-cell {
   aspect-ratio: 1; background: var(--s1); border-radius: var(--rs);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -127,14 +127,14 @@ input:focus, textarea:focus { border-color: var(--accent); }
   min-height: 90px; transition: border-color 0.15s;
 }
 .week-card.today-card { border-color: var(--accent); }
-.week-card .wc-dow { font-size: 11px; color: var(--muted); font-weight: 600; }
+.week-card .wc-dow { font-size: 11px; color: var(--text); font-weight: 600; }
 .week-card .wc-date { font-size: 20px; font-weight: 800; }
 .week-card .wc-badge {
   font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
   background: rgba(255,255,255,0.08);
 }
 .week-strip-nav { display: flex; justify-content: space-between; margin-bottom: 12px; }
-.strip-nav-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--muted); border-radius: var(--rs); background: var(--s1); border: 1px solid var(--border); }
+.strip-nav-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--text); border-radius: var(--rs); background: var(--s1); border: 1px solid var(--border); }
 
 /* Type colors */
 .type-push { color: var(--push); }
@@ -182,10 +182,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
   width: 100%; padding: 10px 12px; font-size: 14px;
   border-radius: var(--r); border: 1px solid var(--border);
   resize: none; height: 40px; transition: height 0.15s; line-height: 1.4;
-  color: var(--muted);
+  color: var(--text);
 }
 .week-notes-input:focus, .week-notes-input.has-content { height: 72px; color: var(--text); }
-.week-notes-input::placeholder { color: var(--dim); }
+.week-notes-input::placeholder { color: var(--muted); }
 
 /* Exercise card */
 .ex-card {
@@ -197,13 +197,14 @@ input:focus, textarea:focus { border-color: var(--accent); }
   min-height: 56px;
 }
 .ex-name { font-size: 16px; font-weight: 700; flex: 1; }
-.ex-progress { font-size: 13px; color: var(--muted); white-space: nowrap; }
-.ex-chevron { font-size: 18px; color: var(--dim); transition: transform 0.2s; }
+.ex-info-btn { min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--accent); border-radius: 50%; background: var(--accent-dim); border: none; flex-shrink: 0; }
+.ex-progress { font-size: 13px; color: var(--text); white-space: nowrap; }
+.ex-chevron { font-size: 18px; color: var(--text); transition: transform 0.2s; }
 .ex-card.open .ex-chevron { transform: rotate(180deg); }
-.ex-suggestion { font-size: 13px; color: var(--muted); padding: 0 14px 10px; font-style: italic; }
+.ex-suggestion { font-size: 13px; color: var(--accent); padding: 0 14px 10px; font-style: italic; }
 .ex-body { display: none; }
 .ex-card.open .ex-body { display: block; }
-.ex-last-session { font-size: 12px; color: var(--dim); padding: 0 14px 8px; }
+.ex-last-session { font-size: 12px; color: var(--text); padding: 0 14px 8px; }
 
 /* Set rows */
 .set-list { padding: 0 10px 10px; }
@@ -221,10 +222,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
   border-radius: var(--rs); padding: 0 4px;
 }
 .weight-input { width: 72px; }
-.set-sep { font-size: 16px; color: var(--dim); font-weight: 700; }
+.set-sep { font-size: 16px; color: var(--text); font-weight: 700; }
 .bw-wrap { display: flex; align-items: center; gap: 4px; }
 .bw-input, .bwa-input { width: 56px; height: 44px; text-align: center; font-size: 16px; font-weight: 700; border-radius: var(--rs); padding: 0 4px; }
-.bw-plus { font-size: 14px; color: var(--dim); }
+.bw-plus { font-size: 14px; color: var(--text); }
 .pill-group { display: flex; gap: 4px; }
 .pill {
   height: 32px; padding: 0 10px; border-radius: 20px; font-size: 13px; font-weight: 600;
@@ -235,7 +236,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .pill.active-mod { background: rgba(255,152,0,0.2); border-color: var(--moderate); color: var(--moderate); }
 .pill.active-hard { background: rgba(244,67,54,0.2); border-color: var(--hard); color: var(--hard); }
 .pill.active-adj { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
-.note-toggle { height: 32px; width: 36px; border-radius: 20px; border: 1px solid var(--border); background: var(--s1); color: var(--dim); font-size: 14px; display: flex; align-items: center; justify-content: center; }
+.note-toggle { height: 32px; width: 36px; border-radius: 20px; border: 1px solid var(--border); background: var(--s1); color: var(--text); font-size: 14px; display: flex; align-items: center; justify-content: center; }
 .note-toggle.has-note { color: var(--accent); border-color: var(--accent); }
 .note-input-wrap { padding: 6px 0 0; display: none; }
 .note-input-wrap.open { display: block; }
@@ -249,7 +250,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .add-set-btn {
   margin: 4px 10px 4px; height: 44px; width: calc(100% - 20px);
   border-radius: var(--rs); border: 1px dashed var(--border); background: none;
-  color: var(--dim); font-size: 14px; font-weight: 600;
+  color: var(--text); font-size: 14px; font-weight: 600;
 }
 .add-set-btn:active { background: var(--s2); }
 
@@ -272,7 +273,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .apnea-target-line { font-size: 12px; color: var(--accent); margin-bottom: 8px; line-height: 1.5; }
 .apnea-fields { display: flex; gap: 8px; flex-wrap: wrap; }
 .apnea-field-wrap { display: flex; flex-direction: column; gap: 3px; }
-.apnea-field-label { font-size: 11px; color: var(--muted); font-weight: 600; }
+.apnea-field-label { font-size: 11px; color: var(--text); font-weight: 600; }
 .apnea-input { width: 80px; height: 40px; text-align: center; font-size: 15px; font-weight: 600; border-radius: var(--rs); padding: 0 4px; }
 .apnea-note-input { width: 140px; height: 40px; font-size: 13px; padding: 0 8px; border-radius: var(--rs); }
 .apnea-input.invalid { border-color: var(--hard); }
@@ -300,9 +301,9 @@ input:focus, textarea:focus { border-color: var(--accent); }
   display: flex; flex-direction: column; overflow: hidden;
 }
 #timer-header { display: flex; align-items: center; padding: 0 14px; height: 56px; border-bottom: 1px solid var(--border); gap: 10px; }
-#timer-close { min-width: 44px; min-height: 44px; font-size: 22px; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+#timer-close { min-width: 44px; min-height: 44px; font-size: 22px; display: flex; align-items: center; justify-content: center; color: var(--text); }
 #timer-tabs { display: flex; flex: 1; gap: 8px; }
-.t-tab { flex: 1; height: 36px; border-radius: var(--rs); background: var(--s2); border: 1px solid var(--border); font-size: 14px; font-weight: 600; color: var(--muted); }
+.t-tab { flex: 1; height: 36px; border-radius: var(--rs); background: var(--s2); border: 1px solid var(--border); font-size: 14px; font-weight: 600; color: var(--text); }
 .t-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .t-body { flex: 1; padding: 20px 16px; display: none; }
 .t-body.active { display: flex; flex-direction: column; align-items: center; }
@@ -329,7 +330,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .fitness-form { background: var(--s1); border-radius: var(--r); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; }
 .fitness-form h2 { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
 .ft-field { margin-bottom: 12px; }
-.ft-label { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 4px; display: block; }
+.ft-label { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 4px; display: block; }
 .ft-input { width: 100%; height: 44px; padding: 0 12px; font-size: 15px; border-radius: var(--rs); }
 .ft-date-input { width: 100%; height: 44px; padding: 0 12px; font-size: 15px; border-radius: var(--rs); color-scheme: dark; }
 .ft-save-btn {
@@ -352,7 +353,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .ft-session.open .ft-session-body { display: block; }
 .ft-metric-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .ft-metric-row:last-child { border-bottom: none; }
-.ft-metric-name { font-size: 14px; color: var(--muted); }
+.ft-metric-name { font-size: 14px; color: var(--text); }
 .ft-metric-val { font-size: 14px; font-weight: 700; }
 .ft-metric-val.is-pr { color: var(--accent); }
 
@@ -364,7 +365,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 #start-modal.open { display: flex; }
 .modal-box { background: var(--s1); border-radius: var(--r); border: 1px solid var(--border); padding: 24px; width: calc(100% - 48px); max-width: 320px; }
 .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
-.modal-body { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+.modal-body { font-size: 14px; color: var(--text); margin-bottom: 20px; line-height: 1.5; }
 .modal-btns { display: flex; gap: 10px; }
 .modal-btn { flex: 1; height: 48px; border-radius: var(--rs); font-size: 15px; font-weight: 700; border: 1px solid var(--border); background: var(--s2); }
 .modal-btn.primary { background: var(--accent); color: #0a0a0a; border-color: var(--accent); }
@@ -377,7 +378,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 #val-modal.open { display: flex; }
 #val-modal .modal-box { max-height: 80vh; overflow-y: auto; }
 .val-error-list { list-style: none; padding: 0; margin-bottom: 20px; }
-.val-error-list li { font-size: 14px; color: var(--muted); padding: 4px 0; border-bottom: 1px solid var(--border); }
+.val-error-list li { font-size: 14px; color: var(--text); padding: 4px 0; border-bottom: 1px solid var(--border); }
 .val-error-list li:last-child { border-bottom: none; }
 .val-error-list li::before { content: "• "; color: var(--hard); }
 
@@ -554,6 +555,18 @@ input:focus, textarea:focus { border-color: var(--accent); }
   </div>
 </div>
 
+<!-- ── Exercise info modal ── -->
+<div id="ex-info-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeExerciseInfo()">
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">
+    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:16px" id="ex-info-name"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Technique</div>
+    <div style="font-size:15px;color:var(--text);line-height:1.6;margin-bottom:20px;white-space:pre-wrap" id="ex-info-cues"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Breath Hold Protocol</div>
+    <div style="font-size:15px;color:var(--text);line-height:1.6;margin-bottom:24px;white-space:pre-wrap" id="ex-info-hold"></div>
+    <button onclick="closeExerciseInfo()" style="width:100%;height:48px;background:var(--accent);color:#000;font-weight:800;font-size:16px;border-radius:var(--rs);border:none;cursor:pointer">Got it</button>
+  </div>
+</div>
+
 <!-- ── Toast ── -->
 <div id="toast"></div>
 
@@ -612,6 +625,116 @@ const APNEA_TARGETS = {
 
 let currentSessionId = null;
 let sheetDate = null;
+// Exercise cues and hold protocols — keyed by exact exercise name (case-sensitive)
+const EXERCISE_INFO = {
+  'Barbell Bench Press': {
+    cues: 'Bar to chest, full lockout. 3-sec eccentric. Drive through palms. 65–70% effort.',
+    hold: 'EXHALE hold — 35 sec · After ALL sets\nRack → rest 30 sec → exhale fully → pinch nose → hold 35 sec → breathe → resume rest.'
+  },
+  'Incline Barbell Press': {
+    cues: 'Incline 30–45°. Bar to upper chest, full lockout. 3-sec eccentric. 185 lb starting point (incline is harder than flat — drop to 175 lb if needed after set 1).',
+    hold: 'EXHALE hold — 35 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 35 sec → breathe → resume rest.'
+  },
+  'Landmine Press': {
+    cues: 'Split stance. Press diagonally from shoulder height to full overhead extension. 1-sec pause at full extension. Alternate arms each set.',
+    hold: 'No hold — postural demand too high post-set.'
+  },
+  'Bodyweight Dips': {
+    cues: 'Stop 5 reps short of failure. Lower until upper arms parallel floor. Forward lean = chest focus, upright = triceps.',
+    hold: 'EXHALE hold — 30 sec · After ALL sets\nRack → rest 30 sec → exhale hold 30 sec → breathe → resume rest.'
+  },
+  'Weighted Dips': {
+    cues: 'Lower until upper arms parallel floor — no lower. Forward lean = chest focus, upright = triceps.',
+    hold: 'EXHALE hold — 35 sec · After ALL sets\nRack → rest 30 sec → exhale hold 35 sec → breathe → resume rest.'
+  },
+  'Arnold Press': {
+    cues: 'Start palms facing you at shoulder height (hammer grip). As you press overhead, rotate palms forward to face away at full extension. Reverse on descent. Hits all three delt heads.',
+    hold: 'No hold — shoulder stability demands full recovery.'
+  },
+  'Cable Chest Fly': {
+    cues: 'Cables at shoulder height, slight forward lean. Arms sweep forward and together — squeeze hard at center. Keep slight bend in elbows. Feel the pec, not the front delt.',
+    hold: 'EXHALE hold — 35 sec · After final set only\nExhale hold 35 sec → begin transition.'
+  },
+  'Tricep Rope Pulldowns': {
+    cues: 'Elbows pinned to sides throughout — they do not move. At the bottom, split the rope apart and supinate slightly for full contraction.',
+    hold: 'EXHALE hold — 35 sec · After final set only\nExhale hold 35 sec → begin 90-sec parasympathetic transition.'
+  },
+  'Pull-Ups': {
+    cues: 'Full dead hang at bottom, chin clears bar at top. 3-sec lowering phase. Add load when 12+ reps easy.',
+    hold: 'INHALE hold — 35 sec · After ALL sets\nStep off bar → rest 30 sec → full diaphragmatic inhale → pinch nose → hold 35 sec → breathe → resume rest.\nMirrors real diving: you enter water on full inhale and must tolerate CO2 rise while muscles remain loaded.'
+  },
+  'Kettlebell Swings': {
+    cues: 'Sharp hip hinge back, explosive hip snap forward — KB floats to shoulder height. NOT a squat. NOT an arm raise. The hip snap IS the movement. Posterior chain power directly transfers to bi-fin and monofin kick.',
+    hold: 'No hold — metabolic demand too high post-set.'
+  },
+  'Chest-Supported Incline Row': {
+    cues: 'Set incline bench to ~45°. Lie face-down, chest fully supported. Row from dead hang to hip — elbow drives back and up, not out to the side. Fully isolates pulling muscles.',
+    hold: 'INHALE hold — 40 sec · After ALL sets\nRest 30 sec → full diaphragmatic inhale → hold 40 sec → breathe → continue rest.'
+  },
+  'T-Bar Row': {
+    cues: 'Straddle bar, hinge to ~45°, grip near the plates. Row toward sternum. Back neutral throughout. Start moderate — this may be new.',
+    hold: 'INHALE hold — 40 sec · After ALL sets\nRest 30 sec → full inhale → hold 40 sec → breathe → resume rest.'
+  },
+  "Farmer's Carry": {
+    cues: 'Tall spine, tight core, relaxed shoulders — DBs not touching thighs. Walk 35 meters without swinging hips. Anti-lateral-flexion core stability directly analogous to body tension during a spearfishing descent.',
+    hold: 'No hold — gait pattern requires normal breathing.'
+  },
+  'Hanging Leg Raises': {
+    cues: 'Hang from pull-up bar. Raise both legs to parallel or higher. Lower slowly — no swinging. Core-for-streamlining: the exact tension pattern used during duck dives and descent.',
+    hold: 'INHALE hold — 20 sec · After final set only\nInhale hold 20 sec → move to parasympathetic transition.'
+  },
+  'Weighted Hanging Leg Raises': {
+    cues: 'Add 5–10 lb DB between ankles. Hang from pull-up bar. Raise legs to parallel or higher — controlled, no swinging.',
+    hold: 'INHALE hold — 35 sec · After final set only\nInhale hold 35 sec → begin 90-sec parasympathetic transition.'
+  },
+  'Goblet Squat': {
+    cues: 'Hold DB vertically at chest (goblet grip). Shoulder-width stance. Full depth — heels flat, chest tall.',
+    hold: 'EXHALE hold — 35 sec · After ALL sets\nStand → rest 30 sec → exhale fully → hold 35 sec → breathe → continue rest.\nExhale holds create the most intense CO2 stimulus and replicate hypoxic leg conditions during a real dive.'
+  },
+  'Bulgarian Split Squat': {
+    cues: 'Rear foot elevated on bench, front shin near vertical. Lower rear knee to 1 inch from floor, front thigh parallel. Drive through front heel.',
+    hold: 'No hold — balance demands full concentration.'
+  },
+  'Walking Lunges': {
+    cues: 'Step forward, back knee 1 inch from floor, drive through front heel into next rep. Continuous motion. Targets hamstrings, hip flexors, and glutes through full dynamic ROM — directly mirrors finning demands.',
+    hold: 'EXHALE hold — 35 sec · After ALL sets\nStand → rest 30 sec → exhale hold 35 sec → breathe → resume rest.'
+  },
+  'Hip Thrust': {
+    cues: 'Upper back on bench, bar or DB across hips. Drive hips to ceiling — hard glute squeeze at the top. Back stays on bench throughout. Feel the glute contraction, not the lower back.',
+    hold: 'No hold — glute contraction demands full focus.'
+  },
+  'Sumo Deadlift': {
+    cues: 'Wide stance, toes ~45° out. Grip inside the knees. Hinge at hips and knees simultaneously — drive floor away. Full lockout at top. 135 lb is technique practice. Back stays neutral throughout — no grinding.',
+    hold: 'No hold — bilateral hinge requires full focus.'
+  },
+  'Single-Leg RDL': {
+    cues: 'Hinge at hip on one standing leg. DBs lower toward floor, free leg extends back for balance. Hamstrings fully loaded. Back neutral throughout — this is a hip hinge, not a back bend.',
+    hold: 'No hold — single-leg balance requires full attention.'
+  },
+  'Copenhagen Plank': {
+    cues: 'Lie on your side. Top foot rests on a bench at knee height. Bottom leg hangs free. Lift hips off floor by contracting the adductor of your top leg — body forms a straight line. Trains adductor/core tension used for streamlining underwater.',
+    hold: 'EXHALE hold — 30 sec · After final set only\nExhale hold 30 sec → begin 90-sec parasympathetic transition.'
+  },
+};
+
+function getExerciseInfo(name) {
+  return EXERCISE_INFO[name] || null;
+}
+
+function showExerciseInfo(name) {
+  const info = getExerciseInfo(name);
+  if (!info) { toast('No cues available for ' + name); return; }
+  const modal = document.getElementById('ex-info-modal');
+  document.getElementById('ex-info-name').textContent = name;
+  document.getElementById('ex-info-cues').textContent = info.cues;
+  document.getElementById('ex-info-hold').textContent = info.hold;
+  modal.style.display = 'flex';
+}
+
+function closeExerciseInfo() {
+  document.getElementById('ex-info-modal').style.display = 'none';
+}
+
 let openCards = new Set();
 let openApnea = false;
 let startModalPending = null;
@@ -1276,7 +1399,7 @@ function renderExercises(session) {
   const container = document.getElementById('exercises-container');
   if (!session.exercises || session.exercises.length === 0) {
     if (session.day_type === 'cardio') {
-      container.innerHTML = `<div class="ex-card" style="padding:16px;font-size:14px;color:var(--muted);line-height:1.6">${esc(session.cardio_instructions || 'Cardio day')}</div>`;
+      container.innerHTML = `<div class="ex-card" style="padding:16px;font-size:14px;color:var(--text);line-height:1.6">${esc(session.cardio_instructions || 'Cardio day')}</div>`;
     } else {
       container.innerHTML = '';
     }
@@ -1329,9 +1452,11 @@ function renderExerciseCard(session, exIdx) {
     setsHtml += renderSetRow(sid, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '');
   }
 
+  const hasInfo = !!getExerciseInfo(ex.name);
   return `<div class="ex-card${isOpen ? ' open' : ''}" id="exc-${esc(sid)}-${exIdx}">
     <div class="ex-header" onclick="toggleExCard(${exIdx})">
       <span class="ex-name">${esc(ex.name)}</span>
+      ${hasInfo ? `<button class="ex-info-btn" onclick="event.stopPropagation();showExerciseInfo('${esc(ex.name)}')" title="Cues &amp; hold protocol">ⓘ</button>` : ''}
       <span class="ex-progress">${progress}</span>
       <span class="ex-chevron">⌄</span>
     </div>
@@ -2122,7 +2247,7 @@ function renderFitnessHistory() {
   const container = document.getElementById('ft-history-list');
 
   if (records.length === 0) {
-    container.innerHTML = '<div style="color:var(--muted);font-size:14px;padding:8px 0">No records yet.</div>';
+    container.innerHTML = '<div style="color:var(--text);font-size:14px;padding:8px 0">No records yet.</div>';
     return;
   }
 
