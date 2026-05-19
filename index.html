@@ -393,7 +393,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 <div id="header">
   <div id="header-left">
     <span id="app-name">⊕ Spearo</span>
-    <button class="hdr-btn" id="back-btn" style="display:none">‹</button>
+    <button class="hdr-btn" id="back-btn" onclick="handleBack()" style="display:none">‹</button>
   </div>
   <div id="header-center">
     <span id="sync-status">—</span>
@@ -1014,7 +1014,6 @@ function showScreen(name) {
   const isFitness = name === 'fitness';
   document.getElementById('app-name').style.display = (isWorkout || isFitness) ? 'none' : '';
   document.getElementById('back-btn').style.display = (isWorkout || isFitness) ? '' : 'none';
-  document.getElementById('back-btn').onclick = isWorkout ? goBack : () => showScreen('calendar');
   const isCalendar = name === 'calendar';
   document.getElementById('fitness-btn').style.display = isCalendar ? '' : 'none';
   document.getElementById('sync-btn').style.display = isCalendar ? '' : 'none';
@@ -1022,6 +1021,11 @@ function showScreen(name) {
   document.getElementById('sync-status').style.display = isCalendar ? '' : 'none';
   document.getElementById('workout-title').style.display = isWorkout ? '' : 'none';
   document.getElementById('complete-btn').classList.toggle('visible', isWorkout);
+}
+
+function handleBack() {
+  if (currentScreen === 'workout') goBack();
+  else showScreen('calendar');
 }
 
 function goBack() {
