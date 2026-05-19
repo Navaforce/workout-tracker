@@ -4081,27 +4081,27 @@ function _countSets(wData) {
 }
 
 function _repairWeekData(wData) {
-  // Run the same prefilled-reps repair on any week object before merging it in,
-  // so cloud data with old corrupt prefilled sets is cleaned before use.
+  let repaired = false;
   const logs = wData.logs || {};
   for (const sets of Object.values(logs)) {
     for (const s of sets) {
       if (s.prefilled && (s.reps !== '' || s.effort || s.adjustment)) {
         s.reps = ''; s.effort = ''; s.adjustment = '';
+        repaired = true;
       }
     }
   }
-  // Clear date/completion state from days that have no real sets
   if (wData.plan?.days) {
     wData.plan.days.forEach(day => {
       const hasReal = day.exercises?.some(ex => (logs[ex.id] || []).some(isRealSet));
       if (!hasReal) {
+        if (day.date || day.completed || day.completedAt || day.startedAt) repaired = true;
         delete day.date; delete day.completed;
         delete day.completedAt; delete day.startedAt;
       }
     });
   }
-  return wData;
+  return { wData, repaired };
 }
 
 async function syncNow(silent) {
@@ -4117,7 +4117,12 @@ async function syncNow(silent) {
     if (!resp.ok) { const t = await resp.text(); throw new Error(`fetch ${resp.status}: ${t}`); }
     const cloudRows = await resp.json();
     const cloudMap = {};
-    cloudRows.forEach(r => { cloudMap[r.week_key] = _repairWeekData(r.data); });
+    const cloudRepaired = {};
+    cloudRows.forEach(r => {
+      const { wData, repaired } = _repairWeekData(r.data);
+      cloudMap[r.week_key] = wData;
+      if (repaired) cloudRepaired[r.week_key] = true;
+    });
 
     const local = load();
     const allKeys = new Set([...Object.keys(local.weeks), ...Object.keys(cloudMap)]);
@@ -4128,7 +4133,6 @@ async function syncNow(silent) {
       const localWk  = local.weeks[wk];
       const cloudWk  = cloudMap[wk];
       if (localWk && cloudWk) {
-        // Both exist — keep whichever has more logged sets; ties go to cloud
         const localSets = _countSets(localWk);
         const cloudSets = _countSets(cloudWk);
         if (cloudSets > localSets) {
@@ -4136,8 +4140,10 @@ async function syncNow(silent) {
           localDirty = true;
         } else if (localSets > cloudSets) {
           toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
+        } else if (cloudRepaired[wk]) {
+          // Equal set counts but cloud had corrupt state — push cleaned version back
+          toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: cloudWk, synced_at: new Date().toISOString() });
         }
-        // equal: no-op
       } else if (localWk && !cloudWk) {
         toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
       } else if (!localWk && cloudWk) {
