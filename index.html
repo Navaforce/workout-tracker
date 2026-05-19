@@ -53,6 +53,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 #back-btn { font-size: 22px; }
 #workout-title { font-size: 14px; text-align: center; }
 #workout-title .day-type-badge { font-weight: 800; }
+.dur-edit-btn { color: var(--accent); cursor: pointer; white-space: nowrap; }
 #sync-status { font-size: 12px; color: var(--text); }
 
 /* ── Screens ── */
@@ -102,7 +103,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 }
 .type-text-push    { color: var(--push); }
 .type-text-pull    { color: var(--pull); }
-.type-text-legs    { color: var(--legs); }
+.type-text-legs    { color: #ff6eb4; }
 .type-text-cardio  { color: var(--cardio); }
 .type-text-rest    { color: var(--rest); }
 .cal-cell .done-check { position: absolute; top: 3px; right: 4px; font-size: 10px; color: var(--easy); }
@@ -253,7 +254,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
   display: flex; align-items: center; padding: 14px; gap: 10px; cursor: pointer; min-height: 56px;
 }
 .apnea-title { font-size: 16px; font-weight: 700; flex: 1; }
-.apnea-chevron { font-size: 18px; color: var(--dim); transition: transform 0.2s; }
+.apnea-chevron { font-size: 18px; color: var(--text); transition: transform 0.2s; }
 .apnea-block.open .apnea-chevron { transform: rotate(180deg); }
 .apnea-body { display: none; padding: 0 14px 14px; }
 .apnea-block.open .apnea-body { display: block; }
@@ -379,6 +380,13 @@ input:focus, textarea:focus { border-color: var(--accent); }
 }
 #val-modal.open { display: flex; }
 #val-modal .modal-box { max-height: 80vh; overflow-y: auto; }
+
+/* Duration edit modal */
+#dur-modal {
+  position: fixed; inset: 0; z-index: 400; display: none;
+  align-items: center; justify-content: center; background: rgba(0,0,0,0.6);
+}
+#dur-modal.open { display: flex; }
 .val-error-list { list-style: none; padding: 0; margin-bottom: 20px; }
 .val-error-list li { font-size: 14px; color: var(--text); padding: 4px 0; border-bottom: 1px solid var(--border); }
 .val-error-list li:last-child { border-bottom: none; }
@@ -409,6 +417,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
   </div>
   <div id="header-right">
     <button class="hdr-btn" id="fitness-btn" onclick="showFitness()" title="Fitness Tests">⊕</button>
+    <button class="hdr-btn" id="reload-btn" onclick="hardReload()" title="Force reload latest version">↺</button>
     <button class="hdr-btn" id="sync-btn" onclick="syncNow(false)" title="Sync">↕</button>
     <button class="hdr-btn" id="warmup-btn" onclick="showWarmup()" style="display:none" title="Warm-up & protocol">ⓘ</button>
     <button class="hdr-btn" id="timer-btn" onclick="openTimer()" style="display:none" title="Timer">⏱</button>
@@ -562,6 +571,27 @@ input:focus, textarea:focus { border-color: var(--accent); }
     <div class="modal-btns">
       <button class="modal-btn" onclick="closeConfirmModal()">Cancel</button>
       <button class="modal-btn danger" id="confirm-modal-ok" onclick="confirmModalOk()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Duration edit modal ── -->
+<div id="dur-modal">
+  <div class="modal-box">
+    <div class="modal-title">Edit Duration</div>
+    <div style="display:flex;flex-direction:column;gap:14px;margin-bottom:20px">
+      <div>
+        <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">Start time</label>
+        <input type="datetime-local" id="dur-start-input" style="width:100%;height:48px;padding:0 12px;font-size:15px;border-radius:var(--rs);border:1px solid var(--border);background:var(--s2);color:var(--text)">
+      </div>
+      <div>
+        <label style="font-size:13px;font-weight:700;display:block;margin-bottom:6px">End time</label>
+        <input type="datetime-local" id="dur-end-input" style="width:100%;height:48px;padding:0 12px;font-size:15px;border-radius:var(--rs);border:1px solid var(--border);background:var(--s2);color:var(--text)">
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeDurModal()">Cancel</button>
+      <button class="modal-btn primary" onclick="saveDurModal()">Save</button>
     </div>
   </div>
 </div>
@@ -1204,6 +1234,14 @@ async function supabaseUpsert(sessionId, data, updatedAt) {
   }
 }
 
+function hardReload() {
+  // Bypass browser and CDN cache by appending a timestamp query param.
+  // GitHub Pages sets aggressive cache headers; a new URL forces a fresh fetch.
+  // localStorage data is preserved — this only re-fetches the HTML/CSS/JS.
+  const url = location.pathname + '?v=' + Date.now();
+  location.replace(url);
+}
+
 function setSyncStatus(msg) {
   document.getElementById('sync-status').textContent = msg;
 }
@@ -1274,6 +1312,7 @@ function showScreen(name) {
   document.getElementById('back-btn').style.display = (isWorkout || isFitness) ? '' : 'none';
   const isCalendar = name === 'calendar';
   document.getElementById('fitness-btn').style.display = isCalendar ? '' : 'none';
+  document.getElementById('reload-btn').style.display = isCalendar ? '' : 'none';
   document.getElementById('sync-btn').style.display = isCalendar ? '' : 'none';
   document.getElementById('warmup-btn').style.display = isWorkout ? '' : 'none';
   document.getElementById('timer-btn').style.display = isWorkout ? '' : 'none';
@@ -1518,7 +1557,9 @@ function renderWorkout(sessionId) {
   let dur = '';
   if (session.started_at && session.completed_at) {
     const mins = Math.round((session.completed_at - session.started_at) / 60000);
-    dur = ` · ${mins}m`;
+    dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Edit duration">${mins}m ✎</span>`;
+  } else {
+    dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Set duration">+ time ✎</span>`;
   }
   document.getElementById('workout-title').innerHTML = `${badge} ${formatDateDisplay(session.date)}${dur}`;
 
@@ -2097,6 +2138,52 @@ function markComplete() {
   }
   toast('Day complete!' + dur);
   syncNow(true);
+}
+
+// ── Duration edit modal ─────────────────────────────────────────
+function tsToDatetimeLocal(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  // datetime-local requires "YYYY-MM-DDTHH:MM" in local time
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function openDurModal(sessionId) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  document.getElementById('dur-start-input').value = tsToDatetimeLocal(session.started_at);
+  document.getElementById('dur-end-input').value   = tsToDatetimeLocal(session.completed_at);
+  window._durSessionId = sessionId;
+  document.getElementById('dur-modal').classList.add('open');
+}
+
+function closeDurModal() {
+  document.getElementById('dur-modal').classList.remove('open');
+  window._durSessionId = null;
+}
+
+function saveDurModal() {
+  const sessionId = window._durSessionId;
+  if (!sessionId) return;
+  const startVal = document.getElementById('dur-start-input').value;
+  const endVal   = document.getElementById('dur-end-input').value;
+  const startTs  = startVal ? new Date(startVal).getTime() : null;
+  const endTs    = endVal   ? new Date(endVal).getTime()   : null;
+  if (startTs && endTs && endTs <= startTs) {
+    toast('End time must be after start time');
+    return;
+  }
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  session.started_at   = startTs  || session.started_at;
+  session.completed_at = endTs    || session.completed_at;
+  session.updated_at   = Date.now();
+  save(data);
+  closeDurModal();
+  renderWorkout(sessionId);
 }
 
 function closeValModal() {
