@@ -263,6 +263,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
   display: flex; align-items: center; padding: 14px; gap: 10px; cursor: pointer; min-height: 56px;
 }
 .apnea-title { font-size: 16px; font-weight: 700; flex: 1; }
+.apnea-block.apnea-done .apnea-title { color: var(--easy); }
 .apnea-chevron { font-size: 18px; color: var(--text); transition: transform 0.2s; }
 .apnea-block.open .apnea-chevron { transform: rotate(180deg); }
 .apnea-body { display: none; padding: 0 14px 14px; }
@@ -281,13 +282,13 @@ input:focus, textarea:focus { border-color: var(--accent); }
 /* Mark complete btn */
 #complete-btn {
   position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
-  background: var(--easy); color: #0a0a0a; font-size: 17px; font-weight: 800;
-  border-radius: 0; z-index: 50;
+  background: var(--s2); color: var(--text); font-size: 17px; font-weight: 800;
+  border-radius: 0; z-index: 50; border-top: 1px solid var(--border);
   padding-bottom: env(safe-area-inset-bottom);
   display: none;
 }
 #complete-btn.visible { display: flex; align-items: center; justify-content: center; }
-#complete-btn.completed { background: var(--s2); color: var(--muted); border-top: 1px solid var(--border); }
+#complete-btn.completed { background: var(--easy); color: #0a0a0a; border-top: none; }
 
 /* ── Timer panel ── */
 #timer-overlay {
@@ -2042,7 +2043,11 @@ function renderApneaBlock(session) {
     </div>`;
   }
 
-  const html = `<div class="apnea-block${openApnea ? ' open' : ''}">
+  // Apnea done = any round has at least one non-empty field logged
+  const apneaDone = Object.values(apnea).some(round =>
+    Object.values(round).some(v => v !== '' && v !== null && v !== undefined)
+  );
+  const html = `<div class="apnea-block${openApnea ? ' open' : ''}${apneaDone ? ' apnea-done' : ''}">
     <div class="apnea-header" onclick="toggleApneaBlock()">
       <span class="apnea-title">⬦ Apnea</span>
       <span class="apnea-chevron">⌄</span>
