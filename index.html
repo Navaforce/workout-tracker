@@ -693,20 +693,56 @@ function cycleDayStatus(dateStr) {
   saveDayStatuses(map);
   renderCalendar();
 }
-function getWeek(key) { return load().weeks[key] || null; }
+// Sessions store day-level state (date, completed, startedAt, completedAt)
+// separately from the plan template. Plan upload never touches session state.
+// Each session key is "YYYY-MM-DD_dN" where N is the day index.
+function getWeek(key) {
+  const data = load();
+  const wData = data.weeks[key];
+  if (!wData) return null;
+  if (!wData.plan?.days) return wData;
+  const sessions = wData.sessions || {};
+  return {
+    ...wData,
+    plan: {
+      ...wData.plan,
+      days: wData.plan.days.map((day, di) => {
+        const sess = sessions[`d${di}`];
+        if (!sess) return day;
+        return { ...day,
+          date:        sess.date        ?? undefined,
+          completed:   sess.completed   ?? false,
+          completedAt: sess.completedAt ?? undefined,
+          startedAt:   sess.startedAt   ?? undefined
+        };
+      })
+    }
+  };
+}
+function getSession(wk, di) {
+  return load().weeks[wk]?.sessions?.[`d${di}`] || null;
+}
+function saveSession(wk, di, updates) {
+  const data = load();
+  if (!data.weeks[wk]) data.weeks[wk] = { logs: {} };
+  if (!data.weeks[wk].sessions) data.weeks[wk].sessions = {};
+  const key = `d${di}`;
+  if (!data.weeks[wk].sessions[key])
+    data.weeks[wk].sessions[key] = { date: null, completed: false, completedAt: null, startedAt: null };
+  Object.assign(data.weeks[wk].sessions[key], updates);
+  save(data);
+}
 function savePlan(key, plan, raw) {
   const data = load();
-  if (!data.weeks[key]) data.weeks[key] = {logs:{}};
-  // Preserve per-day runtime state (completed, completedAt, startedAt, date override)
-  // so uploading a new plan doesn't wipe completion status.
+  if (!data.weeks[key]) data.weeks[key] = { logs: {} };
+  // Build bwMode maps to carry forward — this is the ONLY state preserved on plan upload.
+  // Day state (date, completed, completedAt, startedAt) lives in sessions and is NEVER
+  // touched here. That was the root cause of the May 13/14 calendar corruption.
   const existingDays = data.weeks[key].plan?.days || [];
-  // Build a map of exId→bwMode from the existing plan so we can carry it forward
-  // when a new JSON overwrites the plan (bwMode lives on the exercise object).
   const prevBWMap = {};
   existingDays.forEach(d => d.exercises?.forEach(e => {
     if (e.bwMode) prevBWMap[e.id] = true;
   }));
-  // Also inherit bwMode from the most recent prior week for exercises that match by name
   const prevWeekKeys = Object.keys(data.weeks).filter(k => k < key).sort();
   const prevWeekKey  = prevWeekKeys[prevWeekKeys.length - 1];
   const prevWeekBWNames = new Set();
@@ -715,33 +751,15 @@ function savePlan(key, plan, raw) {
       d.exercises?.forEach(e => { if (e.bwMode) prevWeekBWNames.add(e.name.toLowerCase().trim()); })
     );
   }
-  plan.days.forEach((day, i) => {
-    const prev = existingDays[i];
-    if (prev) {
-      // Only preserve completion state if the day has the same exercises (same-week re-upload).
-      // If exercise IDs don't match this is a new week's plan overwriting an old one —
-      // carrying over completed/date would stamp this week's days with last week's dates.
-      const newIds  = new Set(day.exercises?.map(e => e.id) || []);
-      const prevIds = new Set(prev.exercises?.map(e => e.id) || []);
-      const sameExercises = newIds.size > 0 && newIds.size === prevIds.size &&
-        [...newIds].every(id => prevIds.has(id));
-      if (sameExercises) {
-        if (prev.completed   !== undefined) day.completed   = prev.completed;
-        if (prev.completedAt !== undefined) day.completedAt = prev.completedAt;
-        if (prev.startedAt   !== undefined) day.startedAt   = prev.startedAt;
-        if (prev.date        !== undefined) day.date        = prev.date;
-      }
-    }
-    // Carry bwMode forward: explicit current-week setting takes precedence,
-    // then same-week prior plan, then name match from previous week.
+  plan.days.forEach(day => {
     day.exercises?.forEach(e => {
-      if (e.bwMode) return; // already set in the uploaded JSON
+      if (e.bwMode) return;
       if (prevBWMap[e.id]) { e.bwMode = true; return; }
       if (prevWeekBWNames.has(e.name.toLowerCase().trim())) e.bwMode = true;
     });
   });
   data.weeks[key].plan = plan;
-  data.weeks[key].raw = raw;
+  data.weeks[key].raw  = raw;
   save(data);
 }
 function addSetLog(key, exId, setObj) {
@@ -892,13 +910,9 @@ function deleteDay(di) {
   if (!week?.plan?.days) return;
   const day = week.plan.days[di];
   if (!day) return;
-  // Remove all logs for every exercise in this day
-  if (week.logs) {
-    day.exercises.forEach(ex => { delete week.logs[ex.id]; });
-  }
-  // Remove apnea logs for this day index
+  if (week.logs) day.exercises.forEach(ex => { delete week.logs[ex.id]; });
   if (week.apnea_logs) delete week.apnea_logs[di];
-  // Remove the day from the plan
+  if (week.sessions) delete week.sessions[`d${di}`];
   week.plan.days.splice(di, 1);
   save(data);
 }
@@ -1035,17 +1049,22 @@ function getTypeName(name) {
 
 function getCalendarData() {
   const data = load();
-  const map = new Map(); // 'YYYY-MM-DD' -> { name, logged, total }
+  const map = new Map(); // 'YYYY-MM-DD' -> { name, logged, total, completed }
   for (const [wk, wData] of Object.entries(data.weeks)) {
     if (!wData.plan?.days) continue;
-    const logs = wData.logs || {};
+    const logs     = wData.logs     || {};
+    const sessions = wData.sessions || {};
     wData.plan.days.forEach((day, di) => {
       const logged = day.exercises.reduce((sum, ex) =>
         sum + (logs[ex.id] || []).filter(isRealSet).length, 0);
       if (logged === 0) return;
       const total = day.exercises.reduce((sum, ex) => sum + (parseInt(ex.sets) || 0), 0);
-      const dateKey = resolveDayDate(wk, day, di, logs);
-      map.set(dateKey, { name: day.name, logged, total, completed: !!day.completed });
+      // Session date is authoritative — no derivation.
+      // Older data may have date on the plan day; fall back only if session absent.
+      const sess = sessions[`d${di}`];
+      const dateKey = sess?.date || day.date || resolveDayDate(wk, day, di, logs);
+      const completed = sess ? !!sess.completed : !!day.completed;
+      map.set(dateKey, { name: day.name, logged, total, completed });
     });
   }
   return map;
@@ -1169,18 +1188,21 @@ function resolveDayDate(wk, day, di, logs) {
 
 function jumpToDateWeek(dateStr) {
   mainTab = 'workouts';
-  // First try the natural week for this date
   let targetWeek = toKey(new Date(dateStr + 'T12:00:00'));
   let targetDi   = -1;
   const tryWeek = (wk) => {
-    const wd   = getWeek(wk);
-    const days = wd?.plan?.days || [];
-    const logs = wd?.logs       || {};
-    const di   = days.findIndex((d, i) => resolveDayDate(wk, d, i, logs) === dateStr);
-    return di;
+    const raw  = load().weeks[wk];
+    if (!raw?.plan?.days) return -1;
+    const logs     = raw.logs     || {};
+    const sessions = raw.sessions || {};
+    const days = raw.plan.days;
+    // Sessions are authoritative; fall back to resolveDayDate for old data
+    return days.findIndex((d, i) => {
+      const sessDate = sessions[`d${i}`]?.date;
+      return (sessDate || resolveDayDate(wk, d, i, logs)) === dateStr;
+    });
   };
   targetDi = tryWeek(targetWeek);
-  // If not found, scan all stored weeks for one whose day resolves to this date
   if (targetDi === -1) {
     const data = load();
     for (const wk of Object.keys(data.weeks)) {
@@ -1669,11 +1691,19 @@ function exportCSV() {
   for (const wk of weeks) {
     const wData = data.weeks[wk];
     if (!wData?.plan?.days) continue;
-    const logs = wData.logs || {};
+    const logs     = wData.logs     || {};
+    const sessions = wData.sessions || {};
     const wLabel = weekLabel(wk);
-    wData.plan.days.forEach(day => {
-      const dateStr = day.date || '';
-      const durMin = dayDurationMin(day, logs);
+    wData.plan.days.forEach((day, di) => {
+      const sess = sessions[`d${di}`];
+      // Read state from session (new arch) with fallback to plan day (old data)
+      const dayCompleted  = sess ? !!sess.completed  : !!day.completed;
+      const dayCompletedAt = sess?.completedAt ?? day.completedAt ?? null;
+      const dayStartedAt   = sess?.startedAt   ?? day.startedAt   ?? null;
+      const dateStr = sess?.date || day.date || '';
+      // Build a day-like object for dayDurationMin
+      const dayLike = { completed: dayCompleted, completedAt: dayCompletedAt, startedAt: dayStartedAt, exercises: day.exercises };
+      const durMin = dayDurationMin(dayLike, logs);
       day.exercises.forEach(ex => {
         (logs[ex.id] || []).forEach((s, si) => {
           const r = Number(s.reps);
@@ -1682,7 +1712,7 @@ function exportCSV() {
             wLabel,
             day.name,
             dateStr,
-            si === 0 ? durMin : '', // only on the first set row per day to avoid repetition
+            si === 0 ? durMin : '',
             ex.name,
             si + 1,
             s.weight !== '' && s.weight != null ? s.weight : '',
@@ -3290,42 +3320,40 @@ function formatDayDate(dateStr) {
 
 
 function toggleDayComplete(di) {
-  const data = load();
-  const day = data.weeks[weekKey]?.plan?.days?.[di];
+  const wd = getWeek(weekKey);
+  const day = wd?.plan?.days?.[di];
   if (!day) return;
-  if (!day.completed) {
+  const sess = getSession(weekKey, di);
+  const nowCompleted = !(sess?.completed ?? day.completed ?? false);
+  if (nowCompleted) {
     const errors = validateDayForComplete(di);
-    if (errors.length) {
-      showAlert('Cannot mark complete', errors);
-      return;
-    }
+    if (errors.length) { showAlert('Cannot mark complete', errors); return; }
   }
-  day.completed = !day.completed;
-  if (day.completed && !day.completedAt) day.completedAt = Date.now();
-  else if (!day.completed) delete day.completedAt;
-  // Set day.date from earliest real (non-prefilled) set timestamp.
-  // Falls back to completedAt so the day always lands on the right calendar date.
-  if (day.completed) {
-    const logs = data.weeks[weekKey]?.logs || {};
-    let earliest = day.completedAt;
+  const completedAt = nowCompleted ? (sess?.completedAt ?? Date.now()) : null;
+  // Derive date from earliest real set ts; fall back to completedAt.
+  let date = sess?.date ?? day.date ?? null;
+  if (nowCompleted && !date) {
+    const logs = load().weeks[weekKey]?.logs || {};
+    let earliest = completedAt;
     day.exercises.forEach(ex => {
       (logs[ex.id] || []).forEach(s => {
         if (isRealSet(s) && s.ts && s.ts < earliest) earliest = s.ts;
       });
     });
-    const ref = earliest < day.completedAt ? earliest : day.completedAt;
+    const ref = earliest < completedAt ? earliest : completedAt;
     const d = new Date(ref);
-    day.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  save(data);
+  saveSession(weekKey, di, { completed: nowCompleted, completedAt, date });
   uiFeedback();
-  const wd = getWeek(weekKey);
-  const logs = wd.logs || {};
+  const updatedWd = getWeek(weekKey);
+  const logs = updatedWd.logs || {};
   const prevLogs = getWeek(shiftWeek(weekKey, -1))?.logs || {};
+  const updatedDay = updatedWd.plan.days[di];
   const cardEl = document.getElementById('dc' + di);
   if (cardEl) {
     const tmp = document.createElement('div');
-    tmp.innerHTML = renderDay(day, di, logs, prevLogs);
+    tmp.innerHTML = renderDay(updatedDay, di, logs, prevLogs);
     const newCard = tmp.firstElementChild;
     newCard.classList.add('open');
     (openDayState[weekKey] = openDayState[weekKey] || new Set()).add(di);
@@ -3646,14 +3674,20 @@ function handleInput(exId, idx, field, val) {
     const data = load();
     const di = data.weeks[weekKey]?.plan?.days?.findIndex(d => d.exercises?.some(e => e.id === exId)) ?? -1;
     if (di !== -1) {
-      const day = data.weeks[weekKey].plan.days[di];
-      if (!day.date) {
+      // Write date to session (not to plan day) on first real rep entry.
+      const sess = data.weeks[weekKey]?.sessions?.[`d${di}`];
+      if (!sess?.date) {
         const dt = new Date(now);
-        day.date = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+        const dateStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+        if (!data.weeks[weekKey].sessions) data.weeks[weekKey].sessions = {};
+        if (!data.weeks[weekKey].sessions[`d${di}`])
+          data.weeks[weekKey].sessions[`d${di}`] = { date: null, completed: false, completedAt: null, startedAt: null };
+        data.weeks[weekKey].sessions[`d${di}`].date = dateStr;
+        save(data);
       }
-      save(data);
-      // Show start-workout modal on first real rep entry if not yet started
-      if (!day.startedAt) showStartWorkoutModal(weekKey, di);
+      // Show start-workout modal on first real rep if not yet started
+      const sessNow = getSession(weekKey, di);
+      if (!sessNow?.startedAt) showStartWorkoutModal(weekKey, di);
     }
   }
   refreshProgress(); renderCalendar();
@@ -3680,11 +3714,9 @@ function showStartWorkoutModal(wk, di) {
 
 function confirmStartWorkout(wk, di) {
   document.getElementById('start-workout-modal')?.remove();
-  const data = load();
-  const day = data.weeks[wk]?.plan?.days?.[di];
-  if (!day || day.startedAt) return;
-  day.startedAt = Date.now();
-  save(data);
+  const sess = getSession(wk, di);
+  if (sess?.startedAt) return;
+  saveSession(wk, di, { startedAt: Date.now() });
   uiFeedback();
 }
 
@@ -3784,25 +3816,28 @@ function fmtDuration(ms) {
 }
 
 function getDayDuration(di) {
-  const wd = getWeek(weekKey);
-  const day = wd?.plan?.days?.[di];
-  if (!day?.completed || !day.completedAt) return null;
-  const MAX_MS = 3 * 60 * 60 * 1000; // 3-hour cap — rejects stale placeholder timestamps
-  // Prefer day.startedAt if stored correctly on the day object
-  if (day.startedAt && day.startedAt < day.completedAt && (day.completedAt - day.startedAt) <= MAX_MS) {
-    return fmtDuration(day.completedAt - day.startedAt);
-  }
-  // Fall back to earliest real (non-prefilled) set ts within the cap
-  const logs = wd.logs || {};
-  let earliest = day.completedAt;
-  day.exercises.forEach(ex => {
+  // Prefer session for timing data; fall back to plan day (migration compat)
+  const wd   = getWeek(weekKey);
+  const day  = wd?.plan?.days?.[di];
+  const sess = getSession(weekKey, di);
+  const completedAt = sess?.completedAt ?? day?.completedAt ?? null;
+  const startedAt   = sess?.startedAt   ?? day?.startedAt   ?? null;
+  const isCompleted = sess ? !!sess.completed : !!day?.completed;
+  if (!isCompleted || !completedAt) return null;
+  const MAX_MS = 3 * 60 * 60 * 1000;
+  if (startedAt && startedAt < completedAt && (completedAt - startedAt) <= MAX_MS)
+    return fmtDuration(completedAt - startedAt);
+  // Fall back to earliest real set ts
+  const logs = wd?.logs || {};
+  let earliest = completedAt;
+  (day?.exercises || []).forEach(ex => {
     (logs[ex.id] || []).forEach(s => {
-      if (isRealSet(s) && s.ts && s.ts < earliest && (day.completedAt - s.ts) <= MAX_MS)
+      if (isRealSet(s) && s.ts && s.ts < earliest && (completedAt - s.ts) <= MAX_MS)
         earliest = s.ts;
     });
   });
-  if (earliest >= day.completedAt) return null;
-  return fmtDuration(day.completedAt - earliest);
+  if (earliest >= completedAt) return null;
+  return fmtDuration(completedAt - earliest);
 }
 
 function calc1RM(exId) {
@@ -4083,6 +4118,7 @@ function _countSets(wData) {
 function _repairWeekData(wData) {
   let repaired = false;
   const logs = wData.logs || {};
+  // Repair prefilled sets that still have reps (old data before weight-only auto-populate)
   for (const sets of Object.values(logs)) {
     for (const s of sets) {
       if (s.prefilled && (s.reps !== '' || s.effort || s.adjustment)) {
@@ -4091,13 +4127,24 @@ function _repairWeekData(wData) {
       }
     }
   }
+  // Repair plan day state — remove any that leaked through from old architecture
   if (wData.plan?.days) {
     wData.plan.days.forEach(day => {
-      const hasReal = day.exercises?.some(ex => (logs[ex.id] || []).some(isRealSet));
-      if (!hasReal) {
-        if (day.date || day.completed || day.completedAt || day.startedAt) repaired = true;
-        delete day.date; delete day.completed;
-        delete day.completedAt; delete day.startedAt;
+      if (day.date || day.completed || day.completedAt || day.startedAt) {
+        delete day.date; delete day.completed; delete day.completedAt; delete day.startedAt;
+        repaired = true;
+      }
+    });
+  }
+  // Repair sessions: if a session has no real sets, clear its completion state.
+  if (wData.sessions) {
+    Object.entries(wData.sessions).forEach(([diKey, sess]) => {
+      const di = parseInt(diKey.replace('d', ''));
+      const dayExs = wData.plan?.days?.[di]?.exercises || [];
+      const hasReal = dayExs.some(ex => (logs[ex.id] || []).some(isRealSet));
+      if (!hasReal && (sess.completed || sess.date || sess.completedAt || sess.startedAt)) {
+        sess.completed = false; sess.date = null; sess.completedAt = null; sess.startedAt = null;
+        repaired = true;
       }
     });
   }
@@ -4136,13 +4183,27 @@ async function syncNow(silent) {
         const localSets = _countSets(localWk);
         const cloudSets = _countSets(cloudWk);
         if (cloudSets > localSets) {
-          local.weeks[wk] = cloudWk;
+          // Cloud has more logged sets — pull it, but merge local sessions on top
+          // so that local timing/completion state isn't discarded.
+          const merged = { ...cloudWk };
+          if (localWk.sessions || cloudWk.sessions) {
+            merged.sessions = { ...(cloudWk.sessions || {}), ...(localWk.sessions || {}) };
+          }
+          local.weeks[wk] = merged;
           localDirty = true;
         } else if (localSets > cloudSets) {
           toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
-        } else if (cloudRepaired[wk]) {
-          // Equal set counts but cloud had corrupt state — push cleaned version back
-          toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: cloudWk, synced_at: new Date().toISOString() });
+        } else {
+          // Equal set counts — merge sessions from both sides; push result back
+          // to keep cloud in sync with session state (completion, dates, startedAt).
+          const mergedSessions = { ...(cloudWk.sessions || {}), ...(localWk.sessions || {}) };
+          const sessionChanged = JSON.stringify(mergedSessions) !== JSON.stringify(cloudWk.sessions || {});
+          if (cloudRepaired[wk] || sessionChanged) {
+            const merged = { ...localWk, sessions: mergedSessions };
+            local.weeks[wk] = merged;
+            toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: merged, synced_at: new Date().toISOString() });
+            if (sessionChanged) localDirty = true;
+          }
         }
       } else if (localWk && !cloudWk) {
         toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
@@ -4333,42 +4394,65 @@ syncCalToWeek();
   }
   if (dirty) save(data);
 })();
-// One-time repair: assign day.date to every logged day that is missing one.
-// Covers three corruption cases from the old repairStalePlaceholderTs bug:
-//   1. All set timestamps collapsed to a single value (detect + positional fallback)
-//   2. No timestamps at all (positional fallback)
-//   3. Day was logged but date was never written (first-rep date write missing)
-// Positional fallback: week Monday + day index. Not perfect but puts days on
-// distinct dates so the calendar can display them. User can correct via date picker.
-(function repairDayDates() {
+// V1→V2 migration: move day state (date, completed, completedAt, startedAt)
+// from plan.days into the sessions sub-object, and derive dates from real set
+// timestamps rather than trusting day.date (which was the source of the
+// May 13/14 calendar corruption — savePlan copied dates by position from prior weeks).
+(function migrateToSessionsArch() {
   const data = load();
   let dirty = false;
   for (const [wk, wData] of Object.entries(data.weeks)) {
     if (!wData.plan?.days) continue;
     const logs = wData.logs || {};
+    if (!wData.sessions) wData.sessions = {};
+
     wData.plan.days.forEach((day, di) => {
+      const sessKey = `d${di}`;
       const realSets = day.exercises.flatMap(ex => (logs[ex.id] || []).filter(isRealSet));
 
       if (realSets.length === 0) {
-        // No real logged sets — clear stale date AND completion state copied from a
-        // prior week's plan by the old savePlan index-match logic.
-        if (day.date)        { delete day.date;        dirty = true; }
-        if (day.completed)   { delete day.completed;   dirty = true; }
-        if (day.completedAt) { delete day.completedAt; dirty = true; }
-        if (day.startedAt)   { delete day.startedAt;   dirty = true; }
+        // No real sets — clear any stale completion state from both plan and sessions.
+        let changed = false;
+        ['date','completed','completedAt','startedAt'].forEach(k => {
+          if (day[k] !== undefined) { delete day[k]; changed = true; }
+        });
+        if (wData.sessions[sessKey]) {
+          const s = wData.sessions[sessKey];
+          if (s.completed || s.date || s.completedAt || s.startedAt) {
+            s.completed = false; s.date = null; s.completedAt = null; s.startedAt = null;
+            changed = true;
+          }
+        }
+        if (changed) dirty = true;
         return;
       }
 
-      if (day.date) return; // already correctly set
-
-      // Derive from earliest real set timestamp; fall back to positional
-      const validTs = realSets.map(s => s.ts).filter(t => t && Number.isFinite(t));
+      // Derive date from real set timestamps (never trust day.date — it was corrupt).
+      const validTs = realSets.map(s => s.ts).filter(t => t && Number.isFinite(Number(t)));
       const chosenTs = validTs.length ? Math.min(...validTs) : null;
       const d = chosenTs
         ? new Date(chosenTs)
         : (() => { const x = new Date(wk + 'T12:00:00'); x.setDate(x.getDate() + di); return x; })();
-      day.date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-      dirty = true;
+      const derivedDate = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+      // Write into sessions if not already there (sessions win if populated by new arch)
+      if (!wData.sessions[sessKey]) {
+        wData.sessions[sessKey] = {
+          date:        derivedDate,
+          completed:   !!day.completed,
+          completedAt: day.completedAt || null,
+          startedAt:   day.startedAt   || null
+        };
+        dirty = true;
+      } else if (!wData.sessions[sessKey].date) {
+        wData.sessions[sessKey].date = derivedDate;
+        dirty = true;
+      }
+
+      // Clear from plan day (plan is now read-only template)
+      ['date','completed','completedAt','startedAt'].forEach(k => {
+        if (day[k] !== undefined) { delete day[k]; dirty = true; }
+      });
     });
   }
   if (dirty) save(data);
