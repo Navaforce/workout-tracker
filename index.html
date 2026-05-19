@@ -4127,23 +4127,14 @@ function _repairWeekData(wData) {
       }
     }
   }
-  // Repair plan day state — remove any that leaked through from old architecture
+  // Remove state that leaked onto plan days from the old architecture.
+  // Sessions are never touched here — they are authoritative and managed by app code.
+  // Repairing sessions here causes a perpetual push loop: local pushes session date
+  // to cloud → _repairWeekData clears it → cloudRepaired=true → push again → loop.
   if (wData.plan?.days) {
     wData.plan.days.forEach(day => {
       if (day.date || day.completed || day.completedAt || day.startedAt) {
         delete day.date; delete day.completed; delete day.completedAt; delete day.startedAt;
-        repaired = true;
-      }
-    });
-  }
-  // Repair sessions: if a session has no real sets, clear its completion state.
-  if (wData.sessions) {
-    Object.entries(wData.sessions).forEach(([diKey, sess]) => {
-      const di = parseInt(diKey.replace('d', ''));
-      const dayExs = wData.plan?.days?.[di]?.exercises || [];
-      const hasReal = dayExs.some(ex => (logs[ex.id] || []).some(isRealSet));
-      if (!hasReal && (sess.completed || sess.date || sess.completedAt || sess.startedAt)) {
-        sess.completed = false; sess.date = null; sess.completedAt = null; sess.startedAt = null;
         repaired = true;
       }
     });
