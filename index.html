@@ -312,7 +312,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
   background: var(--s2); border: 1px solid var(--border); color: var(--text);
 }
 .t-btn.primary { background: var(--accent); color: #0a0a0a; border-color: var(--accent); }
-.cd-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.cd-presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
 .cd-preset-wrap { position: relative; }
 .cd-preset-btn {
   width: 100%; aspect-ratio: 1; border-radius: var(--rs); font-size: 16px; font-weight: 800;
@@ -325,6 +325,24 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cd-custom-wrap { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
 .cd-custom-input { width: 80px; height: 44px; text-align: center; font-size: 16px; font-weight: 700; border-radius: var(--rs); }
 .cd-set-btn { height: 44px; padding: 0 16px; border-radius: var(--rs); font-size: 14px; font-weight: 700; background: var(--s2); border: 1px solid var(--border); color: var(--text); }
+
+/* ── Countdown pip (floats over workout screen when panel closed mid-countdown) ── */
+#cd-pip {
+  display: none; position: fixed; bottom: 76px; right: 16px; z-index: 200;
+  background: var(--s1); border: 2px solid var(--accent); border-radius: 14px;
+  padding: 10px 14px; flex-direction: row; align-items: center; gap: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+#cd-pip.visible { display: flex; }
+#cd-pip-display {
+  font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: var(--accent); min-width: 52px; text-align: center;
+}
+#cd-pip-stop {
+  min-width: 36px; height: 36px; border-radius: 18px; font-size: 16px;
+  background: var(--s2); border: 1px solid var(--border); color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+}
 
 /* ── Fitness screen ── */
 #fitness-screen { padding: 12px 12px 40px; }
@@ -544,6 +562,12 @@ input:focus, textarea:focus { border-color: var(--accent); }
       </div>
     </div>
   </div>
+</div>
+
+<!-- ── Countdown pip ── -->
+<div id="cd-pip" onclick="openTimer()">
+  <span id="cd-pip-display">0:00</span>
+  <button id="cd-pip-stop" onclick="event.stopPropagation();cdPipStop()">✕</button>
 </div>
 
 <!-- ── Start modal ── -->
@@ -2290,11 +2314,23 @@ function confirmStart(doStart) {
 // ════════════════════════════════════════════════════════════════
 function openTimer() {
   renderCDPresets();
+  const pip = document.getElementById('cd-pip');
+  if (pip.classList.contains('visible')) switchTimerTab('cd');
+  pip.classList.remove('visible');
   document.getElementById('timer-overlay').classList.add('open');
 }
 
 function closeTimer() {
   document.getElementById('timer-overlay').classList.remove('open');
+  if (cdRunning) {
+    renderCD();
+    document.getElementById('cd-pip').classList.add('visible');
+  }
+}
+
+function cdPipStop() {
+  cdReset();
+  document.getElementById('cd-pip').classList.remove('visible');
 }
 
 function switchTimerTab(tab) {
@@ -2362,6 +2398,7 @@ function cdScheduleTones() {
       document.getElementById('cd-start-btn').textContent = 'Start';
       renderCD();
       renderCDPresets();
+      document.getElementById('cd-pip').classList.remove('visible');
     }, 3000));
   }, remaining * 1000));
 }
@@ -2507,7 +2544,10 @@ function cdSetCustom() {
 function renderCD() {
   const m = Math.floor(cdRemaining / 60);
   const s = Math.floor(cdRemaining % 60);
-  document.getElementById('cd-display').textContent = `${m}:${String(s).padStart(2,'0')}`;
+  const txt = `${m}:${String(s).padStart(2,'0')}`;
+  document.getElementById('cd-display').textContent = txt;
+  const pip = document.getElementById('cd-pip-display');
+  if (pip) pip.textContent = txt;
 }
 
 function getAudioCtx() {
