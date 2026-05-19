@@ -4182,27 +4182,32 @@ async function syncNow(silent) {
       if (localWk && cloudWk) {
         const localSets = _countSets(localWk);
         const cloudSets = _countSets(cloudWk);
-        if (cloudSets > localSets) {
-          // Cloud has more logged sets — pull it, but merge local sessions on top
-          // so that local timing/completion state isn't discarded.
+        const localHasPlan = !!localWk.plan?.days?.length;
+        const cloudHasPlan = !!cloudWk.plan?.days?.length;
+        if (cloudSets > localSets && (!localHasPlan || cloudHasPlan)) {
+          // Cloud has more logged sets AND either local has no plan or cloud also has one.
+          // Merge local sessions on top so completion/date state isn't discarded.
           const merged = { ...cloudWk };
           if (localWk.sessions || cloudWk.sessions) {
             merged.sessions = { ...(cloudWk.sessions || {}), ...(localWk.sessions || {}) };
           }
+          // Never discard a local plan in favour of a cloud row with no plan
+          if (localHasPlan && !cloudHasPlan) merged.plan = localWk.plan;
           local.weeks[wk] = merged;
           localDirty = true;
-        } else if (localSets > cloudSets) {
+        } else if (localSets > cloudSets || (localHasPlan && !cloudHasPlan)) {
+          // Local has more sets, or local has a plan the cloud is missing — push local
           toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
         } else {
-          // Equal set counts — merge sessions from both sides; push result back
-          // to keep cloud in sync with session state (completion, dates, startedAt).
-          const mergedSessions = { ...(cloudWk.sessions || {}), ...(localWk.sessions || {}) };
-          const sessionChanged = JSON.stringify(mergedSessions) !== JSON.stringify(cloudWk.sessions || {});
-          if (cloudRepaired[wk] || sessionChanged) {
-            const merged = { ...localWk, sessions: mergedSessions };
-            local.weeks[wk] = merged;
-            toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: merged, synced_at: new Date().toISOString() });
-            if (sessionChanged) localDirty = true;
+          // Equal set counts — push local to cloud if cloud was repaired or is missing
+          // session state that local has. Never set localDirty here: local is already
+          // correct; only the cloud needs updating. Setting localDirty would re-trigger
+          // save() → scheduleSync() → infinite loop.
+          if (cloudRepaired[wk]) {
+            toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
+          } else if (Object.keys(localWk.sessions || {}).length > Object.keys(cloudWk.sessions || {}).length) {
+            // Local has session entries the cloud doesn't — push to sync them up
+            toUpsert.push({ user_id: SUPABASE_USER, week_key: wk, data: localWk, synced_at: new Date().toISOString() });
           }
         }
       } else if (localWk && !cloudWk) {
