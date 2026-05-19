@@ -870,15 +870,36 @@ function countRealSetsInSession(session) {
     sum + (ex.sets || []).filter(isRealSet).length, 0);
 }
 
-let _calHoldTimer = null;
+let _calHoldStart = 0;
+let _calHoldIso = null;
+let _calHoldFired = false;
+
 function calCellHoldStart(e, iso) {
-  _calHoldTimer = setTimeout(() => {
-    _calHoldTimer = null;
-    toggleInjury(iso);
-  }, 600);
+  _calHoldStart = Date.now();
+  _calHoldIso = iso;
+  _calHoldFired = false;
 }
-function calCellHoldEnd() {
-  if (_calHoldTimer) { clearTimeout(_calHoldTimer); _calHoldTimer = null; }
+
+function calCellHoldEnd(e) {
+  const elapsed = Date.now() - _calHoldStart;
+  if (elapsed >= 600 && _calHoldIso) {
+    _calHoldFired = true;
+    e.preventDefault(); // suppress the subsequent click event
+    toggleInjury(_calHoldIso);
+  }
+  _calHoldIso = null;
+}
+
+function calCellHoldMove() {
+  // Cancel hold if finger moves
+  _calHoldIso = null;
+  _calHoldStart = 0;
+}
+
+function calDayTapGuarded(iso) {
+  // Suppress click if a long-press just fired
+  if (_calHoldFired) { _calHoldFired = false; return; }
+  calDayTap(iso);
 }
 
 function toggleInjury(iso) {
@@ -1356,10 +1377,10 @@ function renderMonthView() {
     else if (session && !isRest) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>`;
 
     html += `<div class="${cellClass}"
-      onclick="calDayTap('${iso}')"
+      onclick="calDayTapGuarded('${iso}')"
       ontouchstart="calCellHoldStart(event,'${iso}')"
-      ontouchend="calCellHoldEnd()"
-      ontouchmove="calCellHoldEnd()"
+      ontouchend="calCellHoldEnd(event)"
+      ontouchmove="calCellHoldMove()"
       oncontextmenu="event.preventDefault();toggleInjury('${iso}')"
     ><span class="cal-date">${d}</span>${typeLabel}</div>`;
   }
