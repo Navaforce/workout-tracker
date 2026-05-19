@@ -93,9 +93,15 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.fitness-day   { border-color: var(--legs); }
 .cal-cell.other-month   { opacity: 0.3; }
 .cal-cell .cal-date { font-size: 15px; font-weight: 700; line-height: 1; color: var(--text); }
+/* Date color follows workout type label */
+.cal-cell.has-push .cal-date    { color: var(--push); }
+.cal-cell.has-pull .cal-date    { color: var(--pull); }
+.cal-cell.has-legs .cal-date    { color: #ff6eb4; }
+.cal-cell.has-cardio .cal-date  { color: var(--cardio); }
+.cal-cell.has-rest .cal-date    { color: #38bdf8; }
+/* Status overlays — take precedence over type color */
 .cal-cell.completed .cal-date  { color: var(--easy); }
 .cal-cell.partial .cal-date    { color: var(--moderate); }
-.cal-cell.rest-day .cal-date   { color: #38bdf8; }
 .cal-cell.injured .cal-date    { color: var(--hard); }
 .cal-cell.fitness-day .cal-date { color: var(--legs); }
 .cal-type-label {
@@ -196,6 +202,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .ex-suggestion { font-size: 13px; color: var(--accent); padding: 0 14px 10px; font-style: italic; }
 .ex-body { display: none; }
 .ex-card.open .ex-body { display: block; }
+.ex-target-line { font-size: 13px; font-weight: 700; color: var(--accent); padding: 8px 14px 4px; }
 .ex-last-session { font-size: 12px; color: var(--text); padding: 0 14px 8px; }
 
 /* Set rows */
@@ -211,12 +218,12 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .set-row-line2 { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .weight-input, .reps-input {
   width: 64px; height: 44px; text-align: center; font-size: 18px; font-weight: 700;
-  border-radius: var(--rs); padding: 0 4px;
+  border-radius: var(--rs); padding: 0 4px; border: 1px solid var(--muted);
 }
 .weight-input { width: 72px; }
 .set-sep { font-size: 16px; color: var(--text); font-weight: 700; }
 .bw-wrap { display: flex; align-items: center; gap: 4px; }
-.bw-input, .bwa-input { width: 56px; height: 44px; text-align: center; font-size: 16px; font-weight: 700; border-radius: var(--rs); padding: 0 4px; }
+.bw-input, .bwa-input { width: 56px; height: 44px; text-align: center; font-size: 16px; font-weight: 700; border-radius: var(--rs); padding: 0 4px; border: 1px solid var(--muted); }
 .bw-plus { font-size: 14px; color: var(--text); }
 .pill-group { display: flex; gap: 4px; }
 .pill {
@@ -679,94 +686,94 @@ const APNEA_TARGETS = {
 
 let currentSessionId = null;
 let sheetDate = null;
-// Exercise cues and hold protocols — keyed by exact exercise name (case-sensitive)
+// Exercise cues, hold protocols, and rest periods — keyed by exact exercise name (case-sensitive)
 const EXERCISE_INFO = {
   'Barbell Bench Press': {
-    cues: 'Bar to chest, full lockout. 3-sec eccentric. Drive through palms. 65–70% effort.',
+    rest: '2:30', cues: 'Bar to chest, full lockout. 3-sec eccentric. Drive through palms. 65–70% effort.',
     hold: 'EXHALE hold — 35 sec · After ALL sets\nRack → rest 30 sec → exhale fully → pinch nose → hold 35 sec → breathe → resume rest.'
   },
   'Incline Barbell Press': {
-    cues: 'Incline 30–45°. Bar to upper chest, full lockout. 3-sec eccentric. 185 lb starting point (incline is harder than flat — drop to 175 lb if needed after set 1).',
+    rest: '2:30', cues: 'Incline 30–45°. Bar to upper chest, full lockout. 3-sec eccentric. 185 lb starting point (incline is harder than flat — drop to 175 lb if needed after set 1).',
     hold: 'EXHALE hold — 35 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 35 sec → breathe → resume rest.'
   },
   'Landmine Press': {
-    cues: 'Split stance. Press diagonally from shoulder height to full overhead extension. 1-sec pause at full extension. Alternate arms each set.',
+    rest: '1:30', cues: 'Split stance. Press diagonally from shoulder height to full overhead extension. 1-sec pause at full extension. Alternate arms each set.',
     hold: 'No hold — postural demand too high post-set.'
   },
   'Bodyweight Dips': {
-    cues: 'Stop 5 reps short of failure. Lower until upper arms parallel floor. Forward lean = chest focus, upright = triceps.',
+    rest: '2:00', cues: 'Stop 5 reps short of failure. Lower until upper arms parallel floor. Forward lean = chest focus, upright = triceps.',
     hold: 'EXHALE hold — 30 sec · After ALL sets\nRack → rest 30 sec → exhale hold 30 sec → breathe → resume rest.'
   },
   'Weighted Dips': {
-    cues: 'Lower until upper arms parallel floor — no lower. Forward lean = chest focus, upright = triceps.',
+    rest: '2:30', cues: 'Lower until upper arms parallel floor — no lower. Forward lean = chest focus, upright = triceps.',
     hold: 'EXHALE hold — 35 sec · After ALL sets\nRack → rest 30 sec → exhale hold 35 sec → breathe → resume rest.'
   },
   'Arnold Press': {
-    cues: 'Start palms facing you at shoulder height (hammer grip). As you press overhead, rotate palms forward to face away at full extension. Reverse on descent. Hits all three delt heads.',
+    rest: '1:30', cues: 'Start palms facing you at shoulder height (hammer grip). As you press overhead, rotate palms forward to face away at full extension. Reverse on descent. Hits all three delt heads.',
     hold: 'No hold — shoulder stability demands full recovery.'
   },
   'Cable Chest Fly': {
-    cues: 'Cables at shoulder height, slight forward lean. Arms sweep forward and together — squeeze hard at center. Keep slight bend in elbows. Feel the pec, not the front delt.',
+    rest: '1:15', cues: 'Cables at shoulder height, slight forward lean. Arms sweep forward and together — squeeze hard at center. Keep slight bend in elbows. Feel the pec, not the front delt.',
     hold: 'EXHALE hold — 35 sec · After final set only\nExhale hold 35 sec → begin transition.'
   },
   'Tricep Rope Pulldowns': {
-    cues: 'Elbows pinned to sides throughout — they do not move. At the bottom, split the rope apart and supinate slightly for full contraction.',
+    rest: '1:15', cues: 'Elbows pinned to sides throughout — they do not move. At the bottom, split the rope apart and supinate slightly for full contraction.',
     hold: 'EXHALE hold — 35 sec · After final set only\nExhale hold 35 sec → begin 90-sec parasympathetic transition.'
   },
   'Pull-Ups': {
-    cues: 'Full dead hang at bottom, chin clears bar at top. 3-sec lowering phase. Add load when 12+ reps easy.',
+    rest: '2:30', cues: 'Full dead hang at bottom, chin clears bar at top. 3-sec lowering phase. Add load when 12+ reps easy.',
     hold: 'INHALE hold — 35 sec · After ALL sets\nStep off bar → rest 30 sec → full diaphragmatic inhale → pinch nose → hold 35 sec → breathe → resume rest.\nMirrors real diving: you enter water on full inhale and must tolerate CO2 rise while muscles remain loaded.'
   },
   'Kettlebell Swings': {
-    cues: 'Sharp hip hinge back, explosive hip snap forward — KB floats to shoulder height. NOT a squat. NOT an arm raise. The hip snap IS the movement. Posterior chain power directly transfers to bi-fin and monofin kick.',
+    rest: '1:30', cues: 'Sharp hip hinge back, explosive hip snap forward — KB floats to shoulder height. NOT a squat. NOT an arm raise. The hip snap IS the movement. Posterior chain power directly transfers to bi-fin and monofin kick.',
     hold: 'No hold — metabolic demand too high post-set.'
   },
   'Chest-Supported Incline Row': {
-    cues: 'Set incline bench to ~45°. Lie face-down, chest fully supported. Row from dead hang to hip — elbow drives back and up, not out to the side. Fully isolates pulling muscles.',
+    rest: '2:00', cues: 'Set incline bench to ~45°. Lie face-down, chest fully supported. Row from dead hang to hip — elbow drives back and up, not out to the side. Fully isolates pulling muscles.',
     hold: 'INHALE hold — 40 sec · After ALL sets\nRest 30 sec → full diaphragmatic inhale → hold 40 sec → breathe → continue rest.'
   },
   'T-Bar Row': {
-    cues: 'Straddle bar, hinge to ~45°, grip near the plates. Row toward sternum. Back neutral throughout. Start moderate — this may be new.',
+    rest: '2:00', cues: 'Straddle bar, hinge to ~45°, grip near the plates. Row toward sternum. Back neutral throughout. Start moderate — this may be new.',
     hold: 'INHALE hold — 40 sec · After ALL sets\nRest 30 sec → full inhale → hold 40 sec → breathe → resume rest.'
   },
   "Farmer's Carry": {
-    cues: 'Tall spine, tight core, relaxed shoulders — DBs not touching thighs. Walk 35 meters without swinging hips. Anti-lateral-flexion core stability directly analogous to body tension during a spearfishing descent.',
+    rest: '1:15', cues: 'Tall spine, tight core, relaxed shoulders — DBs not touching thighs. Walk 35 meters without swinging hips. Anti-lateral-flexion core stability directly analogous to body tension during a spearfishing descent.',
     hold: 'No hold — gait pattern requires normal breathing.'
   },
   'Hanging Leg Raises': {
-    cues: 'Hang from pull-up bar. Raise both legs to parallel or higher. Lower slowly — no swinging. Core-for-streamlining: the exact tension pattern used during duck dives and descent.',
+    rest: '1:15', cues: 'Hang from pull-up bar. Raise both legs to parallel or higher. Lower slowly — no swinging. Core-for-streamlining: the exact tension pattern used during duck dives and descent.',
     hold: 'INHALE hold — 20 sec · After final set only\nInhale hold 20 sec → move to parasympathetic transition.'
   },
   'Weighted Hanging Leg Raises': {
-    cues: 'Add 5–10 lb DB between ankles. Hang from pull-up bar. Raise legs to parallel or higher — controlled, no swinging.',
+    rest: '1:15', cues: 'Add 5–10 lb DB between ankles. Hang from pull-up bar. Raise legs to parallel or higher — controlled, no swinging.',
     hold: 'INHALE hold — 35 sec · After final set only\nInhale hold 35 sec → begin 90-sec parasympathetic transition.'
   },
   'Goblet Squat': {
-    cues: 'Hold DB vertically at chest (goblet grip). Shoulder-width stance. Full depth — heels flat, chest tall.',
+    rest: '2:30', cues: 'Hold DB vertically at chest (goblet grip). Shoulder-width stance. Full depth — heels flat, chest tall.',
     hold: 'EXHALE hold — 35 sec · After ALL sets\nStand → rest 30 sec → exhale fully → hold 35 sec → breathe → continue rest.\nExhale holds create the most intense CO2 stimulus and replicate hypoxic leg conditions during a real dive.'
   },
   'Bulgarian Split Squat': {
-    cues: 'Rear foot elevated on bench, front shin near vertical. Lower rear knee to 1 inch from floor, front thigh parallel. Drive through front heel.',
+    rest: '2:00', cues: 'Rear foot elevated on bench, front shin near vertical. Lower rear knee to 1 inch from floor, front thigh parallel. Drive through front heel.',
     hold: 'No hold — balance demands full concentration.'
   },
   'Walking Lunges': {
-    cues: 'Step forward, back knee 1 inch from floor, drive through front heel into next rep. Continuous motion. Targets hamstrings, hip flexors, and glutes through full dynamic ROM — directly mirrors finning demands.',
+    rest: '2:00', cues: 'Step forward, back knee 1 inch from floor, drive through front heel into next rep. Continuous motion. Targets hamstrings, hip flexors, and glutes through full dynamic ROM — directly mirrors finning demands.',
     hold: 'EXHALE hold — 35 sec · After ALL sets\nStand → rest 30 sec → exhale hold 35 sec → breathe → resume rest.'
   },
   'Hip Thrust': {
-    cues: 'Upper back on bench, bar or DB across hips. Drive hips to ceiling — hard glute squeeze at the top. Back stays on bench throughout. Feel the glute contraction, not the lower back.',
+    rest: '1:30', cues: 'Upper back on bench, bar or DB across hips. Drive hips to ceiling — hard glute squeeze at the top. Back stays on bench throughout. Feel the glute contraction, not the lower back.',
     hold: 'No hold — glute contraction demands full focus.'
   },
   'Sumo Deadlift': {
-    cues: 'Wide stance, toes ~45° out. Grip inside the knees. Hinge at hips and knees simultaneously — drive floor away. Full lockout at top. 135 lb is technique practice. Back stays neutral throughout — no grinding.',
+    rest: '1:30', cues: 'Wide stance, toes ~45° out. Grip inside the knees. Hinge at hips and knees simultaneously — drive floor away. Full lockout at top. 135 lb is technique practice. Back stays neutral throughout — no grinding.',
     hold: 'No hold — bilateral hinge requires full focus.'
   },
   'Single-Leg RDL': {
-    cues: 'Hinge at hip on one standing leg. DBs lower toward floor, free leg extends back for balance. Hamstrings fully loaded. Back neutral throughout — this is a hip hinge, not a back bend.',
+    rest: '1:30', cues: 'Hinge at hip on one standing leg. DBs lower toward floor, free leg extends back for balance. Hamstrings fully loaded. Back neutral throughout — this is a hip hinge, not a back bend.',
     hold: 'No hold — single-leg balance requires full attention.'
   },
   'Copenhagen Plank': {
-    cues: 'Lie on your side. Top foot rests on a bench at knee height. Bottom leg hangs free. Lift hips off floor by contracting the adductor of your top leg — body forms a straight line. Trains adductor/core tension used for streamlining underwater.',
+    rest: '1:00', cues: 'Lie on your side. Top foot rests on a bench at knee height. Bottom leg hangs free. Lift hips off floor by contracting the adductor of your top leg — body forms a straight line. Trains adductor/core tension used for streamlining underwater.',
     hold: 'EXHALE hold — 30 sec · After final set only\nExhale hold 30 sec → begin 90-sec parasympathetic transition.'
   },
 };
@@ -1060,6 +1067,8 @@ function prefillExercises(session, planDay) {
     exercises.push({
       name: planEx.name,
       bw_mode: false,
+      plan_sets: planEx.sets || '',
+      plan_reps: planEx.reps || '',
       sets,
     });
   }
@@ -1404,12 +1413,12 @@ function renderMonthView() {
     const isPartial = session && !session.completed && realCount > 0 && !isRest;
 
     let cellClass = 'cal-cell';
+    if (session) cellClass += ` has-${session.day_type}`;
+    if (isFitnessDay) cellClass += ' fitness-day';
     if (isToday) cellClass += ' today';
     if (injured) cellClass += ' injured';
-    else if (isFitnessDay) cellClass += ' fitness-day';
     else if (isComplete) cellClass += ' completed';
     else if (isPartial) cellClass += ' partial';
-    else if (isRest) cellClass += ' rest-day';
 
     let typeLabel = '';
     if (isFitnessDay) typeLabel = `<span class="cal-type-label" style="color:var(--legs)">Fitness</span>`;
@@ -1614,6 +1623,28 @@ function renderExerciseCard(session, exIdx) {
 
   const suggestion = realSets.length === 0 ? computeProgression(ex.name, session.day_type) : null;
 
+  // Target line: sets × reps · rest from plan + EXERCISE_INFO
+  let targetLine = '';
+  {
+    // Prefer values stored on the exercise; fall back to current plan lookup
+    let planSets = ex.plan_sets || '';
+    let planReps = ex.plan_reps || '';
+    if (!planSets || !planReps) {
+      const data = load();
+      const planDay = data.plan?.weeks?.flatMap(w => w.days).find(
+        d => d.type === session.day_type && (d.exercises || []).some(e => e.name === ex.name)
+      );
+      const planEx = planDay?.exercises?.find(e => e.name === ex.name);
+      if (planEx) { planSets = planEx.sets || ''; planReps = planEx.reps || ''; }
+    }
+    const info = getExerciseInfo(ex.name);
+    const rest = info?.rest || '';
+    const parts = [];
+    if (planSets && planReps) parts.push(`${planSets} × ${planReps}`);
+    if (rest) parts.push(`rest ${rest}`);
+    if (parts.length) targetLine = parts.join(' · ');
+  }
+
   // Last session summary
   const lastSession = getLastSession(session.day_type);
   let lastSummary = '';
@@ -1653,6 +1684,7 @@ function renderExerciseCard(session, exIdx) {
     </div>
     ${suggestion ? `<div class="ex-suggestion">${esc(suggestion)}</div>` : ''}
     <div class="ex-body">
+      ${targetLine ? `<div class="ex-target-line">${esc(targetLine)}</div>` : ''}
       ${lastSummary ? `<div class="ex-last-session">${esc(lastSummary)}</div>` : ''}
       <div class="set-list" id="sl-${esc(sid)}-${exIdx}">${setsHtml}</div>
       <button class="add-set-btn" onclick="addSet('${esc(sid)}', ${exIdx})">+ Add Set</button>
