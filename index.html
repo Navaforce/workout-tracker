@@ -197,6 +197,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .ex-name { font-size: 16px; font-weight: 700; flex: 1; }
 .ex-info-btn { min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--accent); border-radius: 50%; background: var(--accent-dim); border: none; flex-shrink: 0; }
 .ex-progress { font-size: 13px; color: var(--text); white-space: nowrap; }
+.ex-card.ex-done .ex-progress { color: var(--easy); font-weight: 800; }
+.ex-card.ex-done .ex-name { color: var(--easy); }
 .ex-chevron { font-size: 18px; color: var(--text); transition: transform 0.2s; }
 .ex-card.open .ex-chevron { transform: rotate(180deg); }
 .ex-suggestion { font-size: 13px; color: var(--accent); padding: 0 14px 10px; font-style: italic; }
@@ -1467,12 +1469,19 @@ function renderWeekView() {
     const isToday = iso === today;
     const session = findSessionForDate(data, iso);
     let badgeHtml = '';
+    let dateColor = 'var(--text)';
     if (session) {
       badgeHtml = `<span class="wc-badge type-${session.day_type}">${typeName(session.day_type)}</span>`;
+      if      (session.completed)                     dateColor = 'var(--easy)';
+      else if (countRealSetsInSession(session) > 0)   dateColor = 'var(--moderate)';
+      else {
+        const typeColors = { push:'var(--push)', pull:'var(--pull)', legs:'#ff6eb4', cardio:'var(--cardio)', rest:'#38bdf8' };
+        dateColor = typeColors[session.day_type] || 'var(--text)';
+      }
     }
-    html += `<div class="week-card${isToday ? ' today-card' : ''}" onclick="calDayTap('${iso}')">
+    html += `<div class="week-card${isToday ? ' today-card' : ''}" onclick="calDayTapGuarded('${iso}')">
       <span class="wc-dow">${dows[d.getDay()]}</span>
-      <span class="wc-date">${d.getDate()}</span>
+      <span class="wc-date" style="color:${dateColor}">${d.getDate()}</span>
       ${badgeHtml}
       ${session && session.completed ? '<span style="font-size:11px;color:var(--easy)">✓</span>' : ''}
     </div>`;
@@ -1674,8 +1683,9 @@ function renderExerciseCard(session, exIdx) {
     setsHtml += renderSetRow(sid, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '');
   }
 
+  const exDone = totalSets > 0 && realSets.length >= totalSets;
   const hasInfo = !!getExerciseInfo(ex.name);
-  return `<div class="ex-card${isOpen ? ' open' : ''}" id="exc-${esc(sid)}-${exIdx}">
+  return `<div class="ex-card${isOpen ? ' open' : ''}${exDone ? ' ex-done' : ''}" id="exc-${esc(sid)}-${exIdx}">
     <div class="ex-header" onclick="toggleExCard(${exIdx})">
       <span class="ex-name">${esc(ex.name)}</span>
       ${hasInfo ? `<button class="ex-info-btn" onclick="event.stopPropagation();showExerciseInfo('${esc(ex.name)}')" title="Cues &amp; hold protocol">ⓘ</button>` : ''}
