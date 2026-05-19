@@ -800,12 +800,15 @@ async function syncNow(silent) {
         }
       } else {
         const localSession = local.sessions[sid];
+        // Always inject session_id and updated_at into the data object so
+        // the app can find them after load() — cloud data may lack these.
+        const normalized = { ...row.data, session_id: sid, updated_at: cloudUpdated };
         if (!localSession) {
-          local.sessions[sid] = row.data;
+          local.sessions[sid] = normalized;
         } else {
           const localUpdated = localSession.updated_at || 0;
           if (cloudUpdated > localUpdated) {
-            local.sessions[sid] = row.data;
+            local.sessions[sid] = normalized;
           }
         }
       }
@@ -939,12 +942,15 @@ function showScreen(name) {
   document.getElementById(name + '-screen').classList.add('active');
 
   const isWorkout = name === 'workout';
-  document.getElementById('app-name').style.display = isWorkout ? 'none' : '';
-  document.getElementById('back-btn').style.display = isWorkout ? '' : 'none';
-  document.getElementById('fitness-btn').style.display = isWorkout ? 'none' : '';
-  document.getElementById('sync-btn').style.display = isWorkout ? 'none' : '';
+  const isFitness = name === 'fitness';
+  document.getElementById('app-name').style.display = (isWorkout || isFitness) ? 'none' : '';
+  document.getElementById('back-btn').style.display = (isWorkout || isFitness) ? '' : 'none';
+  document.getElementById('back-btn').onclick = isWorkout ? goBack : () => showScreen('calendar');
+  const isCalendar = name === 'calendar';
+  document.getElementById('fitness-btn').style.display = isCalendar ? '' : 'none';
+  document.getElementById('sync-btn').style.display = isCalendar ? '' : 'none';
   document.getElementById('timer-btn').style.display = isWorkout ? '' : 'none';
-  document.getElementById('sync-status').style.display = isWorkout ? 'none' : '';
+  document.getElementById('sync-status').style.display = isCalendar ? '' : 'none';
   document.getElementById('workout-title').style.display = isWorkout ? '' : 'none';
   document.getElementById('complete-btn').classList.toggle('visible', isWorkout);
 }
@@ -959,15 +965,6 @@ function goBack() {
 
 function showFitness() {
   showScreen('fitness');
-  document.getElementById('app-name').style.display = '';
-  document.getElementById('back-btn').style.display = '';
-  document.getElementById('back-btn').onclick = () => showScreen('calendar');
-  document.getElementById('fitness-btn').style.display = 'none';
-  document.getElementById('sync-btn').style.display = 'none';
-  document.getElementById('timer-btn').style.display = 'none';
-  document.getElementById('sync-status').style.display = 'none';
-  document.getElementById('workout-title').style.display = 'none';
-  document.getElementById('complete-btn').classList.remove('visible');
   renderFitnessHistory();
   const today = todayISO();
   document.getElementById('ft-date').value = today;
@@ -1288,7 +1285,7 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode) {
       <div class="set-row-line1">
         ${weightHtml}
         <span class="set-sep">×</span>
-        <input type="number" class="reps-input" value="" placeholder="reps" oninput="handleRepInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
+        <input type="number" class="reps-input" value="${s.prefilled ? '' : (s.reps !== '' && s.reps !== null && s.reps !== undefined ? s.reps : '')}" placeholder="reps" oninput="handleRepInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
       </div>
       <div class="set-row-line2">
         <div class="pill-group">${effortPills}</div>
@@ -2063,6 +2060,7 @@ function init() {
   calYear = y;
   calMonth = m - 1;
   renderCalendar();
+  // syncNow re-renders calendar when done — this initial render shows any cached local data
   syncNow(true);
 }
 
