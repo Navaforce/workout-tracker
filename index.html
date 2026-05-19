@@ -95,9 +95,14 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.partial .cal-date    { color: var(--moderate); }
 .cal-cell.rest-day .cal-date   { color: #38bdf8; }
 .cal-cell.injured .cal-date    { color: var(--hard); }
-.cal-cell .type-dot {
-  width: 6px; height: 6px; border-radius: 50%; margin-top: 3px;
+.cal-type-label {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 2px; line-height: 1;
 }
+.type-text-push    { color: var(--push); }
+.type-text-pull    { color: var(--pull); }
+.type-text-legs    { color: var(--legs); }
+.type-text-cardio  { color: var(--cardio); }
+.type-text-rest    { color: var(--rest); }
 .cal-cell .done-check { position: absolute; top: 3px; right: 4px; font-size: 10px; color: var(--easy); }
 .cal-cell .status-circle {
   position: absolute; bottom: 3px; right: 3px; width: 14px; height: 14px;
@@ -1007,8 +1012,9 @@ function getCurrentWeekNumber() {
 // ════════════════════════════════════════════════════════════════
 function showScreen(name) {
   currentScreen = name;
+  const screenId = name === 'calendar' ? 'cal-screen' : name + '-screen';
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(name + '-screen').classList.add('active');
+  document.getElementById(screenId).classList.add('active');
 
   const isWorkout = name === 'workout';
   const isFitness = name === 'fitness';
@@ -1111,12 +1117,10 @@ function renderMonthView() {
     else if (isPartial) cellClass += ' partial';
     else if (isRest) cellClass += ' rest-day';
 
-    if (session && !isRest) {
-      dotHtml = `<div class="type-dot bg-${session.day_type}"></div>`;
-    }
+    const typeLabel = (session && !isRest) ? `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>` : '';
     const injuryBtn = `<button class="injury-btn" onclick="event.stopPropagation();toggleInjury('${iso}')" title="Mark injured">${injured ? '🤕' : '+'}</button>`;
 
-    html += `<div class="${cellClass}" onclick="calDayTap('${iso}')">${injuryBtn}<span class="cal-date">${d}</span>${dotHtml}</div>`;
+    html += `<div class="${cellClass}" onclick="calDayTap('${iso}')">${injuryBtn}<span class="cal-date">${d}</span>${typeLabel}</div>`;
   }
 
   // Next month pad
