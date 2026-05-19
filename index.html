@@ -314,20 +314,16 @@ input:focus, textarea:focus { border-color: var(--accent); }
   background: var(--s2); border: 1px solid var(--border); color: var(--text);
 }
 .t-btn.primary { background: var(--accent); color: #0a0a0a; border-color: var(--accent); }
-.cd-presets { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; justify-content: center; }
-.cd-preset-wrap { display: flex; align-items: center; position: relative; }
-.cd-preset-del {
-  position: absolute; top: -6px; right: -6px;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: var(--hard); color: #fff; font-size: 10px; font-weight: 800;
-  display: flex; align-items: center; justify-content: center; line-height: 1;
-  z-index: 1;
-}
+.cd-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+.cd-preset-wrap { position: relative; }
 .cd-preset-btn {
-  height: 40px; padding: 0 14px; border-radius: 20px; font-size: 14px; font-weight: 600;
-  background: var(--s2); border: 1px solid var(--border); color: var(--muted);
+  width: 100%; aspect-ratio: 1; border-radius: var(--rs); font-size: 16px; font-weight: 800;
+  background: var(--s2); border: 2px solid var(--border); color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  -webkit-user-select: none; user-select: none;
 }
 .cd-preset-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.cd-preset-btn.hold-active { border-color: var(--hard); background: rgba(244,67,54,0.12); }
 .cd-custom-wrap { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
 .cd-custom-input { width: 80px; height: 44px; text-align: center; font-size: 16px; font-weight: 700; border-radius: var(--rs); }
 .cd-set-btn { height: 44px; padding: 0 16px; border-radius: var(--rs); font-size: 14px; font-weight: 700; background: var(--s2); border: 1px solid var(--border); color: var(--text); }
@@ -376,6 +372,14 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .modal-btns { display: flex; gap: 10px; }
 .modal-btn { flex: 1; height: 48px; border-radius: var(--rs); font-size: 15px; font-weight: 700; border: 1px solid var(--border); background: var(--s2); }
 .modal-btn.primary { background: var(--accent); color: #0a0a0a; border-color: var(--accent); }
+.modal-btn.danger { background: var(--hard); color: #fff; border-color: var(--hard); }
+
+/* Confirm modal */
+#confirm-modal {
+  position: fixed; inset: 0; z-index: 400; display: none;
+  align-items: center; justify-content: center; background: rgba(0,0,0,0.6);
+}
+#confirm-modal.open { display: flex; }
 
 /* Validation modal */
 #val-modal {
@@ -554,6 +558,18 @@ input:focus, textarea:focus { border-color: var(--accent); }
     <ul class="val-error-list" id="val-error-list"></ul>
     <div class="modal-btns">
       <button class="modal-btn primary" onclick="closeValModal()">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Generic confirm modal ── -->
+<div id="confirm-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="confirm-modal-title"></div>
+    <div class="modal-body" id="confirm-modal-body"></div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeConfirmModal()">Cancel</button>
+      <button class="modal-btn danger" id="confirm-modal-ok" onclick="confirmModalOk()">Delete</button>
     </div>
   </div>
 </div>
@@ -2043,6 +2059,22 @@ function closeValModal() {
   document.getElementById('val-modal').classList.remove('open');
 }
 
+function showConfirmModal(title, body, onConfirm) {
+  window._confirmCallback = onConfirm;
+  document.getElementById('confirm-modal-title').textContent = title;
+  document.getElementById('confirm-modal-body').textContent = body;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function confirmModalOk() {
+  const cb = window._confirmCallback;
+  closeConfirmModal();
+  if (cb) cb();
+}
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  window._confirmCallback = null;
+}
+
 // ════════════════════════════════════════════════════════════════
 // WEEK NOTES
 // ════════════════════════════════════════════════════════════════
@@ -2134,6 +2166,32 @@ function renderSW() {
 }
 
 // Countdown
+function cdScheduleTones() {
+  // Cancel any existing scheduled tones
+  cdAlarmTimeouts.forEach(clearTimeout);
+  cdAlarmTimeouts = [];
+  const remaining = cdRemaining;
+  // Countdown tones at 3s, 2s, 1s before end
+  [3, 2, 1].forEach(sec => {
+    const delay = (remaining - sec) * 1000;
+    if (delay > 0) {
+      cdAlarmTimeouts.push(setTimeout(() => playBell(), delay));
+    }
+  });
+  // Alarm + auto-reset at end
+  cdAlarmTimeouts.push(setTimeout(() => {
+    playAlarm();
+    // Auto-reset to last used time after 3s
+    cdAlarmTimeouts.push(setTimeout(() => {
+      cdRemaining = cdTotal;
+      cdRunning = false;
+      document.getElementById('cd-start-btn').textContent = 'Start';
+      renderCD();
+      renderCDPresets();
+    }, 3000));
+  }, remaining * 1000));
+}
+
 function cdToggle() {
   if (cdRunning) {
     clearInterval(cdInterval);
@@ -2145,6 +2203,7 @@ function cdToggle() {
     if (cdRemaining <= 0) cdRemaining = cdTotal;
     cdRunning = true;
     document.getElementById('cd-start-btn').textContent = 'Stop';
+    cdScheduleTones();
     const endTime = Date.now() + cdRemaining * 1000;
     cdInterval = setInterval(() => {
       cdRemaining = Math.max(0, (endTime - Date.now()) / 1000);
@@ -2153,7 +2212,6 @@ function cdToggle() {
         clearInterval(cdInterval);
         cdRunning = false;
         document.getElementById('cd-start-btn').textContent = 'Start';
-        playAlarm();
       }
     }, 100);
   }
@@ -2183,6 +2241,8 @@ function saveCDPresets(presets) {
   localStorage.setItem(CD_PRESET_KEY, JSON.stringify(presets));
 }
 
+let cdHoldTimer = null;
+
 function renderCDPresets() {
   const presets = loadCDPresets();
   const container = document.getElementById('cd-presets-list');
@@ -2191,10 +2251,35 @@ function renderCDPresets() {
     const label = secs < 60 ? secs + 's' : fmtMSS(secs);
     const isActive = secs === cdTotal;
     return `<div class="cd-preset-wrap">
-      <button class="cd-preset-btn${isActive ? ' active' : ''}" onclick="cdSetPreset(${secs})">${label}</button>
-      <button class="cd-preset-del" onclick="cdDeletePreset(${secs})">✕</button>
+      <button class="cd-preset-btn${isActive ? ' active' : ''}"
+        onclick="cdSetPreset(${secs})"
+        oncontextmenu="event.preventDefault();cdConfirmDelete(${secs})"
+        ontouchstart="cdHoldStart(event,${secs})"
+        ontouchend="cdHoldEnd()"
+        ontouchmove="cdHoldEnd()">${label}</button>
     </div>`;
   }).join('');
+}
+
+function cdHoldStart(e, secs) {
+  const btn = e.currentTarget;
+  btn.classList.add('hold-active');
+  cdHoldTimer = setTimeout(() => {
+    btn.classList.remove('hold-active');
+    cdConfirmDelete(secs);
+  }, 600);
+}
+
+function cdHoldEnd() {
+  if (cdHoldTimer) { clearTimeout(cdHoldTimer); cdHoldTimer = null; }
+  document.querySelectorAll('.cd-preset-btn.hold-active').forEach(b => b.classList.remove('hold-active'));
+}
+
+function cdConfirmDelete(secs) {
+  const label = secs < 60 ? secs + 's' : fmtMSS(secs);
+  showConfirmModal(`Delete preset ${label}?`, 'This cannot be undone.', () => {
+    cdDeletePreset(secs);
+  });
 }
 
 function cdSavePreset() {
@@ -2219,13 +2304,17 @@ function cdDeletePreset(secs) {
 }
 
 function cdSetPreset(secs) {
+  // Stop any running countdown first
+  clearInterval(cdInterval);
+  cdAlarmTimeouts.forEach(clearTimeout);
+  cdAlarmTimeouts = [];
+  cdRunning = false;
   cdTotal = secs;
   cdRemaining = secs;
-  clearInterval(cdInterval);
-  cdRunning = false;
-  document.getElementById('cd-start-btn').textContent = 'Start';
   renderCDPresets();
   renderCD();
+  // Auto-start immediately
+  cdToggle();
 }
 
 function cdSetCustom() {
