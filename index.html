@@ -242,10 +242,9 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .note-input-wrap.open { display: block; }
 .note-input { width: 100%; height: 36px; padding: 6px 10px; font-size: 13px; border-radius: var(--rs); }
 .set-delete-btn {
-  position: absolute; right: 0; top: 0; bottom: 0; width: 66px;
-  background: var(--hard); border-radius: 0 var(--rs) var(--rs) 0;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 22px; color: #fff; z-index: 0;
+  min-width: 36px; min-height: 36px; display: flex; align-items: center;
+  justify-content: center; color: var(--hard); font-size: 18px;
+  flex-shrink: 0; border-radius: var(--rs);
 }
 .add-set-btn {
   margin: 4px 10px 4px; height: 44px; width: calc(100% - 20px);
@@ -408,6 +407,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
   <div id="header-right">
     <button class="hdr-btn" id="fitness-btn" onclick="showFitness()" title="Fitness Tests">⊕</button>
     <button class="hdr-btn" id="sync-btn" onclick="syncNow(false)" title="Sync">↕</button>
+    <button class="hdr-btn" id="warmup-btn" onclick="showWarmup()" style="display:none" title="Warm-up & protocol">ⓘ</button>
     <button class="hdr-btn" id="timer-btn" onclick="openTimer()" style="display:none" title="Timer">⏱</button>
   </div>
 </div>
@@ -567,6 +567,19 @@ input:focus, textarea:focus { border-color: var(--accent); }
   </div>
 </div>
 
+<!-- ── Warmup modal ── -->
+<div id="warmup-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeWarmup()">
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto">
+    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:4px" id="warmup-title"></div>
+    <div style="font-size:13px;color:var(--accent);margin-bottom:20px" id="warmup-duration"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px">Warm-Up Steps</div>
+    <div style="font-size:15px;color:var(--text);line-height:1.6;margin-bottom:20px" id="warmup-steps"></div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Hold Protocol</div>
+    <div style="font-size:15px;color:var(--text);line-height:1.6;margin-bottom:24px" id="warmup-protocol"></div>
+    <button onclick="closeWarmup()" style="width:100%;height:48px;background:var(--accent);color:#000;font-weight:800;font-size:16px;border-radius:var(--rs);border:none;cursor:pointer">Got it</button>
+  </div>
+</div>
+
 <!-- ── Toast ── -->
 <div id="toast"></div>
 
@@ -717,6 +730,59 @@ const EXERCISE_INFO = {
   },
 };
 
+const WARMUP_INFO = {
+  push: {
+    title: 'Push Day Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min easy echo bike Zone 1 — nasal breathing only, comfortable conversation pace.',
+      '10 shoulder circles forward + 10 backward — open the rotator cuff.',
+      '10 slow thoracic extensions over foam roller or bench edge.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release — activates diaphragm, primes breath control.',
+      '10 band pull-aparts or face pulls with light resistance — shoulder health prerequisite.',
+      '2 × 10 push-ups at 50% effort to prime the pressing pattern.',
+    ],
+    protocol: 'EXHALE holds after push exercises. Start 30 sec into rest. End 30 sec before next set.',
+  },
+  pull: {
+    title: 'Pull Day Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min easy echo bike Zone 1 — nasal only, gentle pace.',
+      '10 scapular pull-ups: hang from bar, depress and retract shoulder blades without bending elbows — activates lats and lower traps.',
+      '10 slow dead hangs: 10-sec hang at full shoulder elevation — decompresses spine, opens lats.',
+      '3 × Uddiyana Bandha: exhale → suck abdomen in and up → hold 10 sec → release.',
+      '10 face pulls with light resistance — rear delt and external rotator activation.',
+    ],
+    protocol: 'INHALE holds after pull exercises. Full diaphragmatic inhale → pinch nose → hold → breathe. Mirrors real diving: you enter water on full inhale and must tolerate CO2 rise while muscles remain loaded.',
+  },
+  legs: {
+    title: 'Legs Day Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min easy echo bike Zone 1 — nasal breathing only.',
+      '10 bodyweight squats — slow, full depth, heels flat.',
+      '10 hip circles each direction — open hip flexors.',
+      '10 glute bridges — activate posterior chain.',
+      '3 × Uddiyana Bandha: exhale → suck abdomen in and up → hold 10 sec → release.',
+      '10 walking lunges bodyweight — dynamic hip flexor stretch.',
+    ],
+    protocol: 'EXHALE holds after legs exercises. Stand → rest 30 sec → exhale fully → hold → breathe → resume rest. Exhale holds create the most intense CO2 stimulus and replicate hypoxic leg conditions during a real dive.',
+  },
+  cardio: {
+    title: 'Cardio Day Protocol',
+    duration: 'Full session',
+    steps: [
+      'Zone 2 bike 30 min (even cycles) — nasal breathing only, ~65–70% HRmax, conversational pace. OR 4×4 Norwegian HIIT (odd cycles) — 4 min at 90–95% HRmax, 3 min active recovery, 4 rounds.',
+      'Walking apnea max test — rested legs only (48+ hrs from last legs session). 90-sec breathe-up, full inhale, max distance. Record seconds + steps.',
+      '3 × sub-max CO2 walks — full inhale, ~75-80% of max. Conscious leg relaxation throughout.',
+      '1 × partial exhale walk (~25% exhale) — highest CO2 stimulus of the session.',
+      'Box breathing 4 min — 5-5-5-5 pattern. Advance to 6-6-6-6 when comfortable.',
+    ],
+    protocol: 'Garmin readiness < 70 → true rest only. Readiness 70–89 → light Zone 1 only (20–25 min nasal). Readiness 90+ → full session.',
+  },
+};
+
 function getExerciseInfo(name) {
   return EXERCISE_INFO[name] || null;
 }
@@ -733,6 +799,26 @@ function showExerciseInfo(name) {
 
 function closeExerciseInfo() {
   document.getElementById('ex-info-modal').style.display = 'none';
+}
+
+function showWarmup() {
+  const data = load();
+  const session = data.sessions[currentSessionId];
+  if (!session) return;
+  const info = WARMUP_INFO[session.day_type];
+  if (!info) return;
+  const modal = document.getElementById('warmup-modal');
+  document.getElementById('warmup-title').textContent = info.title;
+  document.getElementById('warmup-duration').textContent = info.duration;
+  document.getElementById('warmup-steps').innerHTML = info.steps
+    .map((s, i) => `<div style="display:flex;gap:10px;margin-bottom:12px"><span style="color:var(--accent);font-weight:800;flex-shrink:0">${i+1}.</span><span>${esc(s)}</span></div>`)
+    .join('');
+  document.getElementById('warmup-protocol').textContent = info.protocol;
+  modal.style.display = 'flex';
+}
+
+function closeWarmup() {
+  document.getElementById('warmup-modal').style.display = 'none';
 }
 
 let openCards = new Set();
@@ -1146,6 +1232,7 @@ function showScreen(name) {
   const isCalendar = name === 'calendar';
   document.getElementById('fitness-btn').style.display = isCalendar ? '' : 'none';
   document.getElementById('sync-btn').style.display = isCalendar ? '' : 'none';
+  document.getElementById('warmup-btn').style.display = isWorkout ? '' : 'none';
   document.getElementById('timer-btn').style.display = isWorkout ? '' : 'none';
   document.getElementById('sync-status').style.display = isCalendar ? '' : 'none';
   document.getElementById('workout-title').style.display = isWorkout ? '' : 'none';
@@ -1507,11 +1594,12 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote) {
   }
 
   return `<div class="set-row-wrap" id="srw-${esc(sid)}-${exIdx}-${setIdx}">
-    <div class="set-row" ontouchstart="swipeStart(event,this)" ontouchmove="swipeMove(event,this)" ontouchend="swipeEnd(event,'${esc(sid)}',${exIdx},${setIdx})">
+    <div class="set-row">
       <div class="set-row-line1">
         ${weightHtml}
         <span class="set-sep">×</span>
         <input type="number" class="reps-input" value="${s.prefilled ? '' : (s.reps !== '' && s.reps !== null && s.reps !== undefined ? s.reps : '')}" placeholder="reps" oninput="handleRepInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
+        <button class="set-delete-btn" onclick="deleteSet('${esc(sid)}',${exIdx},${setIdx})">✕</button>
       </div>
       <div class="set-row-line2">
         <div class="pill-group">${effortPills}</div>
@@ -1522,7 +1610,6 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote) {
         <input type="text" class="note-input" value="${esc(s.note || '')}" placeholder="${esc(notePlaceholder)}" oninput="handleNoteInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
       </div>
     </div>
-    <button class="set-delete-btn" onclick="deleteSet('${esc(sid)}',${exIdx},${setIdx})">🗑</button>
   </div>`;
 }
 
@@ -1600,7 +1687,8 @@ function handleEffortInput(sessionId, exIdx, setIdx, effort) {
   const session = data.sessions[sessionId];
   if (!session) return;
   const set = session.exercises[exIdx].sets[setIdx];
-  set.effort = effort;
+  // Tap active pill again → deselect
+  set.effort = set.effort === effort ? '' : effort;
   session.updated_at = Date.now();
   save(data);
   refreshSetRow(sessionId, exIdx, setIdx);
@@ -1611,7 +1699,8 @@ function handleAdjustmentInput(sessionId, exIdx, setIdx, adj) {
   const session = data.sessions[sessionId];
   if (!session) return;
   const set = session.exercises[exIdx].sets[setIdx];
-  set.adjustment = adj;
+  // Tap active pill again → deselect
+  set.adjustment = set.adjustment === adj ? '' : adj;
   session.updated_at = Date.now();
   save(data);
   refreshSetRow(sessionId, exIdx, setIdx);
@@ -1640,12 +1729,12 @@ function refreshExProgress(sessionId, exIdx) {
   if (!session) return;
   const ex = session.exercises[exIdx];
   const realSets = ex.sets.filter(isRealSet);
-  const progressEl = document.querySelector(`#exc-${CSS.escape(sessionId)}-${exIdx} .ex-progress`);
+  const progressEl = document.querySelector(`#exc-${sessionId.replace(/[^a-zA-Z0-9_-]/g, '\\$&')}-${exIdx} .ex-progress`);
   if (progressEl) progressEl.textContent = `${realSets.length}/${ex.sets.length}`;
 
   // Hide suggestion if first real set logged
   if (realSets.length > 0) {
-    const suggEl = document.querySelector(`#exc-${CSS.escape(sessionId)}-${exIdx} .ex-suggestion`);
+    const suggEl = document.querySelector(`#exc-${sessionId.replace(/[^a-zA-Z0-9_-]/g, '\\$&')}-${exIdx} .ex-suggestion`);
     if (suggEl) suggEl.style.display = 'none';
   }
 }
