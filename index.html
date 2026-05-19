@@ -312,10 +312,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
   background: var(--s2); border: 1px solid var(--border); color: var(--text);
 }
 .t-btn.primary { background: var(--accent); color: #0a0a0a; border-color: var(--accent); }
-.cd-presets { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 16px; }
+.cd-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
 .cd-preset-wrap { position: relative; }
 .cd-preset-btn {
-  width: 100%; aspect-ratio: 1; border-radius: var(--rs); font-size: 16px; font-weight: 800;
+  width: 100%; min-height: 80px; border-radius: var(--rs); font-size: 22px; font-weight: 800;
   background: var(--s2); border: 2px solid var(--border); color: var(--text);
   display: flex; align-items: center; justify-content: center;
   -webkit-user-select: none; user-select: none;
@@ -507,6 +507,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
     <div class="ft-field">
       <label class="ft-label">Post-Squat Exhale Hold (M:SS)</label>
       <input type="text" class="ft-input" id="ft-post-squat-hold" placeholder="e.g. 0:45">
+    </div>
+    <div class="ft-field">
+      <label class="ft-label">Jump Rope — 5 min (reps)</label>
+      <input type="number" class="ft-input" id="ft-jump-rope" placeholder="e.g. 600">
     </div>
     <button class="ft-save-btn" onclick="saveFitnessRecord()">Save Test</button>
   </div>
@@ -2604,7 +2608,7 @@ function saveFitnessRecord() {
   if (!date) { toast('Date required'); return; }
 
   const timeFields = ['ft-static-apnea', 'ft-walking-apnea', 'ft-post-pull-hold', 'ft-post-squat-hold'];
-  const numFields = ['ft-pull-ups', 'ft-push-ups', 'ft-bss-l', 'ft-bss-r'];
+  const numFields = ['ft-pull-ups', 'ft-push-ups', 'ft-bss-l', 'ft-bss-r', 'ft-jump-rope'];
 
   const results = {};
   let hasAny = false;
@@ -2620,6 +2624,7 @@ function saveFitnessRecord() {
     'ft-push-ups': 'pushUps',
     'ft-bss-l': 'bssL',
     'ft-bss-r': 'bssR',
+    'ft-jump-rope': 'jumpRope',
   };
 
   for (const id of timeFields) {
@@ -2648,7 +2653,7 @@ function saveFitnessRecord() {
   save(data);
 
   // Clear form
-  ['ft-static-apnea','ft-walking-apnea','ft-pull-ups','ft-push-ups','ft-bss-l','ft-bss-r','ft-post-pull-hold','ft-post-squat-hold']
+  ['ft-static-apnea','ft-walking-apnea','ft-pull-ups','ft-push-ups','ft-bss-l','ft-bss-r','ft-post-pull-hold','ft-post-squat-hold','ft-jump-rope']
     .forEach(id => document.getElementById(id).value = '');
 
   toast('Fitness test saved');
@@ -2675,6 +2680,7 @@ const FT_LABELS = {
   bssR: 'BSS Right',
   postPullUpHold: 'Post-Pull-Up Hold',
   postSquatHold: 'Post-Squat Hold',
+  jumpRope: 'Jump Rope (5 min)',
 };
 const FT_TIME_FIELDS = new Set(['staticApnea','walkingApnea','postPullUpHold','postSquatHold']);
 
