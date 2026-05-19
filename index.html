@@ -88,13 +88,15 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.completed     { border-color: var(--easy); }
 .cal-cell.partial       { border-color: var(--moderate); }
 .cal-cell.rest-day      { border-color: #38bdf8; background: rgba(56,189,248,0.08); }
-.cal-cell.injured       { border-color: var(--hard); background: rgba(244,67,54,0.08); }
+.cal-cell.injured       { border-color: var(--hard); }
+.cal-cell.fitness-day   { border-color: var(--legs); }
 .cal-cell.other-month   { opacity: 0.3; }
 .cal-cell .cal-date { font-size: 15px; font-weight: 700; line-height: 1; color: var(--text); }
 .cal-cell.completed .cal-date  { color: var(--easy); }
 .cal-cell.partial .cal-date    { color: var(--moderate); }
 .cal-cell.rest-day .cal-date   { color: #38bdf8; }
 .cal-cell.injured .cal-date    { color: var(--hard); }
+.cal-cell.fitness-day .cal-date { color: var(--legs); }
 .cal-type-label {
   font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 2px; line-height: 1;
 }
@@ -104,18 +106,6 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .type-text-cardio  { color: var(--cardio); }
 .type-text-rest    { color: var(--rest); }
 .cal-cell .done-check { position: absolute; top: 3px; right: 4px; font-size: 10px; color: var(--easy); }
-.cal-cell .status-circle {
-  position: absolute; bottom: 3px; right: 3px; width: 14px; height: 14px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px;
-  cursor: pointer;
-}
-/* Injury toggle button — always visible when injured, hidden otherwise */
-.cal-cell .injury-btn {
-  position: absolute; top: 2px; left: 2px; font-size: 10px; line-height: 1;
-  padding: 2px; opacity: 0; transition: opacity 0.15s; color: var(--hard);
-}
-.cal-cell.injured .injury-btn { opacity: 1; }
-.cal-cell:active .injury-btn { opacity: 1; }
 
 /* Week strip */
 #week-view { }
@@ -166,7 +156,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .tsb-pull { background: var(--pull); }
 .tsb-legs { background: var(--legs); }
 .tsb-cardio { background: var(--cardio); }
-.tsb-rest { background: var(--rest); color: var(--text); }
+.tsb-rest    { background: var(--rest); color: var(--text); }
+.tsb-fitness { background: var(--legs); color: #0a0a0a; }
 #sheet-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 199;
   display: none;
@@ -502,6 +493,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
     <button class="type-sheet-btn tsb-legs" onclick="pickType('legs')">Legs</button>
     <button class="type-sheet-btn tsb-cardio" onclick="pickType('cardio')">Cardio</button>
     <button class="type-sheet-btn tsb-rest" onclick="pickType('rest')">Rest</button>
+    <button class="type-sheet-btn tsb-fitness" onclick="pickType('fitness')">Fitness Test</button>
   </div>
 </div>
 
@@ -869,13 +861,24 @@ function save(data) {
 }
 
 function defaultData() {
-  return { sessions: {}, plan: null, bodyweight: 185, fitness_records: [], injured_days: {} };
+  return { sessions: {}, plan: null, bodyweight: 185, fitness_records: [], injured_days: {}, fitness_test_days: {} };
 }
 
 function countRealSetsInSession(session) {
   if (!session.exercises) return 0;
   return session.exercises.reduce((sum, ex) =>
     sum + (ex.sets || []).filter(isRealSet).length, 0);
+}
+
+let _calHoldTimer = null;
+function calCellHoldStart(e, iso) {
+  _calHoldTimer = setTimeout(() => {
+    _calHoldTimer = null;
+    toggleInjury(iso);
+  }, 600);
+}
+function calCellHoldEnd() {
+  if (_calHoldTimer) { clearTimeout(_calHoldTimer); _calHoldTimer = null; }
 }
 
 function toggleInjury(iso) {
@@ -1334,6 +1337,7 @@ function renderMonthView() {
     const session = findSessionForDate(data, iso);
     let dotHtml = '';
     const injured = (data.injured_days || {})[iso];
+    const isFitnessDay = (data.fitness_test_days || {})[iso];
     const isRest = session && session.day_type === 'rest';
     const realCount = session ? countRealSetsInSession(session) : 0;
     const isComplete = session && session.completed;
@@ -1341,15 +1345,23 @@ function renderMonthView() {
 
     let cellClass = 'cal-cell';
     if (isToday) cellClass += ' today';
-    else if (injured) cellClass += ' injured';
+    if (injured) cellClass += ' injured';
+    else if (isFitnessDay) cellClass += ' fitness-day';
     else if (isComplete) cellClass += ' completed';
     else if (isPartial) cellClass += ' partial';
     else if (isRest) cellClass += ' rest-day';
 
-    const typeLabel = (session && !isRest) ? `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>` : '';
-    const injuryBtn = `<button class="injury-btn" onclick="event.stopPropagation();toggleInjury('${iso}')" title="Mark injured">${injured ? '🤕' : '+'}</button>`;
+    let typeLabel = '';
+    if (isFitnessDay) typeLabel = `<span class="cal-type-label" style="color:var(--legs)">Fitness</span>`;
+    else if (session && !isRest) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>`;
 
-    html += `<div class="${cellClass}" onclick="calDayTap('${iso}')">${injuryBtn}<span class="cal-date">${d}</span>${typeLabel}</div>`;
+    html += `<div class="${cellClass}"
+      onclick="calDayTap('${iso}')"
+      ontouchstart="calCellHoldStart(event,'${iso}')"
+      ontouchend="calCellHoldEnd()"
+      ontouchmove="calCellHoldEnd()"
+      oncontextmenu="event.preventDefault();toggleInjury('${iso}')"
+    ><span class="cal-date">${d}</span>${typeLabel}</div>`;
   }
 
   // Next month pad
@@ -1422,6 +1434,8 @@ function calDayTap(iso) {
   const session = findSessionForDate(data, iso);
   if (session) {
     openWorkout(session.session_id);
+  } else if ((data.fitness_test_days || {})[iso]) {
+    showFitness();
   } else {
     openTypeSheet(iso);
   }
@@ -1447,6 +1461,15 @@ function pickType(type) {
   const iso = sheetDate;
   closeTypeSheet();
   if (!iso) return;
+  if (type === 'fitness') {
+    const data = load();
+    if (!data.fitness_test_days) data.fitness_test_days = {};
+    data.fitness_test_days[iso] = true;
+    save(data);
+    renderCalendar();
+    showFitness();
+    return;
+  }
   const sessionId = getOrCreateSession(iso, type);
   if (type === 'rest') {
     renderCalendar();
