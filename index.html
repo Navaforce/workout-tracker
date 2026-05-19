@@ -718,10 +718,19 @@ function savePlan(key, plan, raw) {
   plan.days.forEach((day, i) => {
     const prev = existingDays[i];
     if (prev) {
-      if (prev.completed   !== undefined) day.completed   = prev.completed;
-      if (prev.completedAt !== undefined) day.completedAt = prev.completedAt;
-      if (prev.startedAt   !== undefined) day.startedAt   = prev.startedAt;
-      if (prev.date        !== undefined) day.date        = prev.date;
+      // Only preserve completion state if the day has the same exercises (same-week re-upload).
+      // If exercise IDs don't match this is a new week's plan overwriting an old one —
+      // carrying over completed/date would stamp this week's days with last week's dates.
+      const newIds  = new Set(day.exercises?.map(e => e.id) || []);
+      const prevIds = new Set(prev.exercises?.map(e => e.id) || []);
+      const sameExercises = newIds.size > 0 && newIds.size === prevIds.size &&
+        [...newIds].every(id => prevIds.has(id));
+      if (sameExercises) {
+        if (prev.completed   !== undefined) day.completed   = prev.completed;
+        if (prev.completedAt !== undefined) day.completedAt = prev.completedAt;
+        if (prev.startedAt   !== undefined) day.startedAt   = prev.startedAt;
+        if (prev.date        !== undefined) day.date        = prev.date;
+      }
     }
     // Carry bwMode forward: explicit current-week setting takes precedence,
     // then same-week prior plan, then name match from previous week.
@@ -4082,13 +4091,14 @@ function _repairWeekData(wData) {
       }
     }
   }
-  // Clear day.date from days that have no real sets
+  // Clear date/completion state from days that have no real sets
   if (wData.plan?.days) {
     wData.plan.days.forEach(day => {
-      const hasReal = day.exercises?.some(ex =>
-        (logs[ex.id] || []).some(isRealSet)
-      );
-      if (!hasReal && day.date) delete day.date;
+      const hasReal = day.exercises?.some(ex => (logs[ex.id] || []).some(isRealSet));
+      if (!hasReal) {
+        delete day.date; delete day.completed;
+        delete day.completedAt; delete day.startedAt;
+      }
     });
   }
   return wData;
@@ -4334,8 +4344,12 @@ syncCalToWeek();
       const realSets = day.exercises.flatMap(ex => (logs[ex.id] || []).filter(isRealSet));
 
       if (realSets.length === 0) {
-        // No real logged sets — clear any stale date (from handleAdd, old repair, etc.)
-        if (day.date) { delete day.date; dirty = true; }
+        // No real logged sets — clear stale date AND completion state copied from a
+        // prior week's plan by the old savePlan index-match logic.
+        if (day.date)        { delete day.date;        dirty = true; }
+        if (day.completed)   { delete day.completed;   dirty = true; }
+        if (day.completedAt) { delete day.completedAt; dirty = true; }
+        if (day.startedAt)   { delete day.startedAt;   dirty = true; }
         return;
       }
 
