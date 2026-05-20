@@ -391,8 +391,22 @@ input:focus, textarea:focus { border-color: var(--accent); }
   min-width: 28px; height: 44px; display: flex; align-items: center; justify-content: center;
   color: var(--dim); font-size: 18px; cursor: grab; touch-action: none; flex-shrink: 0;
 }
-.ft-field-row { display: flex; gap: 6px; align-items: flex-end; margin-bottom: 12px; }
+.ft-field-row { display: flex; gap: 6px; align-items: flex-start; margin-bottom: 14px; }
 .ft-field-row.drag-over { border-top: 2px solid var(--accent); }
+.ft-field-body { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.ft-row-actions { display: flex; flex-direction: column; gap: 4px; align-items: center; padding-top: 22px; }
+.ft-info-btn { min-width: 32px; height: 32px; border-radius: 16px; background: transparent; border: 1px solid var(--border); color: var(--accent); font-size: 13px; display: flex; align-items: center; justify-content: center; }
+.ft-notes-input { width: 100%; height: 36px; padding: 0 10px; font-size: 13px; border-radius: var(--rs); background: var(--s2); border: 1px solid var(--border); color: var(--text); }
+.ft-notes-input::placeholder { color: var(--dim); }
+.ft-sub-inputs { display: flex; gap: 6px; }
+.ft-sub-inputs .ft-input { flex: 1; }
+.ft-dur-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.ft-dur-label { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.ft-dur-val { font-size: 13px; color: var(--accent); }
+.ft-dur-edit { font-size: 13px; color: var(--accent); background: none; border: none; padding: 0; text-decoration: underline; }
+#ft-info-modal { position: fixed; inset: 0; z-index: 500; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.75); padding: 16px; }
+#ft-info-modal.open { display: flex; }
+#ft-info-modal .modal-box { max-height: 80vh; overflow-y: auto; }
 .fitness-history h2 { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
 .ft-session {
   background: var(--s1); border-radius: var(--r); border: 1px solid var(--border);
@@ -559,6 +573,11 @@ input:focus, textarea:focus { border-color: var(--accent); }
       <label class="ft-label">Date</label>
       <input type="date" class="ft-date-input" id="ft-date">
     </div>
+    <div class="ft-dur-row">
+      <span class="ft-dur-label">Duration</span>
+      <span id="ft-dur-val" class="ft-dur-val">—</span>
+      <button class="ft-dur-edit" id="ft-dur-btn" onclick="openFTDurModal()">✎ Edit</button>
+    </div>
     <div id="ft-fields-list"></div>
     <button class="ft-add-btn" id="ft-add-exercise-btn" onclick="ftAddExercise()">+ Add Exercise</button>
     <button class="ft-save-btn" onclick="saveFitnessRecord()">Save Test</button>
@@ -566,6 +585,17 @@ input:focus, textarea:focus { border-color: var(--accent); }
   <div class="fitness-history">
     <h2>History</h2>
     <div id="ft-history-list"></div>
+  </div>
+</div>
+
+<!-- ── Fitness info modal ── -->
+<div id="ft-info-modal" onclick="if(event.target===this)closeFTInfoModal()">
+  <div class="modal-box">
+    <div class="modal-title" id="ft-info-title"></div>
+    <div class="modal-body" id="ft-info-body" style="white-space:pre-line"></div>
+    <div class="modal-btns">
+      <button class="modal-btn primary" onclick="closeFTInfoModal()">Got it</button>
+    </div>
   </div>
 </div>
 
@@ -1438,6 +1468,8 @@ function goBack() {
 function showFitness() {
   showScreen('fitness');
   seedFitnessHistory();
+  _ftStartedAt = null; _ftCompletedAt = null;
+  renderFTDuration();
   renderFTFields();
   renderFitnessHistory();
   const today = todayISO();
@@ -1518,9 +1550,16 @@ function renderMonthView() {
     if (isFitnessDay) typeLabel = `<span class="cal-type-label" style="color:var(--legs)">Fitness</span>`;
     else if (session && !isRest) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>`;
 
-    // Sets + duration info for non-rest sessions
+    // Sets + duration info for non-rest sessions; duration for fitness days
     let infoHtml = '';
     let progressBar = '';
+    if (isFitnessDay) {
+      const ftRec = (data.fitness_records || []).find(r => r.date === iso);
+      if (ftRec && ftRec.started_at && ftRec.completed_at) {
+        const mins = Math.round((ftRec.completed_at - ftRec.started_at) / 60000);
+        if (mins > 0) infoHtml = `<div class="cal-info"><span class="cal-dur">${mins}m</span></div>`;
+      }
+    }
     if (session && !isRest && !isFitnessDay) {
       const planned = countPlannedSetsInSession(session);
       const setsStr = planned > 0 ? `${realCount}/${planned} sets` : (realCount > 0 ? `${realCount} sets` : '');
@@ -2323,27 +2362,7 @@ function closeDurModal() {
   window._durSessionId = null;
 }
 
-function saveDurModal() {
-  const sessionId = window._durSessionId;
-  if (!sessionId) return;
-  const startVal = document.getElementById('dur-start-input').value;
-  const endVal   = document.getElementById('dur-end-input').value;
-  const startTs  = startVal ? new Date(startVal).getTime() : null;
-  const endTs    = endVal   ? new Date(endVal).getTime()   : null;
-  if (startTs && endTs && endTs <= startTs) {
-    toast('End time must be after start time');
-    return;
-  }
-  const data = load();
-  const session = data.sessions[sessionId];
-  if (!session) return;
-  session.started_at   = startTs  || session.started_at;
-  session.completed_at = endTs    || session.completed_at;
-  session.updated_at   = Date.now();
-  save(data);
-  closeDurModal();
-  renderWorkout(sessionId);
-}
+// saveDurModal defined below in FITNESS TESTS section — handles both workout and fitness test duration
 
 function closeValModal() {
   document.getElementById('val-modal').classList.remove('open');
@@ -2710,16 +2729,29 @@ document.addEventListener('touchstart', () => {
 // Built-in field definitions — canonical order, label, input type
 const FT_BUILTIN = [
   { key: 'staticApnea',    label: 'Static Apnea',              time: true  },
-  { key: 'walkingApnea',   label: 'Walking Apnea',             time: true  },
+  { key: 'walkingApnea',   label: 'Walking Apnea',             time: true,  steps: true },
   { key: 'pullUps',        label: 'Pull-Ups (reps)',            time: false },
   { key: 'postPullUpHold', label: 'Post-Pull-Up Exhale Hold',  time: true  },
   { key: 'pushUps',        label: 'Push-Ups (reps)',           time: false },
-  { key: 'bssL',           label: 'BSS Left (reps)',           time: false },
-  { key: 'bssR',           label: 'BSS Right (reps)',          time: false },
+  { key: 'bssL',           label: 'BSS Left',                  time: false, compound: true },
+  { key: 'bssR',           label: 'BSS Right',                 time: false, compound: true },
   { key: 'postSquatHold',  label: 'Post-Squat Exhale Hold',    time: true  },
   { key: 'echoBike',       label: 'Echo Bike — 5 min (cal)',   time: false },
   { key: 'burpees',        label: 'Burpees — 3 min (reps)',    time: false },
 ];
+
+const FT_CUES = {
+  staticApnea:    { title: 'Static Apnea', cue: 'Lie flat or sit still. Full inhale, hold breath. No movement. Start timer on last exhale before hold. Stop on first urge to breathe or involuntary contraction. Record M:SS.' },
+  walkingApnea:   { title: 'Walking Apnea', cue: 'Normal relaxed breathing, then full inhale. Walk at steady pace — no rushing. Count steps from first step to last before breathing. Record duration (M:SS) and total steps. Legs must be rested (48+ hrs from last leg session).' },
+  pullUps:        { title: 'Pull-Ups', cue: 'Dead hang start, chin clears bar each rep. No kipping. Full extension at bottom. Count to failure or technical failure (no cheat reps). Bodyweight only.' },
+  postPullUpHold: { title: 'Post-Pull-Up Exhale Hold', cue: 'Immediately after last pull-up rep. Step off bar, exhale fully, hold. Start timer on exhale. Stop on first urge to breathe. Record M:SS.' },
+  pushUps:        { title: 'Push-Ups', cue: 'Hands shoulder-width, full lock-out at top, chest touches floor. No sagging hips. Continuous cadence. Count to failure.' },
+  bssL:           { title: 'BSS Left Leg', cue: 'Bulgarian Split Squat — rear foot elevated ~18". Front foot forward enough for vertical shin. Record weight (lb, use 0 for bodyweight) and reps to failure with 1–2 RIR. Left leg leads.' },
+  bssR:           { title: 'BSS Right Leg', cue: 'Bulgarian Split Squat — same setup as left. Do right leg immediately after left with same load. Record weight and reps.' },
+  postSquatHold:  { title: 'Post-Squat Exhale Hold', cue: 'Immediately after last BSS rep of both legs. Stand, exhale fully, hold. Start timer on exhale. Stop on first urge to breathe. Record M:SS.' },
+  echoBike:       { title: 'Echo Bike — 5 min', cue: 'All-out effort from first pedal stroke. Arms and legs. Record total calories at exactly 5:00. Do not pace — treat as a max test. Use the Rogue Echo Bike only (not a substitute).' },
+  burpees:        { title: 'Burpees — 3 min', cue: 'Standard burpee: squat, kick back to plank, chest to floor, push up, jump feet in, jump with hands overhead. Count every completed rep. 3-minute clock, continuous effort. Record total reps.' },
+};
 
 const FT_LABELS = Object.fromEntries(FT_BUILTIN.map(f => [f.key, f.label]));
 const FT_TIME_FIELDS = new Set(FT_BUILTIN.filter(f => f.time).map(f => f.key));
@@ -2787,45 +2819,102 @@ function ftDrop(e, idx) {
   ftDragIdx = null;
 }
 
+// Capture current input values from the form into a plain object before re-render
+function ftCaptureValues() {
+  const vals = {};
+  document.querySelectorAll('#ft-fields-list [id^="ft-val-"]').forEach(el => {
+    if (el.value.trim()) vals[el.id] = el.value;
+  });
+  document.querySelectorAll('#ft-fields-list [id^="ft-steps-"]').forEach(el => {
+    if (el.value.trim()) vals[el.id] = el.value;
+  });
+  document.querySelectorAll('#ft-fields-list [id^="ft-weight-"]').forEach(el => {
+    if (el.value.trim()) vals[el.id] = el.value;
+  });
+  document.querySelectorAll('#ft-fields-list [id^="ft-reps-"]').forEach(el => {
+    if (el.value.trim()) vals[el.id] = el.value;
+  });
+  document.querySelectorAll('#ft-fields-list [id^="ft-note-"]').forEach(el => {
+    if (el.value.trim()) vals[el.id] = el.value;
+  });
+  return vals;
+}
+
+function ftRestoreValues(vals) {
+  for (const [id, val] of Object.entries(vals)) {
+    const el = document.getElementById(id);
+    if (el) el.value = val;
+  }
+}
+
 function renderFTFields() {
   const cfg = loadFTConfig();
   const container = document.getElementById('ft-fields-list');
   if (!container) return;
+
+  // Preserve in-progress values across re-render (fix bug #5)
+  const saved = ftCaptureValues();
 
   const records = (load().fitness_records || []);
   const best = getFitnessBest(records);
   const prevResults = records.length > 0 ? (records[0].results || {}) : {};
 
   container.innerHTML = cfg.map((f, i) => {
-    const inputType = f.time ? 'text' : 'number';
-    const ph = f.time ? 'M:SS' : 'reps / cal';
+    const hasCue = !f.custom && FT_CUES[f.key];
+    const infoBtn = hasCue
+      ? `<button class="ft-info-btn" onclick="event.stopPropagation();showFTInfo('${f.key}')">ⓘ</button>`
+      : '';
 
-    const prevVal = f.key in prevResults ? prevResults[f.key] : null;
-    const bestVal = f.key in best ? best[f.key] : null;
-    const prevStr = prevVal != null ? formatFTValue(f.key, prevVal) : '—';
-    const bestStr = bestVal != null ? formatFTValue(f.key, bestVal) : '—';
+    // Prev/best stats — handle compound BSS values
+    const prevRaw = f.key in prevResults ? prevResults[f.key] : null;
+    const bestRaw = f.key in best ? best[f.key] : null;
+    const prevStr = prevRaw != null ? formatFTValue(f.key, prevRaw) : '—';
+    const bestStr = bestRaw != null ? formatFTValue(f.key, bestRaw) : '—';
     const statsHtml = `<span style="font-size:11px;color:var(--accent)">Prev: ${prevStr} · Best: ${bestStr}</span>`;
 
     const labelHtml = f.custom
       ? `<input type="text" class="ft-input ft-custom-label" placeholder="Exercise name"
            value="${(f.label || '').replace(/"/g,'&quot;')}"
-           oninput="ftUpdateCustomLabel(${i}, this.value)" style="margin-bottom:4px">`
+           oninput="ftUpdateCustomLabel(${i}, this.value)">`
       : `<label class="ft-label">${f.label}</label>`;
+
+    // Main input area — compound (BSS), steps+time (walking), or simple
+    let inputsHtml;
+    if (f.compound) {
+      inputsHtml = `<div class="ft-sub-inputs">
+        <input type="number" class="ft-input" id="ft-weight-${f.key}" placeholder="lb (0=BW)" oninput="ftAutoSave()">
+        <input type="number" class="ft-input" id="ft-reps-${f.key}" placeholder="reps" oninput="ftAutoSave()">
+      </div>`;
+    } else if (f.steps) {
+      inputsHtml = `<div class="ft-sub-inputs">
+        <input type="text" class="ft-input" id="ft-val-${f.key}" placeholder="M:SS" oninput="ftAutoSave()">
+        <input type="number" class="ft-input" id="ft-steps-${f.key}" placeholder="steps" oninput="ftAutoSave()">
+      </div>`;
+    } else {
+      const inputType = f.time ? 'text' : 'number';
+      const ph = f.time ? 'M:SS' : 'reps / cal';
+      inputsHtml = `<input type="${inputType}" class="ft-input" id="ft-val-${f.key}" placeholder="${ph}" oninput="ftAutoSave()">`;
+    }
 
     return `<div class="ft-field-row" data-key="${f.key}" draggable="true"
         ondragstart="ftDragStart(event,${i})"
         ondragover="ftDragOver(event,${i})"
         ondrop="ftDrop(event,${i})">
       <span class="ft-drag-handle">⠿</span>
-      <div style="flex:1">
+      <div class="ft-field-body">
         ${labelHtml}
         ${statsHtml}
-        <input type="${inputType}" class="ft-input" id="ft-val-${f.key}"
-          placeholder="${ph}" style="margin-top:4px">
+        ${inputsHtml}
+        <input type="text" class="ft-notes-input" id="ft-note-${f.key}" placeholder="Notes…" oninput="ftAutoSave()">
       </div>
-      <button class="ft-remove-btn" onclick="ftRemoveField('${f.key}')">✕</button>
+      <div class="ft-row-actions">
+        ${infoBtn}
+        <button class="ft-remove-btn" onclick="ftRemoveField('${f.key}')">✕</button>
+      </div>
     </div>`;
   }).join('');
+
+  ftRestoreValues(saved);
 }
 
 function ftUpdateCustomLabel(idx, val) {
@@ -2833,7 +2922,84 @@ function ftUpdateCustomLabel(idx, val) {
   if (cfg[idx]) { cfg[idx].label = val; saveFTConfig(cfg); }
 }
 
+// Fitness test info modal
+function showFTInfo(key) {
+  const cue = FT_CUES[key];
+  if (!cue) return;
+  document.getElementById('ft-info-title').textContent = cue.title;
+  document.getElementById('ft-info-body').textContent = cue.cue;
+  document.getElementById('ft-info-modal').classList.add('open');
+}
+function closeFTInfoModal() {
+  document.getElementById('ft-info-modal').classList.remove('open');
+}
+
+// Fitness test duration state
+let _ftStartedAt = null, _ftCompletedAt = null;
+
+function renderFTDuration() {
+  const el = document.getElementById('ft-dur-val');
+  if (!el) return;
+  if (_ftStartedAt && _ftCompletedAt) {
+    const mins = Math.round((_ftCompletedAt - _ftStartedAt) / 60000);
+    el.textContent = mins > 0 ? `${mins}m` : '—';
+  } else {
+    el.textContent = '—';
+  }
+}
+
+function openFTDurModal() {
+  window._durSessionId = '__ft__';
+  document.getElementById('dur-start-input').value = tsToDatetimeLocal(_ftStartedAt);
+  document.getElementById('dur-end-input').value   = tsToDatetimeLocal(_ftCompletedAt);
+  document.getElementById('dur-modal').classList.add('open');
+}
+
+// Hook saveDurModal to handle fitness test duration separately
+const _origSaveDurModal = typeof saveDurModal !== 'undefined' ? saveDurModal : null;
+
+function saveDurModal() {
+  if (window._durSessionId === '__ft__') {
+    const startVal = document.getElementById('dur-start-input').value;
+    const endVal   = document.getElementById('dur-end-input').value;
+    const startTs  = startVal ? new Date(startVal).getTime() : null;
+    const endTs    = endVal   ? new Date(endVal).getTime()   : null;
+    if (endTs && startTs && endTs <= startTs) { toast('End must be after start'); return; }
+    _ftStartedAt   = startTs || _ftStartedAt;
+    _ftCompletedAt = endTs   || _ftCompletedAt;
+    closeDurModal();
+    renderFTDuration();
+    return;
+  }
+  // Original workout duration save
+  const sessionId = window._durSessionId;
+  if (!sessionId) { closeDurModal(); return; }
+  const startVal = document.getElementById('dur-start-input').value;
+  const endVal   = document.getElementById('dur-end-input').value;
+  const startTs  = startVal ? new Date(startVal).getTime() : null;
+  const endTs    = endVal   ? new Date(endVal).getTime()   : null;
+  if (endTs && startTs && endTs <= startTs) { toast('End must be after start'); return; }
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) { closeDurModal(); return; }
+  session.started_at   = startTs  || session.started_at;
+  session.completed_at = endTs    || session.completed_at;
+  session.updated_at   = Date.now();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  closeDurModal();
+  renderWorkout(sessionId);
+}
+
 function formatFTValue(key, val) {
+  if (val == null) return '—';
+  // Compound BSS: {weight, reps}
+  if (typeof val === 'object' && 'reps' in val) {
+    return val.weight > 0 ? `${val.weight}lb × ${val.reps}` : `${val.reps} reps`;
+  }
+  // Walking apnea compound: {time, steps}
+  if (typeof val === 'object' && 'time' in val) {
+    return val.steps ? `${fmtMSS(val.time)} / ${val.steps}s` : fmtMSS(val.time);
+  }
   if (FT_TIME_FIELDS.has(key)) return fmtMSS(val);
   return String(val);
 }
@@ -2843,57 +3009,136 @@ function getFitnessBest(records) {
   for (const rec of records) {
     for (const [key, val] of Object.entries(rec.results || {})) {
       if (val == null) continue;
-      if (!(key in best) || val > best[key]) best[key] = val;
+      // For compound values, compare by reps
+      const cmp = (typeof val === 'object' && 'reps' in val) ? val.reps : val;
+      if (!(key in best)) { best[key] = val; continue; }
+      const prevCmp = (typeof best[key] === 'object' && 'reps' in best[key]) ? best[key].reps : best[key];
+      if (cmp > prevCmp) best[key] = val;
     }
   }
   return best;
 }
 
 function ftTrendIcon(curr, prev) {
-  if (prev == null) return '';
-  if (curr > prev) return '<span class="ft-trend up">↑</span>';
-  if (curr < prev) return '<span class="ft-trend down">↓</span>';
+  if (prev == null || curr == null) return '';
+  const c = (typeof curr === 'object' && 'reps' in curr) ? curr.reps : curr;
+  const p = (typeof prev === 'object' && 'reps' in prev) ? prev.reps : prev;
+  if (c > p) return '<span class="ft-trend up">↑</span>';
+  if (c < p) return '<span class="ft-trend down">↓</span>';
   return '<span class="ft-trend same">=</span>';
+}
+
+// Auto-save on any field input (item #6)
+let _ftAutoSaveTimer = null;
+function ftAutoSave() {
+  clearTimeout(_ftAutoSaveTimer);
+  _ftAutoSaveTimer = setTimeout(() => {
+    const date = document.getElementById('ft-date').value;
+    if (!date) return;
+    const record = ftCollectResults();
+    if (!record.hasAny) return;
+    const data = load();
+    if (!data.fitness_records) data.fitness_records = [];
+    // Update or insert record for this date (upsert by date)
+    const idx = data.fitness_records.findIndex(r => r.date === date);
+    const entry = {
+      date,
+      results: record.results,
+      notes: record.notes,
+      started_at: _ftStartedAt,
+      completed_at: _ftCompletedAt,
+    };
+    if (idx >= 0) data.fitness_records[idx] = entry;
+    else data.fitness_records.unshift(entry);
+    if (data.fitness_records.length > 50) data.fitness_records = data.fitness_records.slice(0, 50);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    syncNow(true);
+    renderFitnessHistory();
+  }, 800);
+}
+
+function ftCollectResults() {
+  const cfg = loadFTConfig();
+  const results = {};
+  const notes = {};
+  let hasAny = false;
+
+  for (const f of cfg) {
+    // Note
+    const noteEl = document.getElementById(`ft-note-${f.key}`);
+    if (noteEl && noteEl.value.trim()) notes[f.key] = noteEl.value.trim();
+
+    if (f.compound) {
+      const wEl = document.getElementById(`ft-weight-${f.key}`);
+      const rEl = document.getElementById(`ft-reps-${f.key}`);
+      if (!rEl || !rEl.value.trim()) continue;
+      const reps = parseInt(rEl.value, 10);
+      if (!isFinite(reps)) continue;
+      const weight = wEl && wEl.value.trim() ? parseFloat(wEl.value) : 0;
+      results[f.key] = { weight: isFinite(weight) ? weight : 0, reps };
+      hasAny = true;
+    } else if (f.steps) {
+      const tEl = document.getElementById(`ft-val-${f.key}`);
+      const sEl = document.getElementById(`ft-steps-${f.key}`);
+      if (!tEl || !tEl.value.trim()) continue;
+      const parsed = parseMSS(tEl.value.trim());
+      if (parsed === null) continue;
+      const steps = sEl && sEl.value.trim() ? parseInt(sEl.value, 10) : null;
+      results[f.key] = { time: parsed, steps: isFinite(steps) ? steps : null };
+      hasAny = true;
+    } else {
+      const el = document.getElementById(`ft-val-${f.key}`);
+      if (!el || !el.value.trim()) continue;
+      if (f.time) {
+        const parsed = parseMSS(el.value.trim());
+        if (parsed === null) continue;
+        results[f.key] = parsed;
+      } else {
+        const n = parseFloat(el.value);
+        if (!isFinite(n)) continue;
+        results[f.key] = n;
+      }
+      hasAny = true;
+    }
+  }
+  return { results, notes, hasAny };
 }
 
 function saveFitnessRecord() {
   const date = document.getElementById('ft-date').value;
   if (!date) { toast('Date required'); return; }
 
-  const cfg = loadFTConfig();
-  const results = {};
-  let hasAny = false;
-
-  for (const f of cfg) {
-    const el = document.getElementById(`ft-val-${f.key}`);
-    if (!el) continue;
-    const val = el.value.trim();
-    if (!val) continue;
-    if (f.time) {
-      const parsed = parseMSS(val);
-      if (parsed === null) { toast(`Invalid time: ${val}`); return; }
-      results[f.key] = parsed;
-    } else {
-      const n = parseFloat(val);
-      if (!isFinite(n)) { toast(`Invalid number: ${val}`); return; }
-      results[f.key] = n;
-    }
-    hasAny = true;
-  }
-
+  const { results, notes, hasAny } = ftCollectResults();
   if (!hasAny) { toast('Enter at least one metric'); return; }
+
+  // Validate time fields show error
+  const cfg = loadFTConfig();
+  for (const f of cfg) {
+    if (!f.time || f.compound || f.steps) continue;
+    const el = document.getElementById(`ft-val-${f.key}`);
+    if (!el || !el.value.trim()) continue;
+    if (parseMSS(el.value.trim()) === null) { toast(`Invalid time: ${el.value}`); return; }
+  }
 
   const data = load();
   if (!data.fitness_records) data.fitness_records = [];
-  data.fitness_records.unshift({ date, results });
+  const idx = data.fitness_records.findIndex(r => r.date === date);
+  const entry = { date, results, notes, started_at: _ftStartedAt, completed_at: _ftCompletedAt };
+  if (idx >= 0) data.fitness_records[idx] = entry;
+  else data.fitness_records.unshift(entry);
   if (data.fitness_records.length > 50) data.fitness_records = data.fitness_records.slice(0, 50);
   save(data);
+  syncNow(true);
 
-  // Clear all value inputs
+  // Clear form
   cfg.forEach(f => {
-    const el = document.getElementById(`ft-val-${f.key}`);
-    if (el) el.value = '';
+    ['ft-val-','ft-steps-','ft-weight-','ft-reps-','ft-note-'].forEach(pfx => {
+      const el = document.getElementById(`${pfx}${f.key}`);
+      if (el) el.value = '';
+    });
   });
+  _ftStartedAt = null; _ftCompletedAt = null;
+  renderFTDuration();
 
   toast('Fitness test saved');
   renderFitnessHistory();
@@ -2911,16 +3156,30 @@ function renderFitnessHistory() {
   }
 
   const best = getFitnessBest(records);
-  // Canonical display order for history: builtin keys first, then custom
   const builtinKeys = FT_BUILTIN.map(f => f.key);
 
   let html = '';
   for (let i = 0; i < records.length; i++) {
     const rec = records[i];
     const results = rec.results || {};
+    const notes = rec.notes || {};
     const prevResults = i + 1 < records.length ? (records[i + 1].results || {}) : {};
-    const prCount = Object.entries(results).filter(([k, v]) => v != null && best[k] === v).length;
+    const prCount = Object.entries(results).filter(([k, v]) => {
+      if (v == null) return false;
+      const cmp = (typeof v === 'object' && 'reps' in v) ? v.reps : v;
+      const b = best[k];
+      if (b == null) return false;
+      const bcmp = (typeof b === 'object' && 'reps' in b) ? b.reps : b;
+      return cmp === bcmp;
+    }).length;
     const isOpen = document.getElementById(`fts-${i}`)?.classList.contains('open') || false;
+
+    // Duration line
+    let durLine = '';
+    if (rec.started_at && rec.completed_at) {
+      const mins = Math.round((rec.completed_at - rec.started_at) / 60000);
+      if (mins > 0) durLine = `<div style="font-size:12px;color:var(--accent);padding:4px 0">${mins}m</div>`;
+    }
 
     const allKeys = [...builtinKeys];
     for (const k of Object.keys(results)) { if (!allKeys.includes(k)) allKeys.push(k); }
@@ -2929,16 +3188,22 @@ function renderFitnessHistory() {
     for (const key of allKeys) {
       if (!(key in results)) continue;
       const val = results[key];
-      const isPR = best[key] === val;
       const prevVal = key in prevResults ? prevResults[key] : null;
       const bestVal = best[key];
       const label = FT_LABELS[key] || key.replace(/^custom_\d+$/, '').replace(/_/g,' ');
       const displayed = formatFTValue(key, val);
       const trend = ftTrendIcon(val, prevVal);
-      const prevStr = prevVal != null ? formatFTValue(key, prevVal) : '—';
-      const bestStr = bestVal != null ? formatFTValue(key, bestVal) : '—';
+      const prevStr = formatFTValue(key, prevVal);
+      const bestStr = formatFTValue(key, bestVal);
+      const isPR = (() => {
+        if (val == null || bestVal == null) return false;
+        const c = (typeof val === 'object' && 'reps' in val) ? val.reps : val;
+        const b = (typeof bestVal === 'object' && 'reps' in bestVal) ? bestVal.reps : bestVal;
+        return c === b;
+      })();
+      const noteStr = notes[key] ? `<div style="font-size:11px;color:var(--dim);margin-top:2px">${notes[key]}</div>` : '';
       metricsHtml += `<div class="ft-metric-row">
-        <span class="ft-metric-name">${label}</span>
+        <span class="ft-metric-name">${label}${noteStr}</span>
         <span class="ft-metric-sub">Prev: ${prevStr}<br>Best: ${bestStr}</span>
         <span class="ft-metric-val${isPR ? ' is-pr' : ''}">${displayed}</span>
         ${trend}
@@ -2951,7 +3216,7 @@ function renderFitnessHistory() {
         ${prCount > 0 ? `<span class="ft-pr-badge">${prCount} PR${prCount>1?'s':''}</span>` : ''}
         <span class="ft-session-chevron">⌄</span>
       </div>
-      <div class="ft-session-body">${metricsHtml}</div>
+      <div class="ft-session-body">${durLine}${metricsHtml}</div>
     </div>`;
   }
 
@@ -2977,7 +3242,7 @@ function seedFitnessHistory() {
       date: '2026-04-19',
       results: {
         staticApnea: parseMSS('2:31'),
-        walkingApnea: parseMSS('1:46'),
+        walkingApnea: { time: parseMSS('1:46'), steps: null },
         pullUps: 21,
         pushUps: 78,
         echoBike: 64,
@@ -2990,12 +3255,12 @@ function seedFitnessHistory() {
       date: '2026-04-20',
       results: {
         staticApnea: parseMSS('2:36'),
-        walkingApnea: parseMSS('1:25'),
+        walkingApnea: { time: parseMSS('1:25'), steps: null },
         pullUps: 19,
         postPullUpHold: parseMSS('0:35'),
         pushUps: 75,
-        bssL: 19,
-        bssR: 19,
+        bssL: { weight: 0, reps: 19 },
+        bssR: { weight: 0, reps: 19 },
         postSquatHold: parseMSS('0:25'),
         echoBike: 70,
       }
