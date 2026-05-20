@@ -61,7 +61,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .screen.active { display: block; }
 
 /* ── Calendar screen ── */
-#cal-screen { padding: 12px; }
+#cal-screen { padding: 4px; }
 .cal-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
 .cal-tab {
   flex: 1; height: 44px; border-radius: var(--rs);
@@ -76,13 +76,13 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 0 4px; }
 .month-nav-btn { min-width: 44px; min-height: 44px; font-size: 20px; display: flex; align-items: center; justify-content: center; color: var(--text); }
 .month-title { font-size: 18px; font-weight: 700; }
-.month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
 .dow-header { text-align: center; font-size: 11px; color: var(--text); padding: 4px 0; font-weight: 600; }
 .cal-cell {
   background: var(--s1); border-radius: var(--rs);
-  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
   position: relative; cursor: pointer; border: 2px solid rgba(255,255,255,0.25);
-  min-height: 80px; padding: 6px 6px 4px; transition: border-color 0.15s; overflow: hidden;
+  min-height: 100px; padding: 7px 4px 4px; transition: border-color 0.15s; overflow: hidden;
 }
 /* Status-based outlines */
 .cal-cell.today         { border-color: var(--accent); }
@@ -93,9 +93,9 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.fitness-day   { border-color: var(--legs); }
 .cal-cell.other-month   { opacity: 0.3; }
 .cal-cell .cal-date { font-size: 14px; font-weight: 700; line-height: 1; color: var(--text); }
-.cal-cell .cal-info { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; width: 100%; }
-.cal-cell .cal-sets { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1; }
-.cal-cell .cal-dur  { font-size: 10px; color: var(--accent); line-height: 1; }
+.cal-cell .cal-info { display: flex; flex-direction: column; align-items: center; gap: 3px; margin-top: 4px; width: 100%; }
+.cal-cell .cal-sets { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1; text-align: center; }
+.cal-cell .cal-dur  { font-size: 10px; color: var(--accent); line-height: 1; text-align: center; }
 .cal-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.1); }
 .cal-progress-fill { height: 100%; border-radius: 0 0 var(--rs) var(--rs); transition: width 0.2s; }
 /* Date color follows workout type label */
@@ -106,7 +106,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.has-rest .cal-date    { color: #38bdf8; }
 .cal-cell.fitness-day .cal-date { color: var(--legs); }
 .cal-type-label {
-  font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 3px; line-height: 1;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 3px; line-height: 1; text-align: center;
 }
 .type-text-push    { color: var(--push); }
 .type-text-pull    { color: var(--pull); }
