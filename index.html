@@ -1416,7 +1416,7 @@ function showScreen(name) {
   document.getElementById('reload-btn').style.display = isCalendar ? '' : 'none';
   document.getElementById('sync-btn').style.display = isCalendar ? '' : 'none';
   document.getElementById('warmup-btn').style.display = isWorkout ? '' : 'none';
-  document.getElementById('timer-btn').style.display = isWorkout ? '' : 'none';
+  document.getElementById('timer-btn').style.display = (isWorkout || isFitness) ? '' : 'none';
   document.getElementById('sync-status').style.display = isCalendar ? '' : 'none';
   document.getElementById('workout-title').style.display = isWorkout ? '' : 'none';
   document.getElementById('complete-btn').classList.toggle('visible', isWorkout);
