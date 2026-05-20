@@ -339,6 +339,22 @@ input:focus, textarea:focus { border-color: var(--accent); }
   box-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
 #cd-pip.visible { display: flex; }
+#sw-pip {
+  display: none; position: fixed; bottom: 136px; right: 16px; z-index: 200;
+  background: var(--s1); border: 2px solid var(--accent); border-radius: 14px;
+  padding: 10px 14px; flex-direction: row; align-items: center; gap: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+}
+#sw-pip.visible { display: flex; }
+#sw-pip-display {
+  font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;
+  color: var(--accent); min-width: 60px; text-align: center;
+}
+#sw-pip-stop {
+  min-width: 36px; height: 36px; border-radius: 18px; font-size: 16px;
+  background: var(--s2); border: 1px solid var(--border); color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+}
 #cd-pip-display {
   font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums;
   color: var(--accent); min-width: 52px; text-align: center;
@@ -605,6 +621,12 @@ input:focus, textarea:focus { border-color: var(--accent); }
 <div id="cd-pip" onclick="openTimer()">
   <span id="cd-pip-display">0:00</span>
   <button id="cd-pip-stop" onclick="event.stopPropagation();cdPipStop()">✕</button>
+</div>
+
+<!-- ── Stopwatch pip ── -->
+<div id="sw-pip" onclick="openTimer()">
+  <span id="sw-pip-display">0:00.0</span>
+  <button id="sw-pip-stop" onclick="event.stopPropagation();swPipStop()">✕</button>
 </div>
 
 <!-- ── Start modal ── -->
@@ -2384,9 +2406,12 @@ function confirmStart(doStart) {
 // ════════════════════════════════════════════════════════════════
 function openTimer() {
   renderCDPresets();
-  const pip = document.getElementById('cd-pip');
-  if (pip.classList.contains('visible')) switchTimerTab('cd');
-  pip.classList.remove('visible');
+  const cdPip = document.getElementById('cd-pip');
+  const swPip = document.getElementById('sw-pip');
+  if (cdPip.classList.contains('visible')) switchTimerTab('cd');
+  else if (swPip.classList.contains('visible')) switchTimerTab('sw');
+  cdPip.classList.remove('visible');
+  swPip.classList.remove('visible');
   document.getElementById('timer-overlay').classList.add('open');
 }
 
@@ -2396,11 +2421,20 @@ function closeTimer() {
     renderCD();
     document.getElementById('cd-pip').classList.add('visible');
   }
+  if (swRunning) {
+    renderSW();
+    document.getElementById('sw-pip').classList.add('visible');
+  }
 }
 
 function cdPipStop() {
   cdReset();
   document.getElementById('cd-pip').classList.remove('visible');
+}
+
+function swPipStop() {
+  swReset();
+  document.getElementById('sw-pip').classList.remove('visible');
 }
 
 function switchTimerTab(tab) {
@@ -2442,7 +2476,10 @@ function renderSW() {
   const m = Math.floor(total / 60000);
   const s = Math.floor((total % 60000) / 1000);
   const t = Math.floor((total % 1000) / 100);
-  document.getElementById('sw-display').textContent = `${m}:${String(s).padStart(2,'0')}.${t}`;
+  const txt = `${m}:${String(s).padStart(2,'0')}.${t}`;
+  document.getElementById('sw-display').textContent = txt;
+  const pip = document.getElementById('sw-pip-display');
+  if (pip) pip.textContent = txt;
 }
 
 // Countdown
