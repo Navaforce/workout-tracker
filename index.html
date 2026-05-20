@@ -453,7 +453,31 @@ input:focus, textarea:focus { border-color: var(--accent); }
 <!-- ── Header ── -->
 <div id="header">
   <div id="header-left">
-    <span id="app-name">⊕ Spearo</span>
+    <span id="app-name" style="display:flex;align-items:center;gap:8px">
+      Spearo
+      <svg xmlns="http://www.w3.org/2000/svg" width="38" height="22" viewBox="0 0 120 70" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <!-- body -->
+        <path d="M28 35 C32 18 55 10 75 14 C90 17 105 25 110 35 C105 45 90 53 75 56 C55 60 32 52 28 35 Z"/>
+        <!-- tail fin -->
+        <path d="M28 35 C18 22 8 18 4 12 C10 20 10 28 4 35"/>
+        <path d="M28 35 C18 48 8 52 4 58 C10 50 10 42 4 35"/>
+        <!-- dorsal fin - forked/tall like hogfish -->
+        <path d="M55 14 C52 6 48 2 50 8 C51 4 54 1 56 7 C57 3 60 0 61 7 C62 3 65 2 65 8 C67 4 70 3 69 10 C70 6 73 5 72 12"/>
+        <path d="M55 14 L72 12"/>
+        <!-- pectoral fin -->
+        <path d="M65 42 C70 50 78 55 74 58 C68 52 62 50 60 44"/>
+        <!-- eye -->
+        <circle cx="90" cy="30" r="3.5" fill="#ffffff" stroke="none"/>
+        <!-- mouth - hogfish snout -->
+        <path d="M108 34 C115 32 118 35 115 38 C112 40 108 38 108 36"/>
+        <!-- gill line -->
+        <path d="M82 18 C84 28 83 42 80 52"/>
+        <!-- lateral line -->
+        <path d="M40 35 C55 33 70 34 82 36" stroke-dasharray="4 3"/>
+        <!-- ventral fin -->
+        <path d="M60 56 C62 63 58 67 55 63 C57 60 58 58 60 56"/>
+      </svg>
+    </span>
     <button class="hdr-btn" id="back-btn" onclick="handleBack()" style="display:none">‹</button>
   </div>
   <div id="header-center">
@@ -1331,7 +1355,7 @@ function showScreen(name) {
 
   const isWorkout = name === 'workout';
   const isFitness = name === 'fitness';
-  document.getElementById('app-name').style.display = (isWorkout || isFitness) ? 'none' : '';
+  document.getElementById('app-name').style.display = (isWorkout || isFitness) ? 'none' : 'flex';
   document.getElementById('back-btn').style.display = (isWorkout || isFitness) ? '' : 'none';
   const isCalendar = name === 'calendar';
   document.getElementById('fitness-btn').style.display = isCalendar ? '' : 'none';
