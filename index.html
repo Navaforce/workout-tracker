@@ -79,10 +79,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .dow-header { text-align: center; font-size: 11px; color: var(--text); padding: 4px 0; font-weight: 600; }
 .cal-cell {
-  aspect-ratio: 1; background: var(--s1); border-radius: var(--rs);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--s1); border-radius: var(--rs);
+  display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start;
   position: relative; cursor: pointer; border: 2px solid rgba(255,255,255,0.25);
-  min-height: 48px; transition: border-color 0.15s;
+  min-height: 80px; padding: 6px 6px 4px; transition: border-color 0.15s; overflow: hidden;
 }
 /* Status-based outlines */
 .cal-cell.today         { border-color: var(--accent); }
@@ -92,7 +92,12 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.injured       { border-color: var(--hard); }
 .cal-cell.fitness-day   { border-color: var(--legs); }
 .cal-cell.other-month   { opacity: 0.3; }
-.cal-cell .cal-date { font-size: 15px; font-weight: 700; line-height: 1; color: var(--text); }
+.cal-cell .cal-date { font-size: 14px; font-weight: 700; line-height: 1; color: var(--text); }
+.cal-cell .cal-info { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; width: 100%; }
+.cal-cell .cal-sets { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1; }
+.cal-cell .cal-dur  { font-size: 10px; color: var(--accent); line-height: 1; }
+.cal-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.1); }
+.cal-progress-fill { height: 100%; border-radius: 0 0 var(--rs) var(--rs); transition: width 0.2s; }
 /* Date color follows workout type label */
 .cal-cell.has-push .cal-date    { color: var(--push); }
 .cal-cell.has-pull .cal-date    { color: var(--pull); }
@@ -101,7 +106,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.has-rest .cal-date    { color: #38bdf8; }
 .cal-cell.fitness-day .cal-date { color: var(--legs); }
 .cal-type-label {
-  font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 2px; line-height: 1;
+  font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; margin-top: 3px; line-height: 1;
 }
 .type-text-push    { color: var(--push); }
 .type-text-pull    { color: var(--pull); }
@@ -962,6 +967,18 @@ function countRealSetsInSession(session) {
     sum + (ex.sets || []).filter(isRealSet).length, 0);
 }
 
+function countPlannedSetsInSession(session) {
+  if (!session.exercises) return 0;
+  return session.exercises.reduce((sum, ex) =>
+    sum + (parseInt(ex.plan_sets, 10) || (ex.sets || []).length), 0);
+}
+
+function sessionDurationMins(session) {
+  if (!session.started_at || !session.completed_at) return null;
+  const mins = Math.round((session.completed_at - session.started_at) / 60000);
+  return mins > 0 ? mins : null;
+}
+
 let _calHoldStart = 0;
 let _calHoldIso = null;
 let _calHoldFired = false;
@@ -1479,13 +1496,34 @@ function renderMonthView() {
     if (isFitnessDay) typeLabel = `<span class="cal-type-label" style="color:var(--legs)">Fitness</span>`;
     else if (session && !isRest) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>`;
 
+    // Sets + duration info for non-rest sessions
+    let infoHtml = '';
+    let progressBar = '';
+    if (session && !isRest && !isFitnessDay) {
+      const planned = countPlannedSetsInSession(session);
+      const setsStr = planned > 0 ? `${realCount}/${planned} sets` : (realCount > 0 ? `${realCount} sets` : '');
+      const dur = sessionDurationMins(session);
+      const durStr = dur ? `${dur}m` : '';
+      if (setsStr || durStr) {
+        infoHtml = `<div class="cal-info">
+          ${setsStr ? `<span class="cal-sets">${setsStr}</span>` : ''}
+          ${durStr  ? `<span class="cal-dur">${durStr}</span>` : ''}
+        </div>`;
+      }
+      if (planned > 0) {
+        const pct = Math.min(100, Math.round((realCount / planned) * 100));
+        const fillColor = isComplete ? 'var(--easy)' : isPartial ? 'var(--moderate)' : 'var(--border)';
+        progressBar = `<div class="cal-progress"><div class="cal-progress-fill" style="width:${pct}%;background:${fillColor}"></div></div>`;
+      }
+    }
+
     html += `<div class="${cellClass}"
       onclick="calDayTapGuarded('${iso}')"
       ontouchstart="calCellHoldStart(event,'${iso}')"
       ontouchend="calCellHoldEnd(event)"
       ontouchmove="calCellHoldMove()"
       oncontextmenu="event.preventDefault();toggleInjury('${iso}')"
-    ><span class="cal-date">${d}</span>${typeLabel}</div>`;
+    ><span class="cal-date">${d}</span>${typeLabel}${infoHtml}${progressBar}</div>`;
   }
 
   // Next month pad
