@@ -349,6 +349,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .fitness-form { background: var(--s1); border-radius: var(--r); border: 1px solid var(--border); padding: 16px; margin-bottom: 16px; }
 .fitness-form h2 { font-size: 16px; font-weight: 800; margin-bottom: 14px; }
 .ft-field { margin-bottom: 12px; }
+.ft-field.ft-custom { display: flex; gap: 8px; align-items: flex-end; }
+.ft-field.ft-custom .ft-input { flex: 1; }
 .ft-label { font-size: 13px; color: var(--text); font-weight: 600; margin-bottom: 4px; display: block; }
 .ft-input { width: 100%; height: 44px; padding: 0 12px; font-size: 15px; border-radius: var(--rs); }
 .ft-date-input { width: 100%; height: 44px; padding: 0 12px; font-size: 15px; border-radius: var(--rs); color-scheme: dark; }
@@ -356,6 +358,20 @@ input:focus, textarea:focus { border-color: var(--accent); }
   width: 100%; height: 52px; border-radius: var(--r); background: var(--accent);
   color: #0a0a0a; font-size: 16px; font-weight: 800; margin-top: 8px;
 }
+.ft-add-btn {
+  width: 100%; height: 44px; border-radius: var(--rs); background: var(--s2);
+  border: 1px dashed var(--border); color: var(--text); font-size: 14px; font-weight: 700; margin-top: 4px;
+}
+.ft-remove-btn {
+  min-width: 36px; height: 44px; border-radius: var(--rs); background: transparent;
+  border: none; color: var(--dim); font-size: 20px; padding: 0; flex-shrink: 0;
+}
+.ft-drag-handle {
+  min-width: 28px; height: 44px; display: flex; align-items: center; justify-content: center;
+  color: var(--dim); font-size: 18px; cursor: grab; touch-action: none; flex-shrink: 0;
+}
+.ft-field-row { display: flex; gap: 6px; align-items: flex-end; margin-bottom: 12px; }
+.ft-field-row.drag-over { border-top: 2px solid var(--accent); }
 .fitness-history h2 { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
 .ft-session {
   background: var(--s1); border-radius: var(--r); border: 1px solid var(--border);
@@ -370,11 +386,16 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .ft-session.open .ft-session-chevron { transform: rotate(180deg); }
 .ft-session-body { display: none; padding: 0 14px 14px; }
 .ft-session.open .ft-session-body { display: block; }
-.ft-metric-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.ft-metric-row { display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
 .ft-metric-row:last-child { border-bottom: none; }
 .ft-metric-name { font-size: 14px; color: var(--text); }
-.ft-metric-val { font-size: 14px; font-weight: 700; }
+.ft-metric-sub { font-size: 11px; color: var(--dim); text-align: right; line-height: 1.3; }
+.ft-metric-val { font-size: 14px; font-weight: 700; text-align: right; }
 .ft-metric-val.is-pr { color: var(--accent); }
+.ft-trend { font-size: 16px; font-weight: 800; min-width: 18px; text-align: center; }
+.ft-trend.up   { color: var(--easy); }
+.ft-trend.down { color: var(--hard); }
+.ft-trend.same { color: var(--text); }
 
 /* ── Start modal ── */
 #start-modal {
@@ -476,42 +497,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
       <label class="ft-label">Date</label>
       <input type="date" class="ft-date-input" id="ft-date">
     </div>
-    <div class="ft-field">
-      <label class="ft-label">Static Apnea (M:SS)</label>
-      <input type="text" class="ft-input" id="ft-static-apnea" placeholder="e.g. 2:30">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">Walking Apnea (M:SS)</label>
-      <input type="text" class="ft-input" id="ft-walking-apnea" placeholder="e.g. 3:00">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">Pull-Ups (reps)</label>
-      <input type="number" class="ft-input" id="ft-pull-ups" placeholder="e.g. 15">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">Push-Ups (reps)</label>
-      <input type="number" class="ft-input" id="ft-push-ups" placeholder="e.g. 30">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">BSS Left (reps)</label>
-      <input type="number" class="ft-input" id="ft-bss-l" placeholder="e.g. 12">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">BSS Right (reps)</label>
-      <input type="number" class="ft-input" id="ft-bss-r" placeholder="e.g. 12">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">Post-Pull-Up Exhale Hold (M:SS)</label>
-      <input type="text" class="ft-input" id="ft-post-pull-hold" placeholder="e.g. 1:00">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">Post-Squat Exhale Hold (M:SS)</label>
-      <input type="text" class="ft-input" id="ft-post-squat-hold" placeholder="e.g. 0:45">
-    </div>
-    <div class="ft-field">
-      <label class="ft-label">Jump Rope — 5 min (reps)</label>
-      <input type="number" class="ft-input" id="ft-jump-rope" placeholder="e.g. 600">
-    </div>
+    <div id="ft-fields-list"></div>
+    <button class="ft-add-btn" id="ft-add-exercise-btn" onclick="ftAddExercise()">+ Add Exercise</button>
     <button class="ft-save-btn" onclick="saveFitnessRecord()">Save Test</button>
   </div>
   <div class="fitness-history">
@@ -1372,6 +1359,8 @@ function goBack() {
 
 function showFitness() {
   showScreen('fitness');
+  seedFitnessHistory();
+  renderFTFields();
   renderFitnessHistory();
   const today = todayISO();
   document.getElementById('ft-date').value = today;
@@ -2603,119 +2592,242 @@ document.addEventListener('touchstart', () => {
 // ════════════════════════════════════════════════════════════════
 // FITNESS TESTS
 // ════════════════════════════════════════════════════════════════
-function saveFitnessRecord() {
-  const date = document.getElementById('ft-date').value;
-  if (!date) { toast('Date required'); return; }
 
-  const timeFields = ['ft-static-apnea', 'ft-walking-apnea', 'ft-post-pull-hold', 'ft-post-squat-hold'];
-  const numFields = ['ft-pull-ups', 'ft-push-ups', 'ft-bss-l', 'ft-bss-r', 'ft-jump-rope'];
+// Built-in field definitions — canonical order, label, input type
+const FT_BUILTIN = [
+  { key: 'staticApnea',    label: 'Static Apnea',              time: true  },
+  { key: 'walkingApnea',   label: 'Walking Apnea',             time: true  },
+  { key: 'pullUps',        label: 'Pull-Ups (reps)',            time: false },
+  { key: 'postPullUpHold', label: 'Post-Pull-Up Exhale Hold',  time: true  },
+  { key: 'pushUps',        label: 'Push-Ups (reps)',           time: false },
+  { key: 'bssL',           label: 'BSS Left (reps)',           time: false },
+  { key: 'bssR',           label: 'BSS Right (reps)',          time: false },
+  { key: 'postSquatHold',  label: 'Post-Squat Exhale Hold',    time: true  },
+  { key: 'echoBike',       label: 'Echo Bike — 5 min (cal)',   time: false },
+  { key: 'burpees',        label: 'Burpees — 3 min (reps)',    time: false },
+];
 
-  const results = {};
-  let hasAny = false;
+const FT_LABELS = Object.fromEntries(FT_BUILTIN.map(f => [f.key, f.label]));
+const FT_TIME_FIELDS = new Set(FT_BUILTIN.filter(f => f.time).map(f => f.key));
 
-  const timeMap = {
-    'ft-static-apnea': 'staticApnea',
-    'ft-walking-apnea': 'walkingApnea',
-    'ft-post-pull-hold': 'postPullUpHold',
-    'ft-post-squat-hold': 'postSquatHold',
-  };
-  const numMap = {
-    'ft-pull-ups': 'pullUps',
-    'ft-push-ups': 'pushUps',
-    'ft-bss-l': 'bssL',
-    'ft-bss-r': 'bssR',
-    'ft-jump-rope': 'jumpRope',
-  };
+// Field config persisted to localStorage — ordered array of {key, label, time, custom?}
+const FT_CONFIG_KEY = 'wt_ft_config';
+let ftDragIdx = null;
 
-  for (const id of timeFields) {
-    const val = document.getElementById(id).value.trim();
-    if (!val) continue;
-    const parsed = parseMSS(val);
-    if (parsed === null) { toast(`Invalid time: ${val}`); return; }
-    results[timeMap[id]] = parsed;
-    hasAny = true;
-  }
-
-  for (const id of numFields) {
-    const val = document.getElementById(id).value.trim();
-    if (!val) continue;
-    const n = parseInt(val, 10);
-    if (!isFinite(n)) { toast(`Invalid number: ${val}`); return; }
-    results[numMap[id]] = n;
-    hasAny = true;
-  }
-
-  if (!hasAny) { toast('Enter at least one metric'); return; }
-
-  const data = load();
-  data.fitness_records.unshift({ date, results });
-  if (data.fitness_records.length > 50) data.fitness_records = data.fitness_records.slice(0, 50);
-  save(data);
-
-  // Clear form
-  ['ft-static-apnea','ft-walking-apnea','ft-pull-ups','ft-push-ups','ft-bss-l','ft-bss-r','ft-post-pull-hold','ft-post-squat-hold','ft-jump-rope']
-    .forEach(id => document.getElementById(id).value = '');
-
-  toast('Fitness test saved');
-  renderFitnessHistory();
+function loadFTConfig() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FT_CONFIG_KEY));
+    if (Array.isArray(saved) && saved.length > 0) return saved;
+  } catch {}
+  // Default: all built-ins in canonical order
+  return FT_BUILTIN.map(f => ({ ...f }));
 }
 
-function getFitnessPRs(records) {
-  const prs = {};
-  for (const rec of records) {
-    for (const [key, val] of Object.entries(rec.results || {})) {
-      if (val === null || val === undefined) continue;
-      if (!(key in prs) || val > prs[key]) prs[key] = val;
-    }
-  }
-  return prs;
+function saveFTConfig(cfg) {
+  localStorage.setItem(FT_CONFIG_KEY, JSON.stringify(cfg));
 }
 
-const FT_LABELS = {
-  staticApnea: 'Static Apnea',
-  walkingApnea: 'Walking Apnea',
-  pullUps: 'Pull-Ups',
-  pushUps: 'Push-Ups',
-  bssL: 'BSS Left',
-  bssR: 'BSS Right',
-  postPullUpHold: 'Post-Pull-Up Hold',
-  postSquatHold: 'Post-Squat Hold',
-  jumpRope: 'Jump Rope (5 min)',
-};
-const FT_TIME_FIELDS = new Set(['staticApnea','walkingApnea','postPullUpHold','postSquatHold']);
+function ftAddExercise() {
+  const cfg = loadFTConfig();
+  cfg.push({ key: `custom_${Date.now()}`, label: '', time: false, custom: true });
+  saveFTConfig(cfg);
+  renderFTFields();
+  // Focus the new label input
+  const rows = document.querySelectorAll('.ft-field-row');
+  const last = rows[rows.length - 1];
+  if (last) { const inp = last.querySelector('.ft-custom-label'); if (inp) inp.focus(); }
+}
+
+function ftRemoveField(key) {
+  const cfg = loadFTConfig().filter(f => f.key !== key);
+  saveFTConfig(cfg);
+  renderFTFields();
+}
+
+function ftMoveField(fromIdx, toIdx) {
+  const cfg = loadFTConfig();
+  if (fromIdx < 0 || toIdx < 0 || fromIdx >= cfg.length || toIdx >= cfg.length) return;
+  const [moved] = cfg.splice(fromIdx, 1);
+  cfg.splice(toIdx, 0, moved);
+  saveFTConfig(cfg);
+  renderFTFields();
+}
+
+function ftDragStart(e, idx) {
+  ftDragIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function ftDragOver(e, idx) {
+  e.preventDefault();
+  document.querySelectorAll('.ft-field-row').forEach((r, i) => {
+    r.classList.toggle('drag-over', i === idx && i !== ftDragIdx);
+  });
+}
+
+function ftDrop(e, idx) {
+  e.preventDefault();
+  document.querySelectorAll('.ft-field-row').forEach(r => r.classList.remove('drag-over'));
+  if (ftDragIdx === null || ftDragIdx === idx) { ftDragIdx = null; return; }
+  ftMoveField(ftDragIdx, idx);
+  ftDragIdx = null;
+}
+
+function renderFTFields() {
+  const cfg = loadFTConfig();
+  const container = document.getElementById('ft-fields-list');
+  if (!container) return;
+
+  const records = (load().fitness_records || []);
+  const best = getFitnessBest(records);
+  const prevResults = records.length > 0 ? (records[0].results || {}) : {};
+
+  container.innerHTML = cfg.map((f, i) => {
+    const inputType = f.time ? 'text' : 'number';
+    const ph = f.time ? 'M:SS' : 'reps / cal';
+
+    const prevVal = f.key in prevResults ? prevResults[f.key] : null;
+    const bestVal = f.key in best ? best[f.key] : null;
+    const prevStr = prevVal != null ? formatFTValue(f.key, prevVal) : '—';
+    const bestStr = bestVal != null ? formatFTValue(f.key, bestVal) : '—';
+    const statsHtml = `<span style="font-size:11px;color:var(--dim)">Prev: ${prevStr} · Best: ${bestStr}</span>`;
+
+    const labelHtml = f.custom
+      ? `<input type="text" class="ft-input ft-custom-label" placeholder="Exercise name"
+           value="${(f.label || '').replace(/"/g,'&quot;')}"
+           oninput="ftUpdateCustomLabel(${i}, this.value)" style="margin-bottom:4px">`
+      : `<label class="ft-label">${f.label}</label>`;
+
+    return `<div class="ft-field-row" data-key="${f.key}" draggable="true"
+        ondragstart="ftDragStart(event,${i})"
+        ondragover="ftDragOver(event,${i})"
+        ondrop="ftDrop(event,${i})">
+      <span class="ft-drag-handle">⠿</span>
+      <div style="flex:1">
+        ${labelHtml}
+        ${statsHtml}
+        <input type="${inputType}" class="ft-input" id="ft-val-${f.key}"
+          placeholder="${ph}" style="margin-top:4px">
+      </div>
+      <button class="ft-remove-btn" onclick="ftRemoveField('${f.key}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function ftUpdateCustomLabel(idx, val) {
+  const cfg = loadFTConfig();
+  if (cfg[idx]) { cfg[idx].label = val; saveFTConfig(cfg); }
+}
 
 function formatFTValue(key, val) {
   if (FT_TIME_FIELDS.has(key)) return fmtMSS(val);
   return String(val);
 }
 
+function getFitnessBest(records) {
+  const best = {};
+  for (const rec of records) {
+    for (const [key, val] of Object.entries(rec.results || {})) {
+      if (val == null) continue;
+      if (!(key in best) || val > best[key]) best[key] = val;
+    }
+  }
+  return best;
+}
+
+function ftTrendIcon(curr, prev) {
+  if (prev == null) return '';
+  if (curr > prev) return '<span class="ft-trend up">↑</span>';
+  if (curr < prev) return '<span class="ft-trend down">↓</span>';
+  return '<span class="ft-trend same">=</span>';
+}
+
+function saveFitnessRecord() {
+  const date = document.getElementById('ft-date').value;
+  if (!date) { toast('Date required'); return; }
+
+  const cfg = loadFTConfig();
+  const results = {};
+  let hasAny = false;
+
+  for (const f of cfg) {
+    const el = document.getElementById(`ft-val-${f.key}`);
+    if (!el) continue;
+    const val = el.value.trim();
+    if (!val) continue;
+    if (f.time) {
+      const parsed = parseMSS(val);
+      if (parsed === null) { toast(`Invalid time: ${val}`); return; }
+      results[f.key] = parsed;
+    } else {
+      const n = parseFloat(val);
+      if (!isFinite(n)) { toast(`Invalid number: ${val}`); return; }
+      results[f.key] = n;
+    }
+    hasAny = true;
+  }
+
+  if (!hasAny) { toast('Enter at least one metric'); return; }
+
+  const data = load();
+  if (!data.fitness_records) data.fitness_records = [];
+  data.fitness_records.unshift({ date, results });
+  if (data.fitness_records.length > 50) data.fitness_records = data.fitness_records.slice(0, 50);
+  save(data);
+
+  // Clear all value inputs
+  cfg.forEach(f => {
+    const el = document.getElementById(`ft-val-${f.key}`);
+    if (el) el.value = '';
+  });
+
+  toast('Fitness test saved');
+  renderFitnessHistory();
+}
+
 function renderFitnessHistory() {
   const data = load();
   const records = data.fitness_records || [];
-  const prs = getFitnessPRs(records);
   const container = document.getElementById('ft-history-list');
+  if (!container) return;
 
   if (records.length === 0) {
     container.innerHTML = '<div style="color:var(--text);font-size:14px;padding:8px 0">No records yet.</div>';
     return;
   }
 
+  const best = getFitnessBest(records);
+  // Canonical display order for history: builtin keys first, then custom
+  const builtinKeys = FT_BUILTIN.map(f => f.key);
+
   let html = '';
   for (let i = 0; i < records.length; i++) {
     const rec = records[i];
     const results = rec.results || {};
-    const prCount = Object.entries(results).filter(([k, v]) => v !== null && v !== undefined && prs[k] === v).length;
+    const prevResults = i + 1 < records.length ? (records[i + 1].results || {}) : {};
+    const prCount = Object.entries(results).filter(([k, v]) => v != null && best[k] === v).length;
+    const isOpen = document.getElementById(`fts-${i}`)?.classList.contains('open') || false;
 
-    const isOpen = document.querySelector(`#fts-${i}.open`) !== null;
+    const allKeys = [...builtinKeys];
+    for (const k of Object.keys(results)) { if (!allKeys.includes(k)) allKeys.push(k); }
 
     let metricsHtml = '';
-    for (const [key, label] of Object.entries(FT_LABELS)) {
+    for (const key of allKeys) {
       if (!(key in results)) continue;
       const val = results[key];
-      const isPR = prs[key] === val;
+      const isPR = best[key] === val;
+      const prevVal = key in prevResults ? prevResults[key] : null;
+      const bestVal = best[key];
+      const label = FT_LABELS[key] || key.replace(/^custom_\d+$/, '').replace(/_/g,' ');
+      const displayed = formatFTValue(key, val);
+      const trend = ftTrendIcon(val, prevVal);
+      const prevStr = prevVal != null ? formatFTValue(key, prevVal) : '—';
+      const bestStr = bestVal != null ? formatFTValue(key, bestVal) : '—';
       metricsHtml += `<div class="ft-metric-row">
         <span class="ft-metric-name">${label}</span>
-        <span class="ft-metric-val${isPR ? ' is-pr' : ''}">${formatFTValue(key, val)}</span>
+        <span class="ft-metric-sub">Prev: ${prevStr}<br>Best: ${bestStr}</span>
+        <span class="ft-metric-val${isPR ? ' is-pr' : ''}">${displayed}</span>
+        ${trend}
       </div>`;
     }
 
@@ -2735,6 +2847,56 @@ function renderFitnessHistory() {
 function toggleFTSession(idx) {
   const el = document.getElementById(`fts-${idx}`);
   if (el) el.classList.toggle('open');
+}
+
+// Seed historical data if not already present
+function seedFitnessHistory() {
+  const data = load();
+  if (!data.fitness_records) data.fitness_records = [];
+  const existing = data.fitness_records.map(r => r.date);
+  if (existing.includes('2026-04-20') && existing.includes('2026-04-19')) return;
+
+  const toSeed = [];
+
+  if (!existing.includes('2026-04-19')) {
+    toSeed.push({
+      date: '2026-04-19',
+      results: {
+        staticApnea: parseMSS('2:31'),
+        walkingApnea: parseMSS('1:46'),
+        pullUps: 21,
+        pushUps: 78,
+        echoBike: 64,
+      }
+    });
+  }
+
+  if (!existing.includes('2026-04-20')) {
+    toSeed.push({
+      date: '2026-04-20',
+      results: {
+        staticApnea: parseMSS('2:36'),
+        walkingApnea: parseMSS('1:25'),
+        pullUps: 19,
+        postPullUpHold: parseMSS('0:35'),
+        pushUps: 75,
+        bssL: 19,
+        bssR: 19,
+        postSquatHold: parseMSS('0:25'),
+        echoBike: 70,
+      }
+    });
+  }
+
+  if (toSeed.length > 0) {
+    toSeed.sort((a, b) => b.date.localeCompare(a.date));
+    for (const r of toSeed) {
+      const insertAt = data.fitness_records.findIndex(e => e.date < r.date);
+      if (insertAt === -1) data.fitness_records.push(r);
+      else data.fitness_records.splice(insertAt, 0, r);
+    }
+    save(data);
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
