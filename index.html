@@ -1663,7 +1663,7 @@ function calDayTap(iso) {
   if (session) {
     openWorkout(session.session_id);
   } else if ((data.fitness_test_days || {})[iso]) {
-    showFitness();
+    showFitness(iso);
   } else {
     openTypeSheet(iso);
   }
