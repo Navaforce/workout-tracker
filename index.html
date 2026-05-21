@@ -2101,22 +2101,6 @@ function deleteSet(sessionId, exIdx, setIdx) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// SWIPE TO DELETE
-// ════════════════════════════════════════════════════════════════
-let swipeStartX = 0;
-function swipeStart(e, el) {
-  swipeStartX = e.touches[0].clientX;
-}
-function swipeMove(e, el) {
-  const dx = e.touches[0].clientX - swipeStartX;
-  if (dx < -20) el.classList.add('swiped');
-  else if (dx > 20) el.classList.remove('swiped');
-}
-function swipeEnd(e, sid, exIdx, setIdx) {
-  // noop — swiped state persists until next touch
-}
-
-// ════════════════════════════════════════════════════════════════
 // APNEA BLOCK
 // ════════════════════════════════════════════════════════════════
 function renderApneaBlock(session) {
