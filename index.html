@@ -1967,6 +1967,36 @@ function toggleExCard(exIdx) {
   renderExercises(session);
 }
 
+function toggleBWMode(sessionId, exIdx) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  const ex = session.exercises[exIdx];
+  const turningOff = ex.bw_mode;
+  const realSets = (ex.sets || []).filter(isRealSet);
+
+  function apply() {
+    ex.bw_mode = !ex.bw_mode;
+    // Clear bw/bw_added split fields when turning off so weight input is clean
+    if (!ex.bw_mode) {
+      ex.sets.forEach(s => { delete s.bw; delete s.bw_added; });
+    }
+    session.updated_at = Date.now();
+    save(data);
+    renderExercises(session);
+  }
+
+  if (turningOff && realSets.length > 0) {
+    showConfirmModal(
+      'Remove BW mode?',
+      `Clears bodyweight split from ${realSets.length} logged set${realSets.length > 1 ? 's' : ''}. Total weight values are kept.`,
+      apply
+    );
+  } else {
+    apply();
+  }
+}
+
 // ════════════════════════════════════════════════════════════════
 // SET INPUT HANDLERS
 // ════════════════════════════════════════════════════════════════
