@@ -1245,6 +1245,10 @@ function computeProgressionFromSession(exName, lastSession) {
   return `→ ${weightStr} × ${suggestReps} reps`;
 }
 
+function computeProgression(exName, dayType) {
+  return computeProgressionFromSession(exName, getLastSession(dayType));
+}
+
 // ════════════════════════════════════════════════════════════════
 // SYNC
 // ════════════════════════════════════════════════════════════════
