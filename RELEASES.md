@@ -6,6 +6,24 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.1.0 — P2 dead code + latent bugs (2026-05-21)
+
+**Tag:** `v1.1.0`
+
+### What changed
+
+**P2#6 — Removed `_origSaveDurModal` dead code.** The `const _origSaveDurModal = ...` line always captured `null` (defined before `saveDurModal`) and was never read.
+
+**P2#7 — Removed swipe-to-delete dead code.** `swipeStart`, `swipeMove`, `swipeEnd`, `swipeStartX`, and `.set-row.swiped` CSS were never attached to any element. CLAUDE.md documents no swipe-to-delete.
+
+**P2#8 — Removed orphaned `.is-pr` class emission.** The CSS rule `.ft-metric-val.is-pr` was removed in a prior session (all values are cyan); the class was still being added to the DOM. Also removed the `isPR` IIFE that computed it.
+
+**P2#9 — Fixed `getFitnessBest`, `ftTrendIcon`, and `prCount` BSS comparison.** All three were comparing BSS `{weight, reps}` by `.reps` only — 20 reps at 25 lb incorrectly beat 18 reps at 50 lb. Added `bssScore(v) = v.weight * 1000 + v.reps` composite. Weight takes precedence; reps break ties.
+
+**P2#10 — Explicit `Number()` coercion in `isRealSet`.** Changed `s.reps > 0` to `Number(s.reps) > 0` to make the string-to-number coercion explicit and safe.
+
+---
+
 ## v1.0.0 — Fitness sync + 5-bug fix (2026-05-21)
 
 **Tag:** `v1.0.0`  
