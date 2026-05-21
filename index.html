@@ -1067,6 +1067,7 @@ function toggleInjury(iso) {
   if (!data.injured_days) data.injured_days = {};
   if (data.injured_days[iso]) delete data.injured_days[iso];
   else data.injured_days[iso] = true;
+  data._meta_updated_at = Date.now();
   save(data);
   renderCalendar();
 }
