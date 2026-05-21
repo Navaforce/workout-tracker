@@ -2261,10 +2261,10 @@ function renderApneaBlock(session) {
     </div>`;
   }
 
-  // Apnea done = any round has at least one non-empty field logged
-  const apneaDone = Object.values(apnea).some(round =>
-    Object.values(round).some(v => v !== '' && v !== null && v !== undefined)
-  );
+  // Apnea done = all 6 rounds have their primary hold field logged as a positive number
+  const holdKey = (type === 'pull' || type === 'cardio') ? 'actual_dur' : 'actual_hold';
+  const apneaDone = Array.from({length: rounds}, (_, i) => `r${i}`)
+    .every(rk => Number(apnea[rk]?.[holdKey]) > 0);
   const html = `<div class="apnea-block${openApnea ? ' open' : ''}${apneaDone ? ' apnea-done' : ''}">
     <div class="apnea-header" onclick="toggleApneaBlock()">
       <span class="apnea-title">⬦ Apnea</span>
