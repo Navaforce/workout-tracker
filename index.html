@@ -3067,6 +3067,7 @@ function ftAutoSave() {
     if (idx >= 0) data.fitness_records[idx] = entry;
     else data.fitness_records.unshift(entry);
     if (data.fitness_records.length > 50) data.fitness_records = data.fitness_records.slice(0, 50);
+    data._meta_updated_at = Date.now();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     syncNow(true);
     renderFitnessHistory();
