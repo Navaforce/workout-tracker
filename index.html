@@ -3175,6 +3175,9 @@ function renderFitnessHistory() {
 
   const best = getFitnessBest(records);
   const builtinKeys = FT_BUILTIN.map(f => f.key);
+  // Build label map from live config so custom field labels are accurate
+  const cfgLabelMap = {};
+  for (const f of loadFTConfig()) cfgLabelMap[f.key] = f.label;
 
   let html = '';
   for (let i = 0; i < records.length; i++) {
