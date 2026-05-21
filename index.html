@@ -1863,20 +1863,15 @@ function renderExerciseCard(session, exIdx, lastSession) {
     if (parts.length) targetLine = parts.join(' · ');
   }
 
-  // Last session summary and previous notes — both use the already-fetched lastSession
+  // Last session summary — searches per-exercise across all past sessions of this type
   let lastSummary = '';
   let prevNotes = [];
-  if (lastSession) {
-    const prevEx = lastSession.exercises.find(e => e.name === ex.name);
-    if (prevEx) {
-      const prevReal = prevEx.sets.filter(isRealSet);
-      if (prevReal.length > 0) {
-        const w = prevReal[0].weight;
-        const repsArr = prevReal.map(s => s.reps).join('/');
-        lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} · ${repsArr} reps`;
-      }
-      prevNotes = (prevEx.sets || []).map(s => s.note || '');
-    }
+  const prevReal = getLastExerciseSets(ex.name, session.day_type);
+  if (prevReal) {
+    const w = prevReal[prevReal.length - 1].weight;
+    const repsArr = prevReal.map(s => s.reps).join('/');
+    lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} · ${repsArr} reps`;
+    prevNotes = prevReal.map(s => s.note || '');
   }
 
   let setsHtml = '';
