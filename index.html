@@ -1888,8 +1888,8 @@ function renderExerciseCard(session, exIdx, lastSession) {
       <span class="ex-progress">${progress}</span>
       <span class="ex-chevron">⌄</span>
     </div>
-    ${suggestion ? `<div class="ex-suggestion">${esc(suggestion)}</div>` : ''}
     <div class="ex-body">
+      ${suggestion ? `<div class="ex-suggestion">${esc(suggestion)}</div>` : ''}
       ${targetLine ? `<div class="ex-target-line">${esc(targetLine)}</div>` : ''}
       ${lastSummary ? `<div class="ex-last-session">${esc(lastSummary)}</div>` : ''}
       <div class="set-list" id="sl-${esc(sid)}-${exIdx}">${setsHtml}</div>
