@@ -3147,10 +3147,10 @@ function renderFitnessHistory() {
     const prevResults = i + 1 < records.length ? (records[i + 1].results || {}) : {};
     const prCount = Object.entries(results).filter(([k, v]) => {
       if (v == null) return false;
-      const cmp = (typeof v === 'object' && 'reps' in v) ? v.reps : v;
+      const cmp = (typeof v === 'object' && 'reps' in v) ? bssScore(v) : v;
       const b = best[k];
       if (b == null) return false;
-      const bcmp = (typeof b === 'object' && 'reps' in b) ? b.reps : b;
+      const bcmp = (typeof b === 'object' && 'reps' in b) ? bssScore(b) : b;
       return cmp === bcmp;
     }).length;
     const isOpen = document.getElementById(`fts-${i}`)?.classList.contains('open') || false;
