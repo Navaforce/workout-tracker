@@ -2036,6 +2036,13 @@ function refreshExProgress(sessionId, exIdx) {
   }
 }
 
+function getPrevNotesForExercise(dayType, exName) {
+  const lastSession = getLastSession(dayType);
+  if (!lastSession) return [];
+  const prevEx = lastSession.exercises.find(e => e.name === exName);
+  return prevEx ? (prevEx.sets || []).map(s => s.note || '') : [];
+}
+
 function refreshSetRow(sessionId, exIdx, setIdx) {
   const data = load();
   const session = data.sessions[sessionId];
@@ -2044,8 +2051,9 @@ function refreshSetRow(sessionId, exIdx, setIdx) {
   const set = ex.sets[setIdx];
   const wrap = document.getElementById(`srw-${sessionId}-${exIdx}-${setIdx}`);
   if (!wrap) return;
+  const prevNotes = getPrevNotesForExercise(session.day_type, ex.name);
   const tmp = document.createElement('div');
-  tmp.innerHTML = renderSetRow(sessionId, exIdx, setIdx, set, ex.bw_mode);
+  tmp.innerHTML = renderSetRow(sessionId, exIdx, setIdx, set, ex.bw_mode, prevNotes[setIdx] || '');
   wrap.replaceWith(tmp.firstElementChild);
 }
 
