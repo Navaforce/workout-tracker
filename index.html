@@ -2936,9 +2936,6 @@ function openFTDurModal() {
   document.getElementById('dur-modal').classList.add('open');
 }
 
-// Hook saveDurModal to handle fitness test duration separately
-const _origSaveDurModal = typeof saveDurModal !== 'undefined' ? saveDurModal : null;
-
 function saveDurModal() {
   if (window._durSessionId === '__ft__') {
     const startVal = document.getElementById('dur-start-input').value;
