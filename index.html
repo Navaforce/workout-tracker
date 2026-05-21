@@ -202,11 +202,13 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .ex-card.ex-done .ex-name { color: var(--easy); }
 .ex-chevron { font-size: 18px; color: var(--text); transition: transform 0.2s; }
 .ex-card.open .ex-chevron { transform: rotate(180deg); }
+.bw-btn { height: 28px; padding: 0 8px; border-radius: var(--rs); border: 1px solid var(--border); background: none; color: var(--muted); font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.bw-btn.bw-active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
 .ex-suggestion { font-size: 13px; color: var(--accent); padding: 0 14px 10px; font-style: italic; }
 .ex-body { display: none; }
 .ex-card.open .ex-body { display: block; }
 .ex-target-line { font-size: 13px; font-weight: 700; color: var(--accent); padding: 8px 14px 4px; }
-.ex-last-session { font-size: 12px; color: var(--text); padding: 0 14px 8px; }
+.ex-last-session { font-size: 13px; color: var(--text); padding: 0 14px 8px; }
 
 /* Set rows */
 .set-list { padding: 0 10px 10px; }
@@ -1885,6 +1887,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
     <div class="ex-header" onclick="toggleExCard(${exIdx})">
       <span class="ex-name">${esc(ex.name)}</span>
       ${hasInfo ? `<button class="ex-info-btn" onclick="event.stopPropagation();showExerciseInfo('${esc(ex.name)}')" title="Cues &amp; hold protocol">ⓘ</button>` : ''}
+      <button class="bw-btn${ex.bw_mode ? ' bw-active' : ''}" onclick="event.stopPropagation();toggleBWMode('${esc(sid)}',${exIdx})" title="Bodyweight mode">BW</button>
       <span class="ex-progress">${progress}</span>
       <span class="ex-chevron">⌄</span>
     </div>
@@ -1962,6 +1965,36 @@ function toggleExCard(exIdx) {
   const session = data.sessions[currentSessionId];
   if (!session) return;
   renderExercises(session);
+}
+
+function toggleBWMode(sessionId, exIdx) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  const ex = session.exercises[exIdx];
+  const turningOff = ex.bw_mode;
+  const realSets = (ex.sets || []).filter(isRealSet);
+
+  function apply() {
+    ex.bw_mode = !ex.bw_mode;
+    // Clear bw/bw_added split fields when turning off so weight input is clean
+    if (!ex.bw_mode) {
+      ex.sets.forEach(s => { delete s.bw; delete s.bw_added; });
+    }
+    session.updated_at = Date.now();
+    save(data);
+    renderExercises(session);
+  }
+
+  if (turningOff && realSets.length > 0) {
+    showConfirmModal(
+      'Remove BW mode?',
+      `Clears bodyweight split from ${realSets.length} logged set${realSets.length > 1 ? 's' : ''}. Total weight values are kept.`,
+      apply
+    );
+  } else {
+    apply();
+  }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2715,30 +2748,34 @@ function getAudioCtx() {
 
 function playBell() {
   const ctx = getAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = 880;
-  osc.type = 'sine';
-  gain.gain.setValueAtTime(0.4, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 1.0);
+  ctx.resume().then(() => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 880;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 1.0);
+  });
 }
 
 function playBuzz() {
   const ctx = getAudioCtx();
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.connect(gain);
-  gain.connect(ctx.destination);
-  osc.frequency.value = 200;
-  osc.type = 'square';
-  gain.gain.setValueAtTime(0.3, ctx.currentTime);
-  gain.gain.setValueAtTime(0, ctx.currentTime + 0.8);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.8);
+  ctx.resume().then(() => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = 200;
+    osc.type = 'square';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.setValueAtTime(0, ctx.currentTime + 0.8);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.8);
+  });
 }
 
 function playAlarm() {
@@ -2748,11 +2785,14 @@ function playAlarm() {
   cdAlarmTimeouts.push(setTimeout(playBuzz, 1200));
 }
 
-// Unlock audio on first user interaction
-document.addEventListener('touchstart', () => {
+// Keep AudioContext running — iOS suspends it on background/screen-dim.
+// Persistent listeners on every touch and click ensure it's resumed before any tone fires.
+function _audioUnlock() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-}, { once: true });
+}
+document.addEventListener('touchstart', _audioUnlock);
+document.addEventListener('click', _audioUnlock);
 
 // ════════════════════════════════════════════════════════════════
 // FITNESS TESTS
@@ -3318,7 +3358,9 @@ function seedFitnessHistory() {
       if (insertAt === -1) data.fitness_records.push(r);
       else data.fitness_records.splice(insertAt, 0, r);
     }
-    data._meta_updated_at = Date.now();
+    // Do NOT bump _meta_updated_at — seeds are static baseline data, not user-recorded
+    // results. Bumping here would cause a fresh device to overwrite real recorded data
+    // from another device via last-write-wins sync.
     save(data);
   }
 }
