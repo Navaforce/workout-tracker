@@ -1801,7 +1801,7 @@ function renderExercises(session) {
   container.innerHTML = html;
 }
 
-function renderExerciseCard(session, exIdx) {
+function renderExerciseCard(session, exIdx, lastSession) {
   const ex = session.exercises[exIdx];
   const sid = session.session_id;
   const isOpen = openCards.has(exIdx);
@@ -1809,7 +1809,7 @@ function renderExerciseCard(session, exIdx) {
   const totalSets = (ex.sets || []).length;
   const progress = `${realSets.length}/${totalSets}`;
 
-  const suggestion = realSets.length === 0 ? computeProgression(ex.name, session.day_type) : null;
+  const suggestion = realSets.length === 0 ? computeProgressionFromSession(ex.name, lastSession) : null;
 
   // Target line: sets × reps · rest from plan + EXERCISE_INFO
   let targetLine = '';
@@ -1833,9 +1833,9 @@ function renderExerciseCard(session, exIdx) {
     if (parts.length) targetLine = parts.join(' · ');
   }
 
-  // Last session summary
-  const lastSession = getLastSession(session.day_type);
+  // Last session summary and previous notes — both use the already-fetched lastSession
   let lastSummary = '';
+  let prevNotes = [];
   if (lastSession) {
     const prevEx = lastSession.exercises.find(e => e.name === ex.name);
     if (prevEx) {
@@ -1845,14 +1845,6 @@ function renderExerciseCard(session, exIdx) {
         const repsArr = prevReal.map(s => s.reps).join('/');
         lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} · ${repsArr} reps`;
       }
-    }
-  }
-
-  // Collect previous session's notes per set index for tooltip placeholders
-  let prevNotes = [];
-  if (lastSession) {
-    const prevEx = lastSession.exercises.find(e => e.name === ex.name);
-    if (prevEx) {
       prevNotes = (prevEx.sets || []).map(s => s.note || '');
     }
   }
