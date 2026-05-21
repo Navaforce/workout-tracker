@@ -6,6 +6,20 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.2.0 — P3 performance + minor quality (2026-05-21)
+
+**Tag:** `v1.2.0`
+
+### What changed
+
+**P3#11 — `getLastSession` called once per render, not once per exercise card.** `renderExercises` now fetches `lastSession` once and passes it into `renderExerciseCard`. Added `computeProgressionFromSession(exName, lastSession)` to avoid the redundant call inside `computeProgression`. For a 6-exercise session this cuts `load()`+`JSON.parse()` from ~7 calls to 2.
+
+**P3#12 — `computeProgression` uses last set's weight instead of first.** Changed `realSets[0].weight` to `realSets[realSets.length - 1].weight`. The final set is a better indicator of where to start next session (accounts for warmup progressions like 175→180→185 lb).
+
+**P3#13 — Removed dead `calYear !== undefined` / `calMonth !== undefined` guards.** `init()` always sets both before any render call, so these checks never evaluated the fallback branch.
+
+---
+
 ## v1.1.0 — P2 dead code + latent bugs (2026-05-21)
 
 **Tag:** `v1.1.0`
