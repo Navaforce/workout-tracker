@@ -1,0 +1,8 @@
+# Ignore everything in the home directory by default
+*
+.*
+
+# Except the workout tracker app files
+!index.html
+!RELEASES.md
+!.gitignore
