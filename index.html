@@ -1200,8 +1200,7 @@ function prefillExercises(session, planDay) {
   return exercises;
 }
 
-function computeProgression(exName, dayType) {
-  const lastSession = getLastSession(dayType);
+function computeProgressionFromSession(exName, lastSession) {
   if (!lastSession) return null;
   const ex = lastSession.exercises.find(e => e.name === exName);
   if (!ex) return null;
