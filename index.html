@@ -3299,6 +3299,7 @@ function seedFitnessHistory() {
       if (insertAt === -1) data.fitness_records.push(r);
       else data.fitness_records.splice(insertAt, 0, r);
     }
+    data._meta_updated_at = Date.now();
     save(data);
   }
 }
