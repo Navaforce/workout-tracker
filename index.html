@@ -418,6 +418,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .ft-session-date { font-size: 16px; font-weight: 700; flex: 1; }
 .ft-pr-badge { font-size: 11px; font-weight: 700; background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent); padding: 2px 8px; border-radius: 10px; }
 .ft-session-chevron { font-size: 18px; color: var(--dim); transition: transform 0.2s; }
+.ft-session-delete { min-width: 32px; height: 32px; border-radius: 16px; background: transparent; border: none; color: var(--dim); font-size: 16px; display: flex; align-items: center; justify-content: center; }
 .ft-session.open .ft-session-chevron { transform: rotate(180deg); }
 .ft-session-body { display: none; padding: 0 14px 14px; }
 .ft-session.open .ft-session-body { display: block; }
@@ -2502,22 +2503,20 @@ function renderSW() {
 }
 
 // Countdown
-function cdScheduleTones() {
-  // Cancel any existing scheduled tones
+function cdScheduleTones(endTime) {
   cdAlarmTimeouts.forEach(clearTimeout);
   cdAlarmTimeouts = [];
-  const remaining = cdRemaining;
-  // Countdown tones at 3s, 2s, 1s before end
+  const now = Date.now();
+  // 3-2-1 bells scheduled from shared endTime — no snapshot drift
   [3, 2, 1].forEach(sec => {
-    const delay = (remaining - sec) * 1000;
-    if (delay > 0) {
+    const delay = endTime - now - sec * 1000;
+    if (delay >= 0) {
       cdAlarmTimeouts.push(setTimeout(() => playBell(), delay));
     }
   });
   // Alarm + auto-reset at end
   cdAlarmTimeouts.push(setTimeout(() => {
     playAlarm();
-    // Auto-reset to last used time after 3s
     cdAlarmTimeouts.push(setTimeout(() => {
       cdRemaining = cdTotal;
       cdRunning = false;
@@ -2526,7 +2525,7 @@ function cdScheduleTones() {
       renderCDPresets();
       document.getElementById('cd-pip').classList.remove('visible');
     }, 3000));
-  }, remaining * 1000));
+  }, Math.max(0, endTime - now)));
 }
 
 function cdToggle() {
@@ -2540,8 +2539,8 @@ function cdToggle() {
     if (cdRemaining <= 0) cdRemaining = cdTotal;
     cdRunning = true;
     document.getElementById('cd-start-btn').textContent = 'Stop';
-    cdScheduleTones();
     const endTime = Date.now() + cdRemaining * 1000;
+    cdScheduleTones(endTime);
     cdInterval = setInterval(() => {
       cdRemaining = Math.max(0, (endTime - Date.now()) / 1000);
       renderCD();
@@ -3214,6 +3213,7 @@ function renderFitnessHistory() {
       <div class="ft-session-header" onclick="toggleFTSession(${i})">
         <span class="ft-session-date">${formatDateDisplay(rec.date)}</span>
         ${prCount > 0 ? `<span class="ft-pr-badge">${prCount} PR${prCount>1?'s':''}</span>` : ''}
+        <button class="ft-session-delete" onclick="event.stopPropagation();deleteFTRecord(${i})" title="Delete">✕</button>
         <span class="ft-session-chevron">⌄</span>
       </div>
       <div class="ft-session-body">${durLine}${metricsHtml}</div>
@@ -3226,6 +3226,17 @@ function renderFitnessHistory() {
 function toggleFTSession(idx) {
   const el = document.getElementById(`fts-${idx}`);
   if (el) el.classList.toggle('open');
+}
+
+function deleteFTRecord(idx) {
+  showConfirmModal('Delete test?', 'This cannot be undone.', () => {
+    const data = load();
+    if (!data.fitness_records) return;
+    data.fitness_records.splice(idx, 1);
+    save(data);
+    syncNow(true);
+    renderFitnessHistory();
+  });
 }
 
 // Seed historical data if not already present
