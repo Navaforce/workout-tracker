@@ -3002,8 +3002,8 @@ function getFitnessBest(records) {
 
 function ftTrendIcon(curr, prev) {
   if (prev == null || curr == null) return '';
-  const c = (typeof curr === 'object' && 'reps' in curr) ? curr.reps : curr;
-  const p = (typeof prev === 'object' && 'reps' in prev) ? prev.reps : prev;
+  const c = (typeof curr === 'object' && 'reps' in curr) ? bssScore(curr) : curr;
+  const p = (typeof prev === 'object' && 'reps' in prev) ? bssScore(prev) : prev;
   if (c > p) return '<span class="ft-trend up">↑</span>';
   if (c < p) return '<span class="ft-trend down">↓</span>';
   return '<span class="ft-trend same">=</span>';
