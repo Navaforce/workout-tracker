@@ -1160,6 +1160,26 @@ function getLastSession(type) {
   return sessions.length > 0 ? sessions[0] : null;
 }
 
+function getLastExerciseSets(exName, dayType) {
+  const data = load();
+  const sorted = Object.values(data.sessions)
+    .filter(s =>
+      s.day_type === dayType &&
+      s.date &&
+      s.session_id !== currentSessionId &&
+      s.exercises
+    )
+    .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+  for (const s of sorted) {
+    const ex = s.exercises.find(e => e.name === exName);
+    if (ex) {
+      const real = (ex.sets || []).filter(isRealSet);
+      if (real.length > 0) return real;
+    }
+  }
+  return null;
+}
+
 function prefillExercises(session, planDay) {
   const lastSession = getLastSession(session.day_type);
   const exercises = [];
