@@ -3211,7 +3211,7 @@ function renderFitnessHistory() {
       const val = results[key];
       const prevVal = key in prevResults ? prevResults[key] : null;
       const bestVal = best[key];
-      const label = FT_LABELS[key] || key.replace(/^custom_\d+$/, '').replace(/_/g,' ');
+      const label = FT_LABELS[key] || cfgLabelMap[key] || key.replace(/_/g, ' ');
       const displayed = formatFTValue(key, val);
       const trend = ftTrendIcon(val, prevVal);
       const prevStr = formatFTValue(key, prevVal);
