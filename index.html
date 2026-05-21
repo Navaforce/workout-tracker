@@ -1150,7 +1150,12 @@ function getPlanDay(type, weekNumber) {
 function getLastSession(type) {
   const data = load();
   const sessions = Object.values(data.sessions)
-    .filter(s => s.day_type === type && s.date && s.exercises && s.exercises.length > 0)
+    .filter(s =>
+      s.day_type === type &&
+      s.date &&
+      s.session_id !== currentSessionId &&
+      s.exercises && s.exercises.some(ex => (ex.sets || []).some(isRealSet))
+    )
     .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
   return sessions.length > 0 ? sessions[0] : null;
 }
