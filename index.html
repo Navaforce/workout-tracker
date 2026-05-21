@@ -1287,6 +1287,14 @@ async function syncNow(silent) {
         if (cloudUpdated > localPlanUpdated) {
           local.plan = { ...row.data, _updated_at: row.updated_at };
         }
+      } else if (sid === `${USER_ID}_meta`) {
+        const localMetaUpdated = local._meta_updated_at || 0;
+        if (cloudUpdated > localMetaUpdated) {
+          local.fitness_records   = row.data.fitness_records   || [];
+          local.injured_days      = row.data.injured_days      || {};
+          local.fitness_test_days = row.data.fitness_test_days || {};
+          local._meta_updated_at  = cloudUpdated;
+        }
       } else {
         const localSession = local.sessions[sid];
         // Always inject session_id and updated_at into the data object so
@@ -1314,6 +1322,25 @@ async function syncNow(silent) {
         if (localUpdated > cloudUpdated) {
           upsertQueue.push({ session_id: sid, data: session, updated_at: new Date(localUpdated).toISOString() });
         }
+      }
+    }
+
+    // Queue meta record if local is newer than cloud
+    {
+      const metaSid = `${USER_ID}_meta`;
+      const localMetaUpdated = local._meta_updated_at || 0;
+      const cloudMetaRow = cloudMap[metaSid];
+      const cloudMetaUpdated = cloudMetaRow ? new Date(cloudMetaRow.updated_at).getTime() : 0;
+      if (localMetaUpdated > cloudMetaUpdated) {
+        upsertQueue.push({
+          session_id: metaSid,
+          data: {
+            fitness_records:    local.fitness_records   || [],
+            injured_days:       local.injured_days      || {},
+            fitness_test_days:  local.fitness_test_days || {},
+          },
+          updated_at: new Date(localMetaUpdated).toISOString(),
+        });
       }
     }
 
