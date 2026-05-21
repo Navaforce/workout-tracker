@@ -1464,15 +1464,14 @@ function goBack() {
   showScreen('calendar');
 }
 
-function showFitness() {
+function showFitness(dateIso) {
   showScreen('fitness');
   seedFitnessHistory();
   _ftStartedAt = null; _ftCompletedAt = null;
   renderFTDuration();
   renderFTFields();
   renderFitnessHistory();
-  const today = todayISO();
-  document.getElementById('ft-date').value = today;
+  document.getElementById('ft-date').value = dateIso || todayISO();
 }
 
 // ════════════════════════════════════════════════════════════════
