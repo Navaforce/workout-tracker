@@ -1422,10 +1422,9 @@ function getOrCreateSession(date, type) {
 }
 
 function getCurrentWeekNumber() {
-  // Determine which plan week we're in based on current date
-  // Week 4 starts ~2026-05-11, Week 5 starts ~2026-05-25 (rough heuristic)
-  // Return 5 as current active week (Week 5 full volume)
-  return 5;
+  const data = load();
+  if (!data.plan || !data.plan.weeks || data.plan.weeks.length === 0) return 1;
+  return Math.max(...data.plan.weeks.map(w => w.week_number));
 }
 
 // ════════════════════════════════════════════════════════════════
