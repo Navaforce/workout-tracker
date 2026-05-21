@@ -1333,13 +1333,17 @@ async function syncNow(silent) {
       }
     }
 
-    // Queue meta record if local is newer than cloud
+    // Queue meta record if local is newer than cloud, or if cloud has no meta record yet
     {
       const metaSid = `${USER_ID}_meta`;
       const localMetaUpdated = local._meta_updated_at || 0;
       const cloudMetaRow = cloudMap[metaSid];
       const cloudMetaUpdated = cloudMetaRow ? new Date(cloudMetaRow.updated_at).getTime() : 0;
-      if (localMetaUpdated > cloudMetaUpdated) {
+      const hasLocalMeta = (local.fitness_records || []).length > 0 ||
+                           Object.keys(local.injured_days || {}).length > 0 ||
+                           Object.keys(local.fitness_test_days || {}).length > 0;
+      if (localMetaUpdated > cloudMetaUpdated || (!cloudMetaRow && hasLocalMeta)) {
+        const pushTs = localMetaUpdated > 0 ? new Date(localMetaUpdated).toISOString() : new Date().toISOString();
         upsertQueue.push({
           session_id: metaSid,
           data: {
@@ -1347,7 +1351,7 @@ async function syncNow(silent) {
             injured_days:       local.injured_days      || {},
             fitness_test_days:  local.fitness_test_days || {},
           },
-          updated_at: new Date(localMetaUpdated).toISOString(),
+          updated_at: pushTs,
         });
       }
     }
