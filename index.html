@@ -1793,9 +1793,10 @@ function renderExercises(session) {
     return;
   }
 
+  const lastSession = getLastSession(session.day_type);
   let html = '';
   for (let ei = 0; ei < session.exercises.length; ei++) {
-    html += renderExerciseCard(session, ei);
+    html += renderExerciseCard(session, ei, lastSession);
   }
   container.innerHTML = html;
 }
