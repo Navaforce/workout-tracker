@@ -2096,11 +2096,11 @@ function deleteSet(sessionId, exIdx, setIdx) {
 
   const listEl = document.getElementById(`sl-${sessionId}-${exIdx}`);
   if (listEl) {
-    const tmp = document.createElement('div');
     const ex = session.exercises[exIdx];
+    const prevNotes = getPrevNotesForExercise(session.day_type, ex.name);
     let html = '';
     for (let si = 0; si < ex.sets.length; si++) {
-      html += renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode);
+      html += renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '');
     }
     listEl.innerHTML = html;
   }
