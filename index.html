@@ -2082,10 +2082,8 @@ function refreshExProgress(sessionId, exIdx) {
 }
 
 function getPrevNotesForExercise(dayType, exName) {
-  const lastSession = getLastSession(dayType);
-  if (!lastSession) return [];
-  const prevEx = lastSession.exercises.find(e => e.name === exName);
-  return prevEx ? (prevEx.sets || []).map(s => s.note || '') : [];
+  const sets = getLastExerciseSets(exName, dayType);
+  return sets ? sets.map(s => s.note || '') : [];
 }
 
 function refreshSetRow(sessionId, exIdx, setIdx) {
