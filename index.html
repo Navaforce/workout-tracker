@@ -3246,6 +3246,7 @@ function deleteFTRecord(idx) {
     const data = load();
     if (!data.fitness_records) return;
     data.fitness_records.splice(idx, 1);
+    data._meta_updated_at = Date.now();
     save(data);
     syncNow(true);
     renderFitnessHistory();
