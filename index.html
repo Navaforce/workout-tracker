@@ -1693,9 +1693,10 @@ function pickType(type) {
     const data = load();
     if (!data.fitness_test_days) data.fitness_test_days = {};
     data.fitness_test_days[iso] = true;
+    data._meta_updated_at = Date.now();
     save(data);
     renderCalendar();
-    showFitness();
+    showFitness(iso);
     return;
   }
   const sessionId = getOrCreateSession(iso, type);
