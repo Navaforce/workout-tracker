@@ -1887,6 +1887,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
     <div class="ex-header" onclick="toggleExCard(${exIdx})">
       <span class="ex-name">${esc(ex.name)}</span>
       ${hasInfo ? `<button class="ex-info-btn" onclick="event.stopPropagation();showExerciseInfo('${esc(ex.name)}')" title="Cues &amp; hold protocol">ⓘ</button>` : ''}
+      <button class="bw-btn${ex.bw_mode ? ' bw-active' : ''}" onclick="event.stopPropagation();toggleBWMode('${esc(sid)}',${exIdx})" title="Bodyweight mode">BW</button>
       <span class="ex-progress">${progress}</span>
       <span class="ex-chevron">⌄</span>
     </div>
