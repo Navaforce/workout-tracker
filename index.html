@@ -1075,7 +1075,7 @@ function toggleInjury(iso) {
 // HELPERS
 // ════════════════════════════════════════════════════════════════
 function isRealSet(s) {
-  return s.reps > 0 && !s.prefilled;
+  return Number(s.reps) > 0 && !s.prefilled;
 }
 
 function getSessionId(userId, date, type) {
