@@ -1207,7 +1207,7 @@ function computeProgressionFromSession(exName, lastSession) {
   const realSets = ex.sets.filter(isRealSet);
   if (realSets.length === 0) return null;
 
-  const lastWeight = realSets[0].weight;
+  const lastWeight = realSets[realSets.length - 1].weight;
   const efforts = realSets.map(s => s.effort).filter(Boolean);
   const adjs = realSets.map(s => s.adjustment).filter(Boolean);
 
