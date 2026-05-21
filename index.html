@@ -2785,11 +2785,14 @@ function playAlarm() {
   cdAlarmTimeouts.push(setTimeout(playBuzz, 1200));
 }
 
-// Unlock audio on first user interaction
-document.addEventListener('touchstart', () => {
+// Keep AudioContext running — iOS suspends it on background/screen-dim.
+// Persistent listeners on every touch and click ensure it's resumed before any tone fires.
+function _audioUnlock() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-}, { once: true });
+}
+document.addEventListener('touchstart', _audioUnlock);
+document.addEventListener('click', _audioUnlock);
 
 // ════════════════════════════════════════════════════════════════
 // FITNESS TESTS
