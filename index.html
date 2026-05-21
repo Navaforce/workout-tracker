@@ -3358,7 +3358,9 @@ function seedFitnessHistory() {
       if (insertAt === -1) data.fitness_records.push(r);
       else data.fitness_records.splice(insertAt, 0, r);
     }
-    data._meta_updated_at = Date.now();
+    // Do NOT bump _meta_updated_at — seeds are static baseline data, not user-recorded
+    // results. Bumping here would cause a fresh device to overwrite real recorded data
+    // from another device via last-write-wins sync.
     save(data);
   }
 }
