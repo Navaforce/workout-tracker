@@ -1527,10 +1527,8 @@ function renderMonthView() {
   const today = todayISO();
   const [ty, tm] = today.split('-').map(Number);
 
-  const year = calYear !== undefined ? calYear : ty;
-  const month = calMonth !== undefined ? calMonth : tm - 1;
-  calYear = year;
-  calMonth = month;
+  const year = calYear;
+  const month = calMonth;
 
   const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
   const firstDay = new Date(year, month, 1).getDay();
