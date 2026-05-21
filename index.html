@@ -3176,12 +3176,6 @@ function renderFitnessHistory() {
       const trend = ftTrendIcon(val, prevVal);
       const prevStr = formatFTValue(key, prevVal);
       const bestStr = formatFTValue(key, bestVal);
-      const isPR = (() => {
-        if (val == null || bestVal == null) return false;
-        const c = (typeof val === 'object' && 'reps' in val) ? val.reps : val;
-        const b = (typeof bestVal === 'object' && 'reps' in bestVal) ? bestVal.reps : bestVal;
-        return c === b;
-      })();
       const noteStr = notes[key] ? `<div style="font-size:11px;color:var(--dim);margin-top:2px">${notes[key]}</div>` : '';
       metricsHtml += `<div class="ft-metric-row">
         <span class="ft-metric-name">${label}${noteStr}</span>
