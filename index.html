@@ -2982,15 +2982,18 @@ function formatFTValue(key, val) {
   return String(val);
 }
 
+function bssScore(v) {
+  return (v.weight || 0) * 1000 + (v.reps || 0);
+}
+
 function getFitnessBest(records) {
   const best = {};
   for (const rec of records) {
     for (const [key, val] of Object.entries(rec.results || {})) {
       if (val == null) continue;
-      // For compound values, compare by reps
-      const cmp = (typeof val === 'object' && 'reps' in val) ? val.reps : val;
+      const cmp = (typeof val === 'object' && 'reps' in val) ? bssScore(val) : val;
       if (!(key in best)) { best[key] = val; continue; }
-      const prevCmp = (typeof best[key] === 'object' && 'reps' in best[key]) ? best[key].reps : best[key];
+      const prevCmp = (typeof best[key] === 'object' && 'reps' in best[key]) ? bssScore(best[key]) : best[key];
       if (cmp > prevCmp) best[key] = val;
     }
   }
