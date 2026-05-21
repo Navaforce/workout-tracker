@@ -1160,6 +1160,26 @@ function getLastSession(type) {
   return sessions.length > 0 ? sessions[0] : null;
 }
 
+function getLastExerciseSets(exName, dayType) {
+  const data = load();
+  const sorted = Object.values(data.sessions)
+    .filter(s =>
+      s.day_type === dayType &&
+      s.date &&
+      s.session_id !== currentSessionId &&
+      s.exercises
+    )
+    .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+  for (const s of sorted) {
+    const ex = s.exercises.find(e => e.name === exName);
+    if (ex) {
+      const real = (ex.sets || []).filter(isRealSet);
+      if (real.length > 0) return real;
+    }
+  }
+  return null;
+}
+
 function prefillExercises(session, planDay) {
   const lastSession = getLastSession(session.day_type);
   const exercises = [];
@@ -1333,13 +1353,17 @@ async function syncNow(silent) {
       }
     }
 
-    // Queue meta record if local is newer than cloud
+    // Queue meta record if local is newer than cloud, or if cloud has no meta record yet
     {
       const metaSid = `${USER_ID}_meta`;
       const localMetaUpdated = local._meta_updated_at || 0;
       const cloudMetaRow = cloudMap[metaSid];
       const cloudMetaUpdated = cloudMetaRow ? new Date(cloudMetaRow.updated_at).getTime() : 0;
-      if (localMetaUpdated > cloudMetaUpdated) {
+      const hasLocalMeta = (local.fitness_records || []).length > 0 ||
+                           Object.keys(local.injured_days || {}).length > 0 ||
+                           Object.keys(local.fitness_test_days || {}).length > 0;
+      if (localMetaUpdated > cloudMetaUpdated || (!cloudMetaRow && hasLocalMeta)) {
+        const pushTs = localMetaUpdated > 0 ? new Date(localMetaUpdated).toISOString() : new Date().toISOString();
         upsertQueue.push({
           session_id: metaSid,
           data: {
@@ -1347,7 +1371,7 @@ async function syncNow(silent) {
             injured_days:       local.injured_days      || {},
             fitness_test_days:  local.fitness_test_days || {},
           },
-          updated_at: new Date(localMetaUpdated).toISOString(),
+          updated_at: pushTs,
         });
       }
     }
@@ -1839,20 +1863,15 @@ function renderExerciseCard(session, exIdx, lastSession) {
     if (parts.length) targetLine = parts.join(' · ');
   }
 
-  // Last session summary and previous notes — both use the already-fetched lastSession
+  // Last session summary — searches per-exercise across all past sessions of this type
   let lastSummary = '';
   let prevNotes = [];
-  if (lastSession) {
-    const prevEx = lastSession.exercises.find(e => e.name === ex.name);
-    if (prevEx) {
-      const prevReal = prevEx.sets.filter(isRealSet);
-      if (prevReal.length > 0) {
-        const w = prevReal[0].weight;
-        const repsArr = prevReal.map(s => s.reps).join('/');
-        lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} · ${repsArr} reps`;
-      }
-      prevNotes = (prevEx.sets || []).map(s => s.note || '');
-    }
+  const prevReal = getLastExerciseSets(ex.name, session.day_type);
+  if (prevReal) {
+    const w = prevReal[prevReal.length - 1].weight;
+    const repsArr = prevReal.map(s => s.reps).join('/');
+    lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} · ${repsArr} reps`;
+    prevNotes = prevReal.map(s => s.note || '');
   }
 
   let setsHtml = '';
@@ -1869,8 +1888,8 @@ function renderExerciseCard(session, exIdx, lastSession) {
       <span class="ex-progress">${progress}</span>
       <span class="ex-chevron">⌄</span>
     </div>
-    ${suggestion ? `<div class="ex-suggestion">${esc(suggestion)}</div>` : ''}
     <div class="ex-body">
+      ${suggestion ? `<div class="ex-suggestion">${esc(suggestion)}</div>` : ''}
       ${targetLine ? `<div class="ex-target-line">${esc(targetLine)}</div>` : ''}
       ${lastSummary ? `<div class="ex-last-session">${esc(lastSummary)}</div>` : ''}
       <div class="set-list" id="sl-${esc(sid)}-${exIdx}">${setsHtml}</div>
@@ -2063,10 +2082,8 @@ function refreshExProgress(sessionId, exIdx) {
 }
 
 function getPrevNotesForExercise(dayType, exName) {
-  const lastSession = getLastSession(dayType);
-  if (!lastSession) return [];
-  const prevEx = lastSession.exercises.find(e => e.name === exName);
-  return prevEx ? (prevEx.sets || []).map(s => s.note || '') : [];
+  const sets = getLastExerciseSets(exName, dayType);
+  return sets ? sets.map(s => s.note || '') : [];
 }
 
 function refreshSetRow(sessionId, exIdx, setIdx) {
