@@ -6,6 +6,16 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.2.1 — BW mode reps bug fix (2026-05-22)
+
+**Tag:** `v1.2.1`
+
+### What changed
+
+**BW mode reps never counted as real sets.** In bodyweight mode, sets are created with `prefilled: true`. The normal flow clears `prefilled` inside `handleRepInput` → `if (isRealSet(set))` — but `isRealSet` requires `!prefilled`, making it a deadlock: prefilled can never clear itself. In non-BW mode `handleWeightInput` breaks the deadlock by clearing `prefilled` when weight is typed; BW mode has no weight typing (value is pre-populated). Fix: clear `prefilled` directly when `reps > 0`, before the `isRealSet` check. Also cleared `prefilled` in `handleBWInput` for the case where user touches the BW input first.
+
+---
+
 ## v1.2.0 — P3 performance + minor quality (2026-05-21)
 
 **Tag:** `v1.2.0`
