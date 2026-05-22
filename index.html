@@ -2063,6 +2063,7 @@ function handleBWInput(sessionId, exIdx, setIdx, field, val) {
     set.bw_added = n;
   }
   set.weight = (set.bw || 0) + (set.bw_added || 0);
+  if (set.prefilled) set.prefilled = false;
   session.updated_at = Date.now();
   save(data);
 }
