@@ -636,16 +636,20 @@ input:focus, textarea:focus { border-color: var(--accent); }
       </div>
     </div>
     <div id="cd-body" class="t-body">
-      <div id="cd-display">1:00</div>
-      <div class="timer-btns">
-        <button class="t-btn" onclick="cdReset()">Reset</button>
-        <button class="t-btn primary" id="cd-start-btn" onclick="cdToggle()">Start</button>
+      <div style="display:flex;flex-direction:column;align-items:center;width:100%">
+        <div id="cd-display">1:00</div>
+        <div class="timer-btns">
+          <button class="t-btn" onclick="cdReset()">Reset</button>
+          <button class="t-btn primary" id="cd-start-btn" onclick="cdToggle()">Start</button>
+        </div>
       </div>
-      <div class="cd-presets" id="cd-presets-list"></div>
-      <div class="cd-custom-wrap">
-        <input type="text" class="cd-custom-input" id="cd-custom-input" placeholder="M:SS">
-        <button class="cd-set-btn" onclick="cdSetCustom()">Set</button>
-        <button class="cd-set-btn" onclick="cdSavePreset()" style="background:var(--accent);color:#000">Save</button>
+      <div id="cd-presets-scroll">
+        <div class="cd-presets" id="cd-presets-list"></div>
+        <div class="cd-custom-wrap" style="justify-content:center">
+          <input type="text" class="cd-custom-input" id="cd-custom-input" placeholder="M:SS">
+          <button class="cd-set-btn" onclick="cdSetCustom()">Set</button>
+          <button class="cd-set-btn" onclick="cdSavePreset()" style="background:var(--accent);color:#000">Save</button>
+        </div>
       </div>
     </div>
   </div>
