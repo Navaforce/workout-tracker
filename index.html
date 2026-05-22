@@ -1677,9 +1677,15 @@ function renderWeekView() {
   for (const { iso, d } of days) {
     const isToday = iso === today;
     const session = findSessionForDate(data, iso);
+    const isFitnessDay = (data.fitness_test_days || {})[iso];
     let badgeHtml = '';
     let dateColor = 'var(--text)';
-    if (session) {
+    let extraClass = '';
+    if (isFitnessDay) {
+      badgeHtml = `<span class="wc-badge" style="color:var(--legs)">Fitness</span>`;
+      dateColor = 'var(--legs)';
+      extraClass = ' fitness-day';
+    } else if (session) {
       badgeHtml = `<span class="wc-badge type-${session.day_type}">${typeName(session.day_type)}</span>`;
       if      (session.completed)                     dateColor = 'var(--easy)';
       else if (countRealSetsInSession(session) > 0)   dateColor = 'var(--moderate)';
@@ -1688,7 +1694,7 @@ function renderWeekView() {
         dateColor = typeColors[session.day_type] || 'var(--text)';
       }
     }
-    html += `<div class="week-card${isToday ? ' today-card' : ''}" onclick="calDayTapGuarded('${iso}')">
+    html += `<div class="week-card${isToday ? ' today-card' : ''}${extraClass}" onclick="calDayTapGuarded('${iso}')">
       <span class="wc-dow">${dows[d.getDay()]}</span>
       <span class="wc-date" style="color:${dateColor}">${d.getDate()}</span>
       ${badgeHtml}
