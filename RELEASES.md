@@ -12,6 +12,8 @@ To view what's in a release: `git show <tag>:index.html`
 
 ### What changed
 
+**Calendar not re-rendering after back navigation.** `goBack()` called `showScreen('calendar')` but never `renderCalendar()`, so tile states (completed, partial, etc.) were stale until the next sync. Fixed by adding `renderCalendar()` to `goBack()`.
+
 **BW mode reps never counted as real sets.** In bodyweight mode, sets are created with `prefilled: true`. The normal flow clears `prefilled` inside `handleRepInput` → `if (isRealSet(set))` — but `isRealSet` requires `!prefilled`, making it a deadlock: prefilled can never clear itself. In non-BW mode `handleWeightInput` breaks the deadlock by clearing `prefilled` when weight is typed; BW mode has no weight typing (value is pre-populated). Fix: clear `prefilled` directly when `reps > 0`, before the `isRealSet` check. Also cleared `prefilled` in `handleBWInput` for the case where user touches the BW input first.
 
 ---
