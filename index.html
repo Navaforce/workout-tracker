@@ -2016,8 +2016,11 @@ function handleRepInput(sessionId, exIdx, setIdx, val) {
 
   set.reps = isFinite(numVal) && numVal > 0 ? numVal : (val === '' ? '' : val);
 
+  // Clear prefilled whenever reps > 0 — must happen before isRealSet check,
+  // since BW mode never calls handleWeightInput to clear it first.
+  if (Number(set.reps) > 0 && set.prefilled) set.prefilled = false;
+
   if (isRealSet(set)) {
-    if (set.prefilled) set.prefilled = false;
     if (!set.ts) set.ts = Date.now();
     if (!session.date) {
       session.date = todayISO();
