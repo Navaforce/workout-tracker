@@ -1816,15 +1816,19 @@ function renderWorkout(sessionId) {
   if (!session) return;
 
   // Header
+  const isRest = session.day_type === 'rest';
   const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${typeName(session.day_type)}</span>`;
   let dur = '';
-  if (session.started_at && session.completed_at) {
-    const mins = Math.round((session.completed_at - session.started_at) / 60000);
-    dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Edit duration">${mins}m ✎</span>`;
-  } else {
-    dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Set duration">+ time ✎</span>`;
+  if (!isRest) {
+    if (session.started_at && session.completed_at) {
+      const mins = Math.round((session.completed_at - session.started_at) / 60000);
+      dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Edit duration">${mins}m ✎</span>`;
+    } else {
+      dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Set duration">+ time ✎</span>`;
+    }
   }
   document.getElementById('workout-title').innerHTML = `${badge} ${formatDateDisplay(session.date)}${dur}`;
+  document.getElementById('warmup-btn').style.display = isRest ? 'none' : '';
 
   // Week notes
   const notesEl = document.getElementById('week-notes-input');
