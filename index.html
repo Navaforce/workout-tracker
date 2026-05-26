@@ -1613,7 +1613,7 @@ function renderMonthView() {
 
     let typeLabel = '';
     if (isFitnessDay) typeLabel = `<span class="cal-type-label" style="color:var(--legs)">Fitness</span>`;
-    else if (session && !isRest) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>`;
+    else if (session) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>`;
 
     // Sets + duration info for non-rest sessions; duration for fitness days
     let infoHtml = '';
