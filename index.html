@@ -1733,7 +1733,9 @@ function shiftWeekStrip(delta) {
 function calDayTap(iso) {
   const data = load();
   const session = findSessionForDate(data, iso);
-  if (session) {
+  if (session && session.day_type === 'rest') {
+    openTypeSheet(iso);
+  } else if (session) {
     openWorkout(session.session_id);
   } else if ((data.fitness_test_days || {})[iso]) {
     showFitness(iso);
