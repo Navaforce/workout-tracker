@@ -1751,6 +1751,9 @@ function openTypeSheet(iso) {
   const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
   const mNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   document.getElementById('type-sheet-title').textContent = `What type is ${dayNames[d.getDay()]}, ${mNames[d.getMonth()]} ${d.getDate()}?`;
+  const existingSession = findSessionForDate(load(), iso);
+  document.getElementById('type-sheet-remove').style.display =
+    (existingSession && existingSession.day_type === 'rest') ? '' : 'none';
   document.getElementById('type-sheet').classList.add('open');
   document.getElementById('sheet-backdrop').classList.add('open');
 }
@@ -1759,6 +1762,21 @@ function closeTypeSheet() {
   document.getElementById('type-sheet').classList.remove('open');
   document.getElementById('sheet-backdrop').classList.remove('open');
   sheetDate = null;
+}
+
+function deleteRestDay(iso) {
+  if (!iso) return;
+  closeTypeSheet();
+  const data = load();
+  const sid = Object.keys(data.sessions).find(k => {
+    const s = data.sessions[k];
+    return s.date === iso && s.day_type === 'rest';
+  });
+  if (!sid) return;
+  delete data.sessions[sid];
+  save(data);
+  syncNow(true);
+  renderCalendar();
 }
 
 function pickType(type) {
