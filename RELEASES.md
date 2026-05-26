@@ -6,6 +6,20 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.2.2 — Rest day label + delete (2026-05-26)
+
+**Tag:** `v1.2.2`
+
+### What changed
+
+**Rest label missing from month view.** Month view excluded rest days from the type label by checking `!isRest` — removed that guard so rest days render `Rest` the same way all other types do.
+
+**Rest day tap opened workout screen (blank).** `calDayTap` sent rest sessions to `openWorkout`, which renders an empty screen. Fixed to route rest day taps to the type sheet instead.
+
+**No way to delete / reassign a rest day.** Added `deleteRestDay(iso)` and a "Remove Day" button (red, bottom of type sheet) that appears only when the tapped day has a rest session. Tap → removes session from storage, syncs, re-renders. Day returns to empty state, type sheet can be reopened to re-pick.
+
+---
+
 ## v1.2.1 — BW mode reps bug fix (2026-05-22)
 
 **Tag:** `v1.2.1`
