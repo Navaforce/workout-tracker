@@ -1285,7 +1285,7 @@ function computeProgressionFromSession(exName, lastSession) {
   if (suggestWeight === lastWeight && suggestReps === avgReps) return null;
 
   const weightStr = suggestWeight > 0 ? `${suggestWeight} lbs` : 'BW';
-  return `→ ${weightStr} × ${suggestReps} reps`;
+  return `${weightStr} × ${suggestReps} reps`;
 }
 
 function computeProgression(exName, dayType) {
