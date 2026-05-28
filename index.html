@@ -1907,9 +1907,9 @@ function renderExerciseCard(session, exIdx, lastSession) {
     const info = getExerciseInfo(ex.name);
     const rest = info?.rest || '';
     const parts = [];
-    if (planSets && planReps) parts.push(`${planSets} × ${planReps}`);
-    if (rest) parts.push(`rest ${rest}`);
-    if (parts.length) targetLine = parts.join(' · ');
+    if (planSets && planReps) parts.push(`${planSets} × ${planReps} reps`);
+    if (rest) parts.push(`rest: ${rest}`);
+    if (parts.length) targetLine = parts.join(', ');
   }
 
   // Last session summary — searches per-exercise across all past sessions of this type
