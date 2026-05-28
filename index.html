@@ -1956,9 +1956,9 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote) {
 
   const adjPills = ['increase','same','decrease'].map(a => {
     const active = s.adjustment === a;
-    const cls = active ? ' active-adj' : '';
+    const activeClass = active ? (a === 'increase' ? ' active-adj-up' : a === 'same' ? ' active-adj-same' : ' active-adj-down') : '';
     const label = a === 'increase' ? '↑' : a === 'same' ? '=' : '↓';
-    return `<button class="pill${cls}" onclick="handleAdjustmentInput('${esc(sid)}',${exIdx},${setIdx},'${a}')">${label}</button>`;
+    return `<button class="pill${activeClass}" onclick="handleAdjustmentInput('${esc(sid)}',${exIdx},${setIdx},'${a}')">${label}</button>`;
   }).join('');
 
   const hasNote = s.note && s.note.trim();
