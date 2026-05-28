@@ -2307,7 +2307,7 @@ function renderApneaBlock(session) {
     </div>`;
   }
 
-  // Apnea done = all 6 rounds have their primary hold field logged as a positive number
+  // Apnea done = all rounds have their primary hold field logged as a positive number
   const holdKey = (type === 'pull' || type === 'cardio') ? 'actual_dur' : 'actual_hold';
   const apneaDone = Array.from({length: rounds}, (_, i) => `r${i}`)
     .every(rk => Number(apnea[rk]?.[holdKey]) > 0);
