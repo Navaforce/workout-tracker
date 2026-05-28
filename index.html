@@ -1939,9 +1939,10 @@ function renderExerciseCard(session, exIdx, lastSession) {
       <span class="ex-chevron">⌄</span>
     </div>
     <div class="ex-body">
-      ${suggestion ? `<div class="ex-suggestion">${esc(suggestion)}</div>` : ''}
-      ${targetLine ? `<div class="ex-target-line">${esc(targetLine)}</div>` : ''}
-      ${lastSummary ? `<div class="ex-last-session">${esc(lastSummary)}</div>` : ''}
+      <div class="ex-meta">
+        ${targetLine ? `<div class="ex-instructions">Instructions: <span>${esc(targetLine)}</span></div>` : ''}
+        ${(lastSummary || suggestion) ? `<div class="ex-last-suggested">${lastSummary ? `<span class="ex-ls-last">${esc(lastSummary)}</span>` : '<span class="ex-ls-last"></span>'}${suggestion ? `<span class="ex-ls-suggested">Suggested: ${esc(suggestion)}</span>` : ''}</div>` : ''}
+      </div>
       <div class="set-list" id="sl-${esc(sid)}-${exIdx}">${setsHtml}</div>
       <button class="add-set-btn" onclick="addSet('${esc(sid)}', ${exIdx})">+ Add Set</button>
     </div>
