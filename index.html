@@ -1919,7 +1919,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
   if (prevReal) {
     const w = prevReal[prevReal.length - 1].weight;
     const repsArr = prevReal.map(s => s.reps).join('/');
-    lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} · ${repsArr} reps`;
+    lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} ${repsArr} reps`;
     prevNotes = prevReal.map(s => s.note || '');
   }
 
