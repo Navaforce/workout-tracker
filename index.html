@@ -1018,6 +1018,7 @@ function closeWarmup() {
 
 let openCards = new Set();
 let openApnea = false;
+let _exDrag = null; // { exIdx, startY, ghost, container, cardEls, sourceEl }
 let startModalPending = null;
 let timerTab = 'sw';
 let swElapsed = 0, swRunning = false, swInterval = null;
