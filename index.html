@@ -2094,15 +2094,17 @@ function exDragMove(e) {
   // Mark source card dim
   _exDrag.sourceEl.classList.add('ex-drag-source');
 
-  // Determine drop position by midpoints of other cards
+  // Determine drop position: find the card whose midpoint the ghost center is nearest to
   const cards = _exDrag.cardEls;
   let dropIdx = _exDrag.exIdx;
   for (let i = 0; i < cards.length; i++) {
     if (i === _exDrag.exIdx) continue;
     const r = cards[i].getBoundingClientRect();
     const mid = r.top + r.height / 2;
-    if (i < _exDrag.exIdx && y < mid) { dropIdx = i; break; }
-    if (i > _exDrag.exIdx && y > mid) dropIdx = i;
+    // Dragging up: take the lowest card above whose midpoint finger has passed
+    if (i < _exDrag.exIdx && y <= mid) { dropIdx = i; break; }
+    // Dragging down: update to each card below whose midpoint finger has passed
+    if (i > _exDrag.exIdx && y >= mid) dropIdx = i;
   }
   _exDrag.dropIdx = dropIdx;
 
