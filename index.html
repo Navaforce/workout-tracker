@@ -2553,6 +2553,18 @@ function handleApneaBlur(inputEl) {
   save(data);
 }
 
+function handleApneaEffort(sessionId, roundKey, effort) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  if (!session.apnea) session.apnea = {};
+  if (!session.apnea[roundKey]) session.apnea[roundKey] = {};
+  session.apnea[roundKey].effort = session.apnea[roundKey].effort === effort ? '' : effort;
+  session.updated_at = Date.now();
+  save(data);
+  renderApneaBlock(session);
+}
+
 // ════════════════════════════════════════════════════════════════
 // MARK COMPLETE
 // ════════════════════════════════════════════════════════════════
