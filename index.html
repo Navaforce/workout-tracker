@@ -190,12 +190,29 @@ input:focus, textarea:focus { border-color: var(--accent); }
 /* Exercise card */
 .ex-card {
   background: var(--s1); border-radius: var(--r); border: 1px solid var(--border);
-  margin-bottom: 10px; overflow: hidden;
+  margin-bottom: 10px; overflow: hidden; transition: opacity 0.15s, box-shadow 0.15s;
+}
+.ex-card.ex-drag-source { opacity: 0.35; }
+.ex-card.ex-drop-above { box-shadow: 0 -3px 0 0 var(--accent); }
+.ex-card.ex-drop-below { box-shadow: 0 3px 0 0 var(--accent); }
+.ex-drag-ghost {
+  position: fixed; z-index: 500; pointer-events: none;
+  border-radius: var(--r); border: 1px solid var(--accent);
+  background: var(--s1); box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  opacity: 0.92; padding: 14px 14px; display: flex; align-items: center; gap: 10px;
+  font-size: 16px; font-weight: 700; color: var(--text);
 }
 .ex-header {
-  display: flex; align-items: center; padding: 14px 14px 14px 14px; gap: 10px; cursor: pointer;
+  display: flex; align-items: center; padding: 14px 14px 14px 6px; gap: 10px; cursor: pointer;
   min-height: 56px;
 }
+.ex-drag-handle {
+  display: flex; align-items: center; justify-content: center;
+  width: 28px; min-width: 28px; height: 36px; color: var(--border);
+  font-size: 18px; flex-shrink: 0; touch-action: none; cursor: grab;
+  transition: color 0.15s;
+}
+.ex-drag-handle.dragging { color: var(--accent); }
 .ex-name { font-size: 16px; font-weight: 700; flex: 1; }
 .ex-info-btn { min-width: 36px; min-height: 36px; display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--accent); border-radius: 50%; background: var(--accent-dim); border: none; flex-shrink: 0; }
 .ex-progress { font-size: 13px; color: var(--text); white-space: nowrap; }
