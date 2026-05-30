@@ -1951,6 +1951,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
   const hasInfo = !!getExerciseInfo(ex.name);
   return `<div class="ex-card${isOpen ? ' open' : ''}${exDone ? ' ex-done' : ''}" id="exc-${esc(sid)}-${exIdx}">
     <div class="ex-header" onclick="toggleExCard(${exIdx})">
+      <span class="ex-drag-handle" ontouchstart="exDragHandleTouchStart(event,${exIdx})" onclick="event.stopPropagation()">⠿</span>
       <span class="ex-name">${esc(ex.name)}</span>
       ${hasInfo ? `<button class="ex-info-btn" data-exname="${esc(ex.name)}" onclick="event.stopPropagation();showExerciseInfo(this.dataset.exname)" title="Cues &amp; hold protocol">ⓘ</button>` : ''}
       <button class="bw-btn${ex.bw_mode ? ' bw-active' : ''}" onclick="event.stopPropagation();toggleBWMode('${esc(sid)}',${exIdx})" title="Bodyweight mode">BW</button>
