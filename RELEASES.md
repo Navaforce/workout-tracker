@@ -6,6 +6,16 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.3.1 — Apnea round effort rating (2026-05-30)
+
+**Tag:** `v1.3.1`
+
+### What changed
+
+**Effort pills on apnea rounds.** Each breath-hold round now has Easy / Mod / Hard pills below the input fields, styled identically to the exercise set effort pills. Tapping a pill selects it; tapping the active pill deselects it. Stored in `session.apnea.r{n}.effort` and synced to Supabase with the rest of the session on the next sync.
+
+---
+
 ## v1.3.0 — Exercise drag-to-reorder (2026-05-30)
 
 **Tag:** `v1.3.0`
