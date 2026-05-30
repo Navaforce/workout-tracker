@@ -2450,10 +2450,19 @@ function renderApneaBlock(session) {
       parts.push(`Recovery: ${tgt.recovery}`);
       tgtHtml = `<div class="apnea-target-line">${esc(parts.join(' · '))}</div>`;
     }
+    const effort = rData.effort || '';
+    const effortPills = ['easy','moderate','hard'].map(e => {
+      const active = effort === e;
+      const cls = active ? ` active-${e === 'moderate' ? 'mod' : e}` : '';
+      const label = e === 'moderate' ? 'Mod' : e.charAt(0).toUpperCase() + e.slice(1);
+      return `<button class="pill${cls}" onclick="handleApneaEffort('${esc(session.session_id)}','${rKey}','${e}')">${label}</button>`;
+    }).join('');
+
     roundsHtml += `<div class="apnea-round">
       <div class="apnea-round-label">Round ${r+1}</div>
       ${tgtHtml}
       ${fieldsHtml}
+      <div class="pill-group" style="margin-top:8px">${effortPills}</div>
     </div>`;
   }
 
