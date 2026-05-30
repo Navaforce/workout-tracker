@@ -6,6 +6,16 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.3.0 — Exercise drag-to-reorder (2026-05-30)
+
+**Tag:** `v1.3.0`
+
+### What changed
+
+**Drag-to-reorder exercises within a workout day.** Long-press the ⠿ grip handle on the left of any exercise header and drag up or down to reposition it. A ghost card follows the finger; the target card gets a cyan drop-indicator bar. On release the exercise array is spliced to the new position, saved, and the screen re-renders. Open/collapsed card state is remapped to new indices so nothing snaps shut. The tap-to-collapse action on the header is suppressed after a drag so releasing your finger never accidentally toggles the card.
+
+---
+
 ## v1.2.2 — Rest day label + delete (2026-05-26)
 
 **Tag:** `v1.2.2`
