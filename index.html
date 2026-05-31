@@ -312,6 +312,22 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .apnea-note-input { width: 140px; height: 40px; font-size: 13px; padding: 0 8px; border-radius: var(--rs); }
 .apnea-input.invalid { border-color: var(--hard); }
 
+/* Dive log block */
+.dive-block {
+  background: var(--s1); border-radius: var(--r); border: 1px solid var(--border);
+  margin-bottom: 10px; overflow: hidden;
+}
+.dive-header {
+  display: flex; align-items: center; padding: 16px 14px; gap: 10px;
+}
+.dive-title { font-size: 16px; font-weight: 700; flex: 1; color: var(--dive); }
+.dive-fields { padding: 0 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+.dive-field-row { display: flex; align-items: center; gap: 10px; }
+.dive-field-label { font-size: 13px; font-weight: 600; color: var(--text); width: 110px; flex-shrink: 0; }
+.dive-input { height: 44px; border-radius: var(--rs); font-size: 16px; font-weight: 600; padding: 0 10px; text-align: center; width: 110px; }
+.dive-unit { font-size: 13px; color: var(--muted); }
+.dive-note-input { height: 40px; border-radius: var(--rs); font-size: 13px; padding: 0 10px; flex: 1; }
+
 /* Mark complete btn */
 #complete-btn {
   position: fixed; bottom: 0; left: 0; right: 0; height: 60px;
