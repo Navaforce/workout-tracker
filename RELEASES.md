@@ -6,6 +6,16 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.3.2 — Dive day type (2026-05-30)
+
+**Tag:** `v1.3.2`
+
+### What changed
+
+**Dive added to the day-type picker.** Selecting Dive on any calendar tile opens a dedicated log screen with three fields: Dives (count), Max Depth (ft), and Max Breath Hold (M:SS), plus a notes field. No exercise cards, no apnea block. Calendar tiles show dives count and depth. Syncs to Supabase with the rest of the session. Stored in `session.dive_log`.
+
+---
+
 ## v1.3.1 — Apnea round effort rating (2026-05-30)
 
 **Tag:** `v1.3.1`
