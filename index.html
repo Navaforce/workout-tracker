@@ -2516,6 +2516,82 @@ function toggleApneaBlock() {
   document.querySelector('.apnea-block')?.classList.toggle('open', openApnea);
 }
 
+// ════════════════════════════════════════════════════════════════
+// DIVE LOG BLOCK
+// ════════════════════════════════════════════════════════════════
+
+function renderDiveBlock(session) {
+  const container = document.getElementById('apnea-container');
+  const log = session.dive_log || {};
+  const sid = session.session_id;
+  container.innerHTML = `<div class="dive-block">
+    <div class="dive-header">
+      <span class="dive-title">🤿 Dive Log</span>
+    </div>
+    <div class="dive-fields">
+      <div class="dive-field-row">
+        <span class="dive-field-label">Dives</span>
+        <input type="number" class="dive-input" value="${esc(String(log.dives ?? ''))}" placeholder="0" min="0"
+          oninput="handleDiveInput('${esc(sid)}','dives','num',this)">
+        <span class="dive-unit">dives</span>
+      </div>
+      <div class="dive-field-row">
+        <span class="dive-field-label">Max Depth</span>
+        <input type="number" class="dive-input" value="${esc(String(log.max_depth_ft ?? ''))}" placeholder="0" min="0"
+          oninput="handleDiveInput('${esc(sid)}','max_depth_ft','num',this)">
+        <span class="dive-unit">ft</span>
+      </div>
+      <div class="dive-field-row">
+        <span class="dive-field-label">Max Breath Hold</span>
+        <input type="text" class="dive-input" value="${esc(log.max_hold_secs !== '' && log.max_hold_secs != null ? fmtMSS(log.max_hold_secs) : '')}" placeholder="0:00"
+          oninput="handleDiveInput('${esc(sid)}','max_hold_secs','mss',this)"
+          onblur="handleDiveBlur(this,'${esc(sid)}','max_hold_secs')">
+        <span class="dive-unit">M:SS</span>
+      </div>
+      <div class="dive-field-row">
+        <span class="dive-field-label">Notes</span>
+        <input type="text" class="dive-note-input" value="${esc(log.note || '')}" placeholder="conditions, site, species…"
+          oninput="handleDiveInput('${esc(sid)}','note','text',this)">
+      </div>
+    </div>
+  </div>`;
+}
+
+function handleDiveInput(sessionId, field, format, inputEl) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  if (!session.dive_log) session.dive_log = {};
+  const val = inputEl.value;
+  if (format === 'num') {
+    const n = parseFloat(val);
+    session.dive_log[field] = isFinite(n) ? n : '';
+  } else if (format === 'mss') {
+    // store on blur; just clear invalid on input
+    inputEl.classList.remove('invalid');
+    return;
+  } else {
+    session.dive_log[field] = val;
+  }
+  session.updated_at = Date.now();
+  save(data);
+}
+
+function handleDiveBlur(inputEl, sessionId, field) {
+  const val = inputEl.value.trim();
+  if (!val) { inputEl.classList.remove('invalid'); return; }
+  const parsed = parseMSS(val);
+  if (parsed === null) { inputEl.classList.add('invalid'); inputEl.value = ''; return; }
+  inputEl.classList.remove('invalid');
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  if (!session.dive_log) session.dive_log = {};
+  session.dive_log[field] = parsed;
+  session.updated_at = Date.now();
+  save(data);
+}
+
 function handleApneaInput(sessionId, roundKey, field, format, inputEl) {
   const data = load();
   const session = data.sessions[sessionId];
