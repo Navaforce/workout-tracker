@@ -1755,9 +1755,10 @@ function renderWeekView() {
       dateColor = 'var(--legs)';
       extraClass = ' fitness-day';
     } else if (session) {
-      badgeHtml = `<span class="wc-badge type-${session.day_type}">${typeName(session.day_type)}</span>`;
+      badgeHtml = `<span class="wc-badge type-${session.day_type}">${session.day_type === 'dive' ? '🤿 Dive' : typeName(session.day_type)}</span>`;
       if      (session.completed)                     dateColor = 'var(--easy)';
-      else if (countRealSetsInSession(session) > 0)   dateColor = 'var(--moderate)';
+      else if (session.day_type !== 'dive' && countRealSetsInSession(session) > 0) dateColor = 'var(--moderate)';
+      else if (session.day_type === 'dive' && session.dive_log?.dives) dateColor = 'var(--moderate)';
       else {
         const typeColors = { push:'var(--push)', pull:'var(--pull)', legs:'#ff6eb4', cardio:'var(--cardio)', rest:'#38bdf8', dive:'var(--dive)' };
         dateColor = typeColors[session.day_type] || 'var(--text)';
