@@ -1679,20 +1679,28 @@ function renderMonthView() {
       }
     }
     if (session && !isRest && !isFitnessDay) {
-      const planned = countPlannedSetsInSession(session);
-      const setsStr = planned > 0 ? `${realCount}/${planned} sets` : (realCount > 0 ? `${realCount} sets` : '');
-      const dur = sessionDurationMins(session);
-      const durStr = dur ? `${dur}m` : '';
-      if (setsStr || durStr) {
-        infoHtml = `<div class="cal-info">
-          ${setsStr ? `<span class="cal-sets">${setsStr}</span>` : ''}
-          ${durStr  ? `<span class="cal-dur">${durStr}</span>` : ''}
-        </div>`;
-      }
-      if (planned > 0) {
-        const pct = Math.min(100, Math.round((realCount / planned) * 100));
-        const fillColor = isComplete ? 'var(--easy)' : isPartial ? 'var(--moderate)' : 'var(--border)';
-        progressBar = `<div class="cal-progress"><div class="cal-progress-fill" style="width:${pct}%;background:${fillColor}"></div></div>`;
+      if (session.day_type === 'dive') {
+        const dl = session.dive_log || {};
+        const parts = [];
+        if (dl.dives) parts.push(`${dl.dives} dives`);
+        if (dl.max_depth_ft) parts.push(`${dl.max_depth_ft}ft`);
+        if (parts.length) infoHtml = `<div class="cal-info"><span class="cal-sets">${parts.join(' · ')}</span></div>`;
+      } else {
+        const planned = countPlannedSetsInSession(session);
+        const setsStr = planned > 0 ? `${realCount}/${planned} sets` : (realCount > 0 ? `${realCount} sets` : '');
+        const dur = sessionDurationMins(session);
+        const durStr = dur ? `${dur}m` : '';
+        if (setsStr || durStr) {
+          infoHtml = `<div class="cal-info">
+            ${setsStr ? `<span class="cal-sets">${setsStr}</span>` : ''}
+            ${durStr  ? `<span class="cal-dur">${durStr}</span>` : ''}
+          </div>`;
+        }
+        if (planned > 0) {
+          const pct = Math.min(100, Math.round((realCount / planned) * 100));
+          const fillColor = isComplete ? 'var(--easy)' : isPartial ? 'var(--moderate)' : 'var(--border)';
+          progressBar = `<div class="cal-progress"><div class="cal-progress-fill" style="width:${pct}%;background:${fillColor}"></div></div>`;
+        }
       }
     }
 
