@@ -1881,7 +1881,7 @@ function renderWorkout(sessionId) {
     }
   }
   document.getElementById('workout-title').innerHTML = `${badge} ${formatDateDisplay(session.date)}${dur}`;
-  document.getElementById('warmup-btn').style.display = isRest ? 'none' : '';
+  document.getElementById('warmup-btn').style.display = (isRest || isDive) ? 'none' : '';
 
   // Week notes
   const notesEl = document.getElementById('week-notes-input');
@@ -1889,11 +1889,15 @@ function renderWorkout(sessionId) {
   if (notesEl.value) notesEl.classList.add('has-content');
   else notesEl.classList.remove('has-content');
 
-  // Exercises
-  renderExercises(session);
-
-  // Apnea
-  renderApneaBlock(session);
+  // Exercises + Apnea (skipped for dive)
+  if (isDive) {
+    document.getElementById('exercises-container').innerHTML = '';
+    document.getElementById('apnea-container').innerHTML = '';
+    renderDiveBlock(session);
+  } else {
+    renderExercises(session);
+    renderApneaBlock(session);
+  }
 
   // Complete button
   const btn = document.getElementById('complete-btn');
