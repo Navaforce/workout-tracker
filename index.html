@@ -2676,6 +2676,7 @@ function handleApneaEffort(sessionId, roundKey, effort) {
 // ════════════════════════════════════════════════════════════════
 function validateDayForComplete(session) {
   const errors = [];
+  if (session.day_type === 'dive') return errors;
   for (let ei = 0; ei < session.exercises.length; ei++) {
     const ex = session.exercises[ei];
     for (let si = 0; si < ex.sets.length; si++) {
