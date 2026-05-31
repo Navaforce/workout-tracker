@@ -1527,12 +1527,14 @@ function getOrCreateSession(date, type) {
     apnea: {},
   };
 
-  if (type !== 'rest' && type !== 'cardio') {
+  if (type !== 'rest' && type !== 'cardio' && type !== 'dive') {
     session.exercises = prefillExercises(session, planDay);
   } else if (type === 'cardio') {
     const cardioDay = planDay;
     session.cardio_instructions = cardioDay && cardioDay.instructions ? cardioDay.instructions : '';
     session.apnea_rounds = 6;
+  } else if (type === 'dive') {
+    session.dive_log = { dives: '', max_depth_ft: '', max_hold_secs: '', note: '' };
   }
 
   data.sessions[baseId] = session;
