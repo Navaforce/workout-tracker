@@ -1749,7 +1749,7 @@ function renderWeekView() {
       if      (session.completed)                     dateColor = 'var(--easy)';
       else if (countRealSetsInSession(session) > 0)   dateColor = 'var(--moderate)';
       else {
-        const typeColors = { push:'var(--push)', pull:'var(--pull)', legs:'#ff6eb4', cardio:'var(--cardio)', rest:'#38bdf8' };
+        const typeColors = { push:'var(--push)', pull:'var(--pull)', legs:'#ff6eb4', cardio:'var(--cardio)', rest:'#38bdf8', dive:'var(--dive)' };
         dateColor = typeColors[session.day_type] || 'var(--text)';
       }
     }
