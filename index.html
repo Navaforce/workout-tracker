@@ -1869,7 +1869,8 @@ function renderWorkout(sessionId) {
 
   // Header
   const isRest = session.day_type === 'rest';
-  const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${typeName(session.day_type)}</span>`;
+  const isDive = session.day_type === 'dive';
+  const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${isDive ? '🤿 Dive' : typeName(session.day_type)}</span>`;
   let dur = '';
   if (!isRest) {
     if (session.started_at && session.completed_at) {
