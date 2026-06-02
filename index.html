@@ -2501,11 +2501,13 @@ function renderApneaBlock(session) {
       return `<button class="pill${cls}" onclick="handleApneaEffort('${esc(session.session_id)}','${rKey}','${e}')">${label}</button>`;
     }).join('');
 
+    const apneaTargetSecs = tgt ? parseMSS((tgt.target || '').split('·')[0].trim()) : null;
+    const apneaTimerBtn = apneaTargetSecs ? `<button class="set-timer-btn" style="margin-top:8px" onclick="startTimerForDuration(${apneaTargetSecs})">⏱</button>` : '';
     roundsHtml += `<div class="apnea-round">
       <div class="apnea-round-label">Round ${r+1}</div>
       ${tgtHtml}
       ${fieldsHtml}
-      <div class="pill-group" style="margin-top:8px">${effortPills}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:8px"><div class="pill-group">${effortPills}</div>${apneaTimerBtn}</div>
     </div>`;
   }
 
