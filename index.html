@@ -1983,7 +1983,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
 
   let setsHtml = '';
   for (let si = 0; si < (ex.sets || []).length; si++) {
-    setsHtml += renderSetRow(sid, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '');
+    setsHtml += renderSetRow(sid, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '', ex.name);
   }
 
   const exDone = totalSets > 0 && realSets.length >= totalSets;
