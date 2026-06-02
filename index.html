@@ -2395,7 +2395,7 @@ function addSet(sessionId, exIdx) {
   if (listEl) {
     const si = ex.sets.length - 1;
     const tmp = document.createElement('div');
-    tmp.innerHTML = renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode);
+    tmp.innerHTML = renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, '', ex.name);
     listEl.appendChild(tmp.firstElementChild);
   }
   refreshExProgress(sessionId, exIdx);
