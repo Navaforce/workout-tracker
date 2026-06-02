@@ -658,7 +658,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
     <button class="type-sheet-btn tsb-pull" onclick="pickType('pull')">Pull</button>
     <button class="type-sheet-btn tsb-legs" onclick="pickType('legs')">Legs</button>
     <button class="type-sheet-btn tsb-cardio" onclick="pickType('cardio')">Cardio</button>
-    <button class="type-sheet-btn tsb-dive" onclick="pickType('dive')">🤿 Dive</button>
+    <button class="type-sheet-btn tsb-dive" onclick="pickType('dive')">Dive</button>
     <button class="type-sheet-btn tsb-rest" onclick="pickType('rest')">Rest</button>
     <button class="type-sheet-btn tsb-fitness" onclick="pickType('fitness')">Fitness Test</button>
     <button id="type-sheet-remove" class="type-sheet-btn" style="display:none;background:var(--s2);border:1px solid var(--hard);color:var(--hard)" onclick="deleteRestDay(sheetDate)">Remove Day</button>
@@ -1755,7 +1755,7 @@ function renderWeekView() {
       dateColor = 'var(--legs)';
       extraClass = ' fitness-day';
     } else if (session) {
-      badgeHtml = `<span class="wc-badge type-${session.day_type}">${session.day_type === 'dive' ? '🤿 Dive' : typeName(session.day_type)}</span>`;
+      badgeHtml = `<span class="wc-badge type-${session.day_type}">${session.day_type === 'dive' ? 'Dive' : typeName(session.day_type)}</span>`;
       if      (session.completed)                     dateColor = 'var(--easy)';
       else if (session.day_type !== 'dive' && countRealSetsInSession(session) > 0) dateColor = 'var(--moderate)';
       else if (session.day_type === 'dive' && session.dive_log?.dives) dateColor = 'var(--moderate)';
@@ -1879,7 +1879,7 @@ function renderWorkout(sessionId) {
   // Header
   const isRest = session.day_type === 'rest';
   const isDive = session.day_type === 'dive';
-  const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${isDive ? '🤿 Dive' : typeName(session.day_type)}</span>`;
+  const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${isDive ? 'Dive' : typeName(session.day_type)}</span>`;
   let dur = '';
   if (!isRest) {
     if (session.started_at && session.completed_at) {
@@ -2535,7 +2535,7 @@ function renderDiveBlock(session) {
   const sid = session.session_id;
   container.innerHTML = `<div class="dive-block">
     <div class="dive-header">
-      <span class="dive-title">🤿 Dive Log</span>
+      <span class="dive-title">Dive Log</span>
     </div>
     <div class="dive-fields">
       <div class="dive-field-row">
@@ -3049,6 +3049,20 @@ function cdSetPreset(secs) {
   renderCDPresets();
   renderCD();
   // Auto-start immediately
+  cdToggle();
+}
+
+function startTimerForDuration(secs) {
+  clearInterval(cdInterval);
+  cdAlarmTimeouts.forEach(clearTimeout);
+  cdAlarmTimeouts = [];
+  cdRunning = false;
+  cdTotal = secs;
+  cdRemaining = secs;
+  renderCDPresets();
+  renderCD();
+  switchTimerTab('cd');
+  openTimer();
   cdToggle();
 }
 
