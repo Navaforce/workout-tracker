@@ -2008,7 +2008,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
   </div>`;
 }
 
-function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote) {
+function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName) {
   const wVal = s.prefilled ? '' : (s.weight !== '' && s.weight !== null ? s.weight : '');
   const wPlaceholder = s.prefilled && s.weight !== '' ? s.weight : '';
 
