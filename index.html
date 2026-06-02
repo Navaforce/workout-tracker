@@ -2415,7 +2415,7 @@ function deleteSet(sessionId, exIdx, setIdx) {
     const prevNotes = getPrevNotesForExercise(session.day_type, ex.name);
     let html = '';
     for (let si = 0; si < ex.sets.length; si++) {
-      html += renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '');
+      html += renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '', ex.name);
     }
     listEl.innerHTML = html;
   }
