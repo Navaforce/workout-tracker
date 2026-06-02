@@ -2031,6 +2031,9 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName) {
   // Previous session note shown as placeholder (tooltip equivalent on mobile)
   const notePlaceholder = hasNote ? '' : (prevNote ? `Prev: ${prevNote}` : 'Note…');
 
+  const restSecs = exName ? parseMSS(getExerciseInfo(exName)?.rest || '') : null;
+  const timerBtn = restSecs ? `<button class="set-timer-btn" onclick="startTimerForDuration(${restSecs})">⏱</button>` : '';
+
   let weightHtml;
   if (bwMode) {
     const data = load();
