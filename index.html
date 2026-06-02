@@ -2368,7 +2368,7 @@ function refreshSetRow(sessionId, exIdx, setIdx) {
   if (!wrap) return;
   const prevNotes = getPrevNotesForExercise(session.day_type, ex.name);
   const tmp = document.createElement('div');
-  tmp.innerHTML = renderSetRow(sessionId, exIdx, setIdx, set, ex.bw_mode, prevNotes[setIdx] || '');
+  tmp.innerHTML = renderSetRow(sessionId, exIdx, setIdx, set, ex.bw_mode, prevNotes[setIdx] || '', ex.name);
   wrap.replaceWith(tmp.firstElementChild);
 }
 
