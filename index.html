@@ -2060,6 +2060,7 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName) {
         <div class="pill-group">${effortPills}</div>
         <div class="pill-group">${adjPills}</div>
         <button class="note-toggle${hasNote ? ' has-note' : ''}" onclick="toggleNote(this)">ⓘ</button>
+        ${timerBtn}
       </div>
       <div class="note-input-wrap${noteOpen ? ' open' : ''}">
         <input type="text" class="note-input" value="${esc(s.note || '')}" placeholder="${esc(notePlaceholder)}" oninput="handleNoteInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
