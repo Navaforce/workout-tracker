@@ -1848,17 +1848,28 @@ function closeTypeSheet() {
 
 function deleteRestDay(iso) {
   if (!iso) return;
-  closeTypeSheet();
   const data = load();
-  const sid = Object.keys(data.sessions).find(k => {
-    const s = data.sessions[k];
-    return s.date === iso && s.day_type === 'rest';
-  });
-  if (!sid) return;
-  delete data.sessions[sid];
-  save(data);
-  syncNow(true);
-  renderCalendar();
+  const entry = Object.entries(data.sessions).find(([, s]) => s.date === iso);
+  if (!entry) { closeTypeSheet(); return; }
+  const [sid, session] = entry;
+  const hasData = session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
+  const label = (session.day_type || 'day').charAt(0).toUpperCase() + (session.day_type || 'day').slice(1);
+  const confirmDelete = () => {
+    delete data.sessions[sid];
+    if (session.day_type === 'fitness' && data.fitness_test_days) {
+      delete data.fitness_test_days[iso];
+      data._meta_updated_at = Date.now();
+    }
+    save(data);
+    syncNow(true);
+    renderCalendar();
+  };
+  closeTypeSheet();
+  if (hasData) {
+    showConfirmModal(`Delete ${label} day?`, 'This day has logged sets. This cannot be undone.', confirmDelete);
+  } else {
+    confirmDelete();
+  }
 }
 
 function pickType(type) {
