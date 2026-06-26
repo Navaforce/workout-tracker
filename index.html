@@ -1835,7 +1835,7 @@ function openTypeSheet(iso) {
   document.getElementById('type-sheet-title').textContent = `What type is ${dayNames[d.getDay()]}, ${mNames[d.getMonth()]} ${d.getDate()}?`;
   const existingSession = findSessionForDate(load(), iso);
   document.getElementById('type-sheet-remove').style.display =
-    (existingSession && existingSession.day_type === 'rest') ? '' : 'none';
+    existingSession ? '' : 'none';
   document.getElementById('type-sheet').classList.add('open');
   document.getElementById('sheet-backdrop').classList.add('open');
 }
