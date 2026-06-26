@@ -1819,7 +1819,12 @@ function calDayTap(iso) {
   if (session && session.day_type === 'rest') {
     openTypeSheet(iso);
   } else if (session) {
-    openWorkout(session.session_id);
+    const hasData = session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
+    if (hasData) {
+      openWorkout(session.session_id);
+    } else {
+      openTypeSheet(iso);
+    }
   } else if ((data.fitness_test_days || {})[iso]) {
     showFitness(iso);
   } else {
