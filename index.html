@@ -1866,7 +1866,7 @@ function deleteRestDay(iso) {
       data._meta_updated_at = Date.now();
     }
     save(data);
-    syncNow(true);
+    supabaseDelete(sid).then(() => syncNow(true));
     renderCalendar();
   };
   closeTypeSheet();
