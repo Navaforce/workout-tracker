@@ -1811,7 +1811,16 @@ function renderWeekView() {
 }
 
 function findSessionForDate(data, iso) {
-  return Object.values(data.sessions).find(s => s.date === iso) || null;
+  const matches = Object.values(data.sessions).filter(s => s.date === iso);
+  if (matches.length === 0) return null;
+  if (matches.length === 1) return matches[0];
+  // Prefer session with real data over empty ones
+  const withData = matches.find(s =>
+    (s.day_type === 'dive' && s.dive_log && (s.dive_log.dives || s.dive_log.max_depth_ft || s.dive_log.max_hold_secs || s.dive_log.note)) ||
+    (s.exercises && s.exercises.some(ex => (ex.sets || []).some(isRealSet))) ||
+    s.completed
+  );
+  return withData || matches[0];
 }
 
 function shiftMonth(delta) {
