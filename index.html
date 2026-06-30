@@ -1832,7 +1832,9 @@ function calDayTap(iso) {
   if (session && session.day_type === 'rest') {
     openTypeSheet(iso);
   } else if (session) {
-    const hasData = session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
+    const hasData = (session.day_type === 'dive')
+      ? session.dive_log && (session.dive_log.dives || session.dive_log.max_depth_ft || session.dive_log.max_hold_secs || session.dive_log.note)
+      : session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
     if (hasData) {
       openWorkout(session.session_id);
     } else {
