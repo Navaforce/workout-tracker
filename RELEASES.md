@@ -6,6 +6,24 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.3.3 — Ghost session fix (2026-06-30)
+
+**Tag:** `v1.3.3`
+
+### What changed
+
+**Type sheet opening on days with existing data after "Remove Day" + retype.** Three root causes fixed:
+
+1. **`supabaseDelete` added.** `deleteRestDay` now calls `supabaseDelete(sid)` before `syncNow`. Previously, the sync immediately re-fetched the just-deleted session from Supabase and restored it locally — every tap saw the zombie session (no real sets) and re-opened the type sheet.
+
+2. **`findSessionForDate` made data-aware.** When multiple sessions exist for the same date (orphan from a previous type + current session), the function now prefers the session with real data (`dive_log` fields, real sets, or `completed`) over an empty one. Falls back to first-found if none have data.
+
+3. **Dive `hasData` check in `calDayTap`.** Dive sessions have no `exercises` array — the old check always evaluated false, so dive tiles always opened the type sheet. Now uses `dive_log` fields (dives, max_depth_ft, max_hold_secs, note) as the data presence test.
+
+**Supabase cleanup:** Two orphan rows deleted directly (`david_2026-06-26_dive`, `david_2026-06-28_pull`).
+
+---
+
 ## v1.3.2 — Dive day type (2026-05-30)
 
 **Tag:** `v1.3.2`
