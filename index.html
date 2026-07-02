@@ -2388,6 +2388,11 @@ function handleNoteInput(sessionId, exIdx, setIdx, val) {
   session.exercises[exIdx].sets[setIdx].note = val;
   session.updated_at = Date.now();
   save(data);
+  const wrap = document.getElementById(`srw-${sessionId}-${exIdx}-${setIdx}`);
+  if (wrap) {
+    const btn = wrap.querySelector('.note-toggle');
+    if (btn) btn.classList.toggle('has-note', !!(val && val.trim()));
+  }
 }
 
 function toggleNote(btn) {
