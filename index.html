@@ -1957,8 +1957,9 @@ function renderWorkout(sessionId) {
   document.getElementById('workout-title').innerHTML = `${badge} ${formatDateDisplay(session.date)}${dur}`;
   document.getElementById('warmup-btn').style.display = (isRest || isDive) ? 'none' : '';
 
-  // Week notes
+  // Session notes
   const notesEl = document.getElementById('week-notes-input');
+  notesEl.placeholder = isRest ? 'Rest day notes — why you rested, how you felt…' : 'Session notes…';
   notesEl.value = session.week_notes || '';
   if (notesEl.value) notesEl.classList.add('has-content');
   else notesEl.classList.remove('has-content');
