@@ -1883,13 +1883,15 @@ function closeTypeSheet() {
   sheetDate = null;
 }
 
-function deleteRestDay(iso) {
+function deleteRestDay(iso) { deleteDay(iso); }
+function deleteDay(iso) {
   if (!iso) return;
   const data = load();
   const entry = Object.entries(data.sessions).find(([, s]) => s.date === iso);
   if (!entry) { closeTypeSheet(); return; }
   const [sid, session] = entry;
-  const hasData = session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
+  const hasLoggedSets = session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
+  const hasNotes = !!(session.week_notes && session.week_notes.trim());
   const label = (session.day_type || 'day').charAt(0).toUpperCase() + (session.day_type || 'day').slice(1);
   const confirmDelete = () => {
     delete data.sessions[sid];
@@ -1899,11 +1901,13 @@ function deleteRestDay(iso) {
     }
     save(data);
     supabaseDelete(sid).then(() => syncNow(true));
+    closeTypeSheet();
     renderCalendar();
   };
-  closeTypeSheet();
-  if (hasData) {
+  if (hasLoggedSets) {
     showConfirmModal(`Delete ${label} day?`, 'This day has logged sets. This cannot be undone.', confirmDelete);
+  } else if (hasNotes) {
+    showConfirmModal(`Delete ${label} day?`, 'This day has notes. This cannot be undone.', confirmDelete);
   } else {
     confirmDelete();
   }
