@@ -1973,14 +1973,19 @@ function renderWorkout(sessionId) {
     renderApneaBlock(session);
   }
 
-  // Complete button
+  // Complete button — hidden on rest days
   const btn = document.getElementById('complete-btn');
-  if (session.completed) {
-    btn.textContent = '✓ Completed';
-    btn.classList.add('completed');
+  if (isRest) {
+    btn.style.display = 'none';
   } else {
-    btn.textContent = 'Mark Complete';
-    btn.classList.remove('completed');
+    btn.style.display = '';
+    if (session.completed) {
+      btn.textContent = '✓ Completed';
+      btn.classList.add('completed');
+    } else {
+      btn.textContent = 'Mark Complete';
+      btn.classList.remove('completed');
+    }
   }
 }
 
