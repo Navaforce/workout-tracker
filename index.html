@@ -1743,13 +1743,16 @@ function renderMonthView() {
       }
     }
 
+    const deleteIcon = (session && !isComplete)
+      ? `<span class="cal-delete" onclick="event.stopPropagation();deleteDay('${iso}')" title="Delete">🗑</span>`
+      : '';
     html += `<div class="${cellClass}"
       onclick="calDayTapGuarded('${iso}')"
       ontouchstart="calCellHoldStart(event,'${iso}')"
       ontouchend="calCellHoldEnd(event)"
       ontouchmove="calCellHoldMove()"
       oncontextmenu="event.preventDefault();toggleInjury('${iso}')"
-    ><span class="cal-date">${d}</span>${typeLabel}${infoHtml}${progressBar}</div>`;
+    ><span class="cal-date">${d}</span>${typeLabel}${infoHtml}${progressBar}${deleteIcon}</div>`;
   }
 
   // Next month pad
