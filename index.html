@@ -668,6 +668,17 @@ input:focus, textarea:focus { border-color: var(--accent); }
   </div>
 </div>
 
+<!-- ── Swap exercise sheet ── -->
+<div id="swap-backdrop" onclick="closeSwapSheet()"></div>
+<div id="swap-sheet">
+  <div id="swap-sheet-title">Swap Exercise</div>
+  <div id="swap-sheet-alts"></div>
+  <label id="swap-plan-label">
+    <input type="checkbox" id="swap-update-plan"> Also update plan for all future sessions
+  </label>
+  <button class="type-sheet-btn" style="background:var(--s2);border:1px solid var(--border);color:var(--muted);margin-top:8px;font-size:15px" onclick="closeSwapSheet()">Cancel</button>
+</div>
+
 <!-- ── Timer overlay ── -->
 <div id="timer-overlay">
   <div id="timer-backdrop" onclick="closeTimer()"></div>
