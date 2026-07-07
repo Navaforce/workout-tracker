@@ -2487,6 +2487,28 @@ function addSet(sessionId, exIdx) {
   refreshExProgress(sessionId, exIdx);
 }
 
+function deleteExercise(sessionId, exIdx) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  const ex = session.exercises[exIdx];
+  const hasRealSets = ex.sets && ex.sets.some(isRealSet);
+  const doDelete = () => {
+    const data2 = load();
+    const session2 = data2.sessions[sessionId];
+    if (!session2) return;
+    session2.exercises.splice(exIdx, 1);
+    session2.updated_at = Date.now();
+    save(data2);
+    renderExercises(session2);
+  };
+  if (hasRealSets) {
+    showConfirmModal(`Remove ${ex.name}?`, 'All logged sets will be deleted. This cannot be undone.', doDelete);
+  } else {
+    doDelete();
+  }
+}
+
 function deleteSet(sessionId, exIdx, setIdx) {
   const data = load();
   const session = data.sessions[sessionId];
