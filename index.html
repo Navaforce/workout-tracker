@@ -1172,6 +1172,9 @@ function sessionDurationMins(session) {
 let _calHoldStart = 0;
 let _calHoldIso = null;
 let _calHoldFired = false;
+let _exNameHoldTimer = null;
+let _exNameHoldSid = null;
+let _exNameHoldIdx = null;
 
 function calCellHoldStart(e, iso) {
   _calHoldStart = Date.now();
