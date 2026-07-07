@@ -2767,11 +2767,18 @@ function confirmSwap(sid, exIdx, newName) {
   if (!session) return;
   const ex = session.exercises[exIdx];
   const oldName = ex.name;
+  // Carry over plan_sets/plan_reps from the original exercise so the target line renders correctly
+  const planSets = ex.plan_sets;
+  const planReps = ex.plan_reps;
   ex.name = newName;
   ex.sets = [];
+  ex.plan_sets = planSets;
+  ex.plan_reps = planReps;
   session.updated_at = Date.now();
   save(data);
-  renderExercises(session);
+  // Re-load after save so renderExercises sees the persisted state including new EXERCISE_INFO entries
+  const saved = load();
+  renderExercises(saved.sessions[sid]);
   toast(`Swapped to ${newName}`);
   if (updatePlan) {
     swapInPlan(oldName, newName);
