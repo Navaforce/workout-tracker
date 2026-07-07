@@ -179,6 +179,30 @@ input:focus, textarea:focus { border-color: var(--accent); }
   display: none;
 }
 #sheet-backdrop.open { display: block; }
+#swap-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 209;
+  display: none;
+}
+#swap-backdrop.open { display: block; }
+#swap-sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 210;
+  background: var(--s1); border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0; padding: 20px 16px 32px;
+  transform: translateY(100%); transition: transform 0.25s ease;
+  display: flex; flex-direction: column; gap: 10px;
+}
+#swap-sheet.open { transform: translateY(0); }
+#swap-sheet-title { font-size: 16px; font-weight: 700; text-align: center; margin-bottom: 4px; }
+.swap-alt-btn {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 3px;
+  width: 100%; padding: 12px 14px; border-radius: var(--r);
+  background: var(--s2); border: 1px solid var(--border);
+  text-align: left; cursor: pointer;
+}
+.swap-alt-name { font-size: 15px; font-weight: 700; color: var(--text); }
+.swap-alt-note { font-size: 12px; color: var(--muted); line-height: 1.3; }
+#swap-plan-label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+#swap-plan-label input { width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; }
 
 /* ── Workout screen ── */
 #workout-screen { padding: 12px 12px 100px; }
