@@ -2569,6 +2569,103 @@ function deleteExercise(sessionId, exIdx) {
   }
 }
 
+// ════════════════════════════════════════════════════════════════
+// EXERCISE SWAP
+// ════════════════════════════════════════════════════════════════
+function exNameHoldStart(e, sid, exIdx) {
+  e.stopPropagation();
+  _exNameHoldSid = sid;
+  _exNameHoldIdx = exIdx;
+  _exNameHoldTimer = setTimeout(() => {
+    _exNameHoldTimer = null;
+    openSwapSheet(sid, exIdx);
+  }, 600);
+}
+function exNameHoldEnd(e) {
+  e.stopPropagation();
+  if (_exNameHoldTimer) { clearTimeout(_exNameHoldTimer); _exNameHoldTimer = null; }
+}
+function exNameHoldCancel() {
+  if (_exNameHoldTimer) { clearTimeout(_exNameHoldTimer); _exNameHoldTimer = null; }
+}
+
+function openSwapSheet(sid, exIdx) {
+  const data = load();
+  const session = data.sessions[sid];
+  if (!session) return;
+  const ex = session.exercises[exIdx];
+  const hasRealSets = ex.sets && ex.sets.some(isRealSet);
+  if (hasRealSets) {
+    toast('Remove sets before swapping');
+    return;
+  }
+  const alts = EXERCISE_ALTERNATIVES[ex.name];
+  if (!alts || alts.length === 0) {
+    toast('No alternatives defined for this exercise');
+    return;
+  }
+  document.getElementById('swap-sheet-title').textContent = `Swap: ${ex.name}`;
+  document.getElementById('swap-update-plan').checked = false;
+  const container = document.getElementById('swap-sheet-alts');
+  container.innerHTML = alts.map(([name, note]) =>
+    `<button class="swap-alt-btn" onclick="confirmSwap('${esc(sid)}',${exIdx},'${esc(name)}')">
+      <span class="swap-alt-name">${esc(name)}</span>
+      <span class="swap-alt-note">${esc(note)}</span>
+    </button>`
+  ).join('');
+  document.getElementById('swap-backdrop').classList.add('open');
+  document.getElementById('swap-sheet').classList.add('open');
+}
+
+function closeSwapSheet() {
+  document.getElementById('swap-backdrop').classList.remove('open');
+  document.getElementById('swap-sheet').classList.remove('open');
+}
+
+function confirmSwap(sid, exIdx, newName) {
+  const updatePlan = document.getElementById('swap-update-plan').checked;
+  closeSwapSheet();
+  const data = load();
+  const session = data.sessions[sid];
+  if (!session) return;
+  const ex = session.exercises[exIdx];
+  const oldName = ex.name;
+  ex.name = newName;
+  ex.sets = [];
+  session.updated_at = Date.now();
+  save(data);
+  renderExercises(session);
+  toast(`Swapped to ${newName}`);
+  if (updatePlan) {
+    swapInPlan(oldName, newName);
+  }
+}
+
+async function swapInPlan(oldName, newName) {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/${TABLE}?user_id=eq.${USER_ID}&session_id=eq.david_plan`,
+      { headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` } }
+    );
+    const rows = await res.json();
+    if (!rows || !rows.length) return;
+    const plan = rows[0].data;
+    let changed = false;
+    for (const week of (plan.weeks || [])) {
+      for (const day of (week.days || [])) {
+        for (const ex of (day.exercises || [])) {
+          if (ex.name === oldName) { ex.name = newName; changed = true; }
+        }
+      }
+    }
+    if (!changed) return;
+    await supabaseUpsert('david_plan', plan, new Date().toISOString());
+    toast('Plan updated');
+  } catch(e) {
+    toast('Plan update failed: ' + e.message);
+  }
+}
+
 function deleteSet(sessionId, exIdx, setIdx) {
   const data = load();
   const session = data.sessions[sessionId];
