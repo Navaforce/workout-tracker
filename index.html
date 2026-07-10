@@ -2039,17 +2039,8 @@ function shiftWeekStrip(delta) {
 function calDayTap(iso) {
   const data = load();
   const session = findSessionForDate(data, iso);
-  if (session && session.day_type === 'rest') {
+  if (session) {
     openWorkout(session.session_id);
-  } else if (session) {
-    const hasData = (session.day_type === 'dive')
-      ? session.dive_log && (session.dive_log.dives || session.dive_log.max_depth_ft || session.dive_log.max_hold_secs || session.dive_log.note)
-      : session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
-    if (hasData) {
-      openWorkout(session.session_id);
-    } else {
-      openTypeSheet(iso);
-    }
   } else if ((data.fitness_test_days || {})[iso]) {
     showFitness(iso);
   } else {
