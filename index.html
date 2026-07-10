@@ -1311,6 +1311,8 @@ function sessionDurationMins(session) {
 let _calHoldStart = 0;
 let _calHoldIso = null;
 let _calHoldFired = false;
+let _calHoldTimer = null;
+let _calDrag = null; // { sourceIso, sourceEl }
 let _exNameHoldTimer = null;
 let _exNameHoldSid = null;
 let _exNameHoldIdx = null;
@@ -1319,28 +1321,108 @@ function calCellHoldStart(e, iso) {
   _calHoldStart = Date.now();
   _calHoldIso = iso;
   _calHoldFired = false;
+  clearTimeout(_calHoldTimer);
+  _calHoldTimer = setTimeout(() => {
+    if (!_calHoldIso) return;
+    _calHoldFired = true;
+    const data = load();
+    const session = findSessionForDate(data, iso);
+    if (session && session.day_type !== 'rest') {
+      _calDragStart(iso);
+    } else {
+      toggleInjury(iso);
+    }
+  }, 600);
 }
 
 function calCellHoldEnd(e) {
-  const elapsed = Date.now() - _calHoldStart;
-  if (elapsed >= 600 && _calHoldIso) {
-    _calHoldFired = true;
-    e.preventDefault(); // suppress the subsequent click event
-    toggleInjury(_calHoldIso);
+  clearTimeout(_calHoldTimer);
+  if (_calDrag) {
+    e.preventDefault();
+    _calDragEnd(e);
   }
   _calHoldIso = null;
 }
 
-function calCellHoldMove() {
-  // Cancel hold if finger moves
+function calCellHoldMove(e) {
+  if (_calDrag) {
+    e.preventDefault();
+    _calDragMove(e);
+    return;
+  }
+  // Cancel hold-for-injury if finger moves before 600ms
+  clearTimeout(_calHoldTimer);
   _calHoldIso = null;
   _calHoldStart = 0;
 }
 
 function calDayTapGuarded(iso) {
-  // Suppress click if a long-press just fired
   if (_calHoldFired) { _calHoldFired = false; return; }
   calDayTap(iso);
+}
+
+function _calDragStart(iso) {
+  const el = _calCellElForIso(iso);
+  if (!el) return;
+  el.classList.add('cal-drag-source');
+  _calDrag = { sourceIso: iso, sourceEl: el, targetIso: null, targetEl: null };
+  toast('Drag to target date');
+}
+
+function _calDragMove(e) {
+  if (!_calDrag) return;
+  const touch = e.touches[0];
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const cell = el && el.closest('.cal-cell');
+  const iso = cell && cell.getAttribute('data-iso');
+  if (iso && iso !== _calDrag.sourceIso) {
+    if (iso !== _calDrag.targetIso) {
+      if (_calDrag.targetEl) _calDrag.targetEl.classList.remove('cal-drag-target');
+      _calDrag.targetIso = iso;
+      _calDrag.targetEl = cell;
+      cell.classList.add('cal-drag-target');
+    }
+  } else if (!iso || iso === _calDrag.sourceIso) {
+    if (_calDrag.targetEl) _calDrag.targetEl.classList.remove('cal-drag-target');
+    _calDrag.targetIso = null;
+    _calDrag.targetEl = null;
+  }
+}
+
+function _calDragEnd(e) {
+  if (!_calDrag) return;
+  const { sourceIso, sourceEl, targetIso, targetEl } = _calDrag;
+  _calDrag = null;
+  sourceEl.classList.remove('cal-drag-source');
+  if (targetEl) targetEl.classList.remove('cal-drag-target');
+
+  if (!targetIso) return;
+
+  const data = load();
+  const existing = findSessionForDate(data, targetIso);
+  if (existing) { toast('Target date already has a session'); return; }
+
+  // Find and move the session
+  const entry = Object.entries(data.sessions).find(([, s]) => s.date === sourceIso);
+  if (!entry) return;
+  const [oldId, session] = entry;
+
+  // Build new session_id with target date
+  const newId = oldId.replace(sourceIso, targetIso);
+  session.session_id = newId;
+  session.date = targetIso;
+
+  delete data.sessions[oldId];
+  data.sessions[newId] = session;
+
+  save(data);
+  supabaseDelete(oldId).then(() => syncNow(true));
+  renderCalendar();
+  toast(`Moved to ${targetIso}`);
+}
+
+function _calCellElForIso(iso) {
+  return document.querySelector(`.cal-cell[data-iso="${iso}"]`);
 }
 
 function toggleInjury(iso) {
