@@ -3549,8 +3549,8 @@ function startTimerForDuration(secs) {
   renderCDPresets();
   renderCD();
   switchTimerTab('cd');
-  openTimer();
   cdToggle();
+  document.getElementById('cd-pip').classList.add('visible');
 }
 
 function cdSetCustom() {
