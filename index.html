@@ -2774,11 +2774,8 @@ function deleteExercise(sessionId, exIdx) {
     save(data2);
     renderExercises(session2);
   };
-  if (hasRealSets) {
-    showConfirmModal(`Remove ${ex.name}?`, 'All logged sets will be deleted. This cannot be undone.', doDelete);
-  } else {
-    doDelete();
-  }
+  const body = hasRealSets ? 'All logged sets will be deleted. This cannot be undone.' : 'This cannot be undone.';
+  showConfirmModal(`Remove ${ex.name}?`, body, doDelete);
 }
 
 // ════════════════════════════════════════════════════════════════
