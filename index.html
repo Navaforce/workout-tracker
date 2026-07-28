@@ -52,8 +52,14 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .hdr-btn:active { color: var(--text); }
 #app-name { font-weight: 800; font-size: 17px; color: var(--text); letter-spacing: -0.3px; }
 #back-btn { font-size: 22px; }
-#workout-title { font-size: 14px; text-align: center; }
+#workout-title { font-size: 14px; text-align: center; line-height: 1.3; }
 #workout-title .day-type-badge { font-weight: 800; }
+.deload-pill { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; background: rgba(255,152,0,0.18); color: #ff9800; border: 1px solid rgba(255,152,0,0.4); border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+.deload-countdown { display: inline-block; font-size: 10px; font-weight: 600; color: var(--dim); border: 1px solid var(--border); border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+.apnea-mode-toggle { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; }
+.apnea-mode-btn { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 4px; border: 1px solid var(--border); background: none; color: var(--dim); cursor: pointer; letter-spacing: 0.3px; }
+.apnea-mode-btn.active { background: rgba(0,212,255,0.15); color: var(--accent); border-color: rgba(0,212,255,0.4); }
+.apnea-mode-info-btn { font-size: 14px; color: var(--dim); background: none; border: none; cursor: pointer; padding: 0 2px; }
 .dur-edit-btn { color: var(--accent); cursor: pointer; white-space: nowrap; }
 #sync-status { font-size: 12px; color: var(--text); }
 
@@ -823,6 +829,20 @@ input:focus, textarea:focus { border-color: var(--accent); }
   </div>
 </div>
 
+<!-- ── Apnea mode info modal ── -->
+<div id="apnea-mode-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeApneaModeModal()">
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">
+    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:16px">CO₂ vs O₂ Table</div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">CO₂ Table — Use by default</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px">Fixed hold, decreasing rest. Trains your CO₂ chemoreceptors — reduces the urge-to-breathe reflex and builds tolerance to high CO₂. Best used 3 out of 4 push sessions. Goal: complete all 6 rounds at target without stress.</div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">O₂ Table — Use once per cycle</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px">Fixed rest (2:00), escalating hold duration up toward your max. Trains hypoxia tolerance — pushes into O₂ depletion territory that CO₂ tables never reach. Breaks static plateaus. Use on the second push day of each 8-day cycle, or when CO₂ tables feel easy.</div>
+    <div style="font-size:13px;font-weight:700;color:#ff9800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Important</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:24px">Never do O₂ tables in open water without a safety diver. Round 6 approaches near-maximum effort — stop if you feel dizzy or lightheaded. Always do these dry or in a pool with supervision.</div>
+    <button onclick="closeApneaModeModal()" style="width:100%;height:48px;background:var(--accent);color:#000;font-weight:800;font-size:16px;border-radius:var(--rs);border:none;cursor:pointer">Got it</button>
+  </div>
+</div>
+
 <!-- ── Warmup modal ── -->
 <div id="warmup-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeWarmup()">
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:85vh;overflow-y:auto">
@@ -866,6 +886,14 @@ const APNEA_TARGETS = {
     { breatheUp: '2:00', mode: 'Full inhale hold', target: '2:05', recovery: '2:00' },
     { breatheUp: '2:00', mode: 'Full inhale hold', target: '2:10', recovery: '2:00' },
   ],
+  push_o2: [
+    { breatheUp: '2:00', mode: 'O2 — Full inhale hold', target: '1:00', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O2 — Full inhale hold', target: '1:15', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O2 — Full inhale hold', target: '1:30', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O2 — Full inhale hold', target: '1:45', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O2 — Full inhale hold', target: '2:00', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O2 — Full inhale hold', target: '2:20', recovery: '2:00' },
+  ],
   pull: [
     { mode: 'Full inhale walk', target: '1:30 · 80 steps', recovery: '2:00 easy walk' },
     { mode: 'Full inhale walk', target: '1:40 · 85 steps', recovery: '2:00 easy walk' },
@@ -900,15 +928,15 @@ let sheetDate = null;
 const EXERCISE_INFO = {
   'Barbell Bench Press': {
     rest: '2:30', cues: 'Bar to chest, full lockout. 3-sec eccentric. Drive through palms. 65–70% effort.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale fully → pinch nose → hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale fully → pinch nose → hold 40 sec → breathe → resume rest.'
   },
   'Flat Barbell Press': {
     rest: '2:30', cues: 'Bar lowers to mid-chest, full lockout at top. 3-sec eccentric, no bounce off chest. Drive through palms, elbows ~75° from torso. Establish clean reps at 185 lb before loading.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale fully → pinch nose → hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale fully → pinch nose → hold 40 sec → breathe → resume rest.'
   },
   'Incline Barbell Press': {
     rest: '2:30', cues: 'Incline 30–45°. 2-sec pause at chest — no bounce off the stretch reflex. Full lockout at top. 3-sec eccentric. 165 lb working weight.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 40 sec → breathe → resume rest.'
   },
   'Landmine Press': {
     rest: '1:30', cues: 'Split stance. Press diagonally from shoulder height to full overhead extension. 1-sec pause at full extension. Alternate arms each set.',
@@ -920,7 +948,7 @@ const EXERCISE_INFO = {
   },
   'Weighted Dips': {
     rest: '2:30', cues: 'Lower until upper arms parallel floor — no lower. Forward lean = chest focus, upright = triceps.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Arnold Press': {
     rest: '1:30', cues: 'Start palms facing you at shoulder height (hammer grip). As you press overhead, rotate palms forward to face away at full extension. Reverse on descent. Hits all three delt heads.',
@@ -932,11 +960,11 @@ const EXERCISE_INFO = {
   },
   'Cable Chest Fly': {
     rest: '1:15', cues: 'Cables at shoulder height, slight forward lean. Arms sweep forward and together — squeeze hard at center. Keep slight bend in elbows. Feel the pec, not the front delt.',
-    hold: 'EXHALE hold — 45 sec · After final set only\nExhale hold 45 sec → begin transition.'
+    hold: 'EXHALE hold — 40 sec · After final set only\nExhale hold 40 sec → begin transition.'
   },
   'Tricep Rope Pulldowns': {
     rest: '1:15', cues: 'Elbows pinned to sides throughout — they do not move. At the bottom, split the rope apart and supinate slightly for full contraction.',
-    hold: 'EXHALE hold — 45 sec · After final set only\nExhale hold 45 sec → begin 90-sec parasympathetic transition.'
+    hold: 'EXHALE hold — 40 sec · After final set only\nExhale hold 40 sec → begin 90-sec parasympathetic transition.'
   },
   'Pull-Ups': {
     rest: '2:30', cues: 'Full dead hang at bottom, chin clears bar at top. 3-sec lowering phase. Add load when 12+ reps easy.',
@@ -968,7 +996,7 @@ const EXERCISE_INFO = {
   },
   'Goblet Squat': {
     rest: '2:30', cues: 'Hold DB vertically at chest (goblet grip). Shoulder-width stance. Full depth — heels flat, chest tall.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStand → rest 30 sec → exhale fully → hold 45 sec → breathe → continue rest.\nExhale holds create the most intense CO2 stimulus and replicate hypoxic leg conditions during a real dive.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale fully → hold 40 sec → breathe → continue rest.\nExhale holds create the most intense CO2 stimulus and replicate hypoxic leg conditions during a real dive.'
   },
   'Bulgarian Split Squat': {
     rest: '2:00', cues: 'Rear foot elevated on bench, front shin near vertical. Lower rear knee to 1 inch from floor, front thigh parallel. Drive through front heel.',
@@ -976,7 +1004,7 @@ const EXERCISE_INFO = {
   },
   'Walking Lunges': {
     rest: '2:00', cues: 'Step forward, back knee 1 inch from floor, drive through front heel into next rep. Continuous motion. Targets hamstrings, hip flexors, and glutes through full dynamic ROM — directly mirrors finning demands.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStand → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Hip Thrust': {
     rest: '1:30', cues: 'Upper back on bench, bar or DB across hips. Drive hips to ceiling — hard glute squeeze at the top. Back stays on bench throughout. Feel the glute contraction, not the lower back.',
@@ -1013,15 +1041,15 @@ const EXERCISE_INFO = {
   // ── Push alternatives ──
   'DB Bench Press': {
     rest: '2:30', cues: 'DBs touch at top, lower to chest level — slight flare of elbows. Each side moves independently, exposing and fixing imbalances. 3-sec eccentric.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 40 sec → breathe → resume rest.'
   },
   'Close-Grip Bench Press': {
     rest: '2:30', cues: 'Hands shoulder-width (not ultra-narrow). Elbows tucked close to torso on descent. Shifts load to triceps and inner chest. Full lockout at top.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale fully → hold 40 sec → breathe → resume rest.'
   },
   'Floor Press': {
     rest: '2:00', cues: 'Lie on floor, upper arms rest on floor at bottom — eliminates leg drive and stretch reflex. Press to full lockout. Easier on shoulders due to shortened ROM.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nLower → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nLower → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Single-Arm DB Shoulder Press': {
     rest: '1:30', cues: 'Press one DB overhead to full lockout. Opposite hand on hip or rack for stability. Unilateral demand engages core anti-lateral-flexion. Alternate arms each set.',
@@ -1029,19 +1057,19 @@ const EXERCISE_INFO = {
   },
   'Incline DB Press': {
     rest: '2:00', cues: 'Bench at 30–45°. DBs lower to chest level with elbows ~75° from torso. 3-sec eccentric. Press to full lockout. Upper chest and front delt emphasis.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Cable Chest Press': {
     rest: '1:30', cues: 'Cables set at chest height. Step forward, press forward and together — full lockout. Constant tension through entire ROM, unlike barbell. Feel the pec contract at extension.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStep back → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStep back → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'DB Floor Press': {
     rest: '2:00', cues: 'Lie on floor with DBs. Upper arms rest on floor at bottom — paused position. Press to full lockout. No leg drive possible. Good shoulder-friendly pressing variation.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nLower → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nLower → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Dip Bar Dips': {
     rest: '2:30', cues: 'Parallel dip bars. Lower until upper arms parallel floor — can go slightly deeper than bench dips. Forward lean = chest focus, upright = triceps. Add load via belt.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStep off → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStep off → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Cable Overhead Press': {
     rest: '1:30', cues: 'Cable set low. Press overhead to full lockout — constant tension on the delts throughout, unlike DBs which unload at top. Keep core braced, avoid lower-back arch.',
@@ -1105,15 +1133,15 @@ const EXERCISE_INFO = {
   // ── Legs alternatives ──
   'Landmine Squat': {
     rest: '2:30', cues: 'Hold landmine bar at chest with both hands. Bar path guides you into depth — keeps torso upright. Heels flat, full depth. Hip-and-quad dominant with less knee stress than goblet.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStand → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'DB Sumo Squat': {
     rest: '2:00', cues: 'Wide stance, toes ~45° out. Hold single DB vertically between legs (goblet style). Full depth — knees track over toes throughout. Hits adductors and glutes harder than standard goblet.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStand → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Zercher Squat': {
     rest: '2:30', cues: 'Bar cradled in the crook of the elbows at chest height. Upright torso, full depth. Very high anterior chain and core demand. Keep elbows close together throughout.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nRack → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nRack → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Deficit Reverse Lunge': {
     rest: '2:00', cues: 'Stand on a 2–4 inch plate or step. Step backward into lunge — rear knee drops well below platform level for greater hip flexor and glute ROM. Drive through front heel to return.',
@@ -1125,11 +1153,11 @@ const EXERCISE_INFO = {
   },
   'Reverse Lunge': {
     rest: '2:00', cues: 'Step backward, rear knee 1 inch from floor, front shin near vertical. Less forward knee travel than walking lunge — easier on patellar tendon. Drive through front heel to return.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStand → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Reverse Lunges': {
     rest: '2:00', cues: 'Alternating reverse lunges with DBs. Step backward, rear knee 1 inch from floor. Drive through front heel. Same cue as Reverse Lunge — alternating variation.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStand → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Step-Ups': {
     rest: '2:00', cues: 'Box at knee height with DBs. Alternate legs or complete all reps one side. Drive through heel of working leg. Full extension at top before stepping down.',
@@ -1137,7 +1165,7 @@ const EXERCISE_INFO = {
   },
   'DB Split Squat': {
     rest: '2:00', cues: 'Both feet on floor in staggered stance. Lower rear knee to 1 inch from floor. Static base removes the balance demand of BSS — lets you focus purely on leg strength.',
-    hold: 'EXHALE hold — 45 sec · After ALL sets\nStand → rest 30 sec → exhale hold 45 sec → breathe → resume rest.'
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale hold 40 sec → breathe → resume rest.'
   },
   'Single-Leg Hip Thrust': {
     rest: '1:30', cues: 'Upper back on bench, one foot flat on floor, other leg extended. Drive single-leg hip extension to full lockout — hard glute squeeze at top. Doubles the stimulus per side.',
@@ -2230,7 +2258,22 @@ function renderWorkout(sessionId) {
       dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Set duration">+ time ✎</span>`;
     }
   }
-  document.getElementById('workout-title').innerHTML = `${badge} ${formatDateDisplay(session.date)}${dur}`;
+  const weekLabel = (() => { try { const d=load(); const w=d.plan?.weeks?.find(wk=>wk.week_number===getCurrentWeekNumber()); return w?.label||''; } catch(e){return '';} })();
+  const deloadPill = /deload/i.test(weekLabel) ? `<span class="deload-pill">Deload</span>` : '';
+  const deloadCountdown = (() => {
+    if (/deload/i.test(weekLabel)) return '';
+    try {
+      const d = load();
+      if (!d.plan?.weeks) return '';
+      const cur = getCurrentWeekNumber();
+      const next = d.plan.weeks.filter(w => /deload/i.test(w.label||'') && w.week_number > cur)
+        .sort((a,b) => a.week_number - b.week_number)[0];
+      if (!next) return '';
+      const diff = next.week_number - cur;
+      return `<span class="deload-countdown">Deload in ${diff}w</span>`;
+    } catch(e) { return ''; }
+  })();
+  document.getElementById('workout-title').innerHTML = `${badge}${deloadPill}${deloadCountdown} ${formatDateDisplay(session.date)}${dur}`;
   document.getElementById('warmup-btn').style.display = (isRest || isDive) ? 'none' : '';
 
   // Session notes
@@ -2907,12 +2950,28 @@ function deleteSet(sessionId, exIdx, setIdx) {
 // ════════════════════════════════════════════════════════════════
 // APNEA BLOCK
 // ════════════════════════════════════════════════════════════════
+function toggleApneaTableMode(sessionId) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session) return;
+  const cur = session.apnea_table_mode || 'co2';
+  session.apnea_table_mode = cur === 'co2' ? 'o2' : 'co2';
+  save(data);
+  renderApneaBlock(session);
+}
+
+function closeApneaModeModal() {
+  document.getElementById('apnea-mode-modal').style.display = 'none';
+}
+
 function renderApneaBlock(session) {
   const container = document.getElementById('apnea-container');
   const type = session.day_type;
   if (type === 'rest') { container.innerHTML = ''; return; }
 
-  const rounds = (APNEA_TARGETS[type] || []).length || 6;
+  const tableMode = (type === 'push') ? (session.apnea_table_mode || 'co2') : null;
+  const targetsKey = (type === 'push' && tableMode === 'o2') ? 'push_o2' : type;
+  const rounds = (APNEA_TARGETS[targetsKey] || []).length || 6;
   const apnea = session.apnea || {};
 
   let fieldsForType;
@@ -2964,7 +3023,7 @@ function renderApneaBlock(session) {
       </div>`;
     }
     fieldsHtml += '</div>';
-    const tgt = (APNEA_TARGETS[type] || [])[r];
+    const tgt = (APNEA_TARGETS[targetsKey] || [])[r];
     let tgtHtml = '';
     if (tgt) {
       const parts = [];
@@ -2996,12 +3055,19 @@ function renderApneaBlock(session) {
   const holdKey = (type === 'pull' || type === 'cardio') ? 'actual_dur' : 'actual_hold';
   const apneaDone = Array.from({length: rounds}, (_, i) => `r${i}`)
     .every(rk => Number(apnea[rk]?.[holdKey]) > 0);
+  const modeToggleHtml = (type === 'push') ? `
+    <div class="apnea-mode-toggle" onclick="event.stopPropagation()">
+      <button class="apnea-mode-btn${tableMode === 'co2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}')">CO₂</button>
+      <button class="apnea-mode-btn${tableMode === 'o2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}')">O₂</button>
+      <button class="apnea-mode-info-btn" onclick="document.getElementById('apnea-mode-modal').style.display='flex'">ⓘ</button>
+    </div>` : '';
+
   const html = `<div class="apnea-block${openApnea ? ' open' : ''}${apneaDone ? ' apnea-done' : ''}">
     <div class="apnea-header" onclick="toggleApneaBlock()">
       <span class="apnea-title">⬦ Apnea</span>
       <span class="apnea-chevron">⌄</span>
     </div>
-    <div class="apnea-body">${roundsHtml}</div>
+    <div class="apnea-body">${modeToggleHtml}${roundsHtml}</div>
   </div>`;
 
   container.innerHTML = html;
