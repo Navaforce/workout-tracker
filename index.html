@@ -2291,8 +2291,53 @@ function pickType(type) {
 // ════════════════════════════════════════════════════════════════
 // WORKOUT SCREEN
 // ════════════════════════════════════════════════════════════════
+function reconcileSessionWithPlan(sessionId) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session || session.completed) return;
+  if (session.day_type === 'rest' || session.day_type === 'cardio' || session.day_type === 'dive') return;
+  const planDay = getPlanDay(session.day_type, getCurrentWeekNumber());
+  const planExercises = planDay && planDay.exercises ? planDay.exercises : [];
+  if (!planExercises.length) return;
+  let changed = false;
+  if (!session.exercises) session.exercises = [];
+  for (const planEx of planExercises) {
+    const existing = session.exercises.find(e => e.name === planEx.name);
+    if (!existing) {
+      const numSets = parseInt(planEx.sets, 10) || 3;
+      const lastSession = getLastSession(session.day_type);
+      let prevWeight = '';
+      if (lastSession) {
+        const prevEx = lastSession.exercises && lastSession.exercises.find(e => e.name === planEx.name);
+        if (prevEx) {
+          const realSets = (prevEx.sets || []).filter(isRealSet);
+          if (realSets.length > 0) prevWeight = realSets[0].weight;
+        }
+      }
+      const sets = [];
+      for (let i = 0; i < numSets; i++) {
+        sets.push({ weight: prevWeight, reps: '', effort: '', adjustment: '', note: '', ts: null, prefilled: true });
+      }
+      session.exercises.push({ name: planEx.name, bw_mode: false, plan_sets: planEx.sets || '', plan_reps: planEx.reps || '', sets });
+      changed = true;
+    } else {
+      if (existing.plan_sets !== planEx.sets || existing.plan_reps !== planEx.reps) {
+        existing.plan_sets = planEx.sets || '';
+        existing.plan_reps = planEx.reps || '';
+        changed = true;
+      }
+    }
+  }
+  if (changed) {
+    session.updated_at = Date.now();
+    data.sessions[sessionId] = session;
+    save(data);
+  }
+}
+
 function openWorkout(sessionId) {
   currentSessionId = sessionId;
+  reconcileSessionWithPlan(sessionId);
   showScreen('workout');
   renderWorkout(sessionId);
 }
