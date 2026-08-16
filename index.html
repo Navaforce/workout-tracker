@@ -1864,52 +1864,7 @@ function getOrCreateSession(date, type) {
     const s = data.sessions[sid];
     return s.date === date && s.day_type === type;
   });
-  if (matching.length > 0) {
-    const sid = matching[0];
-    const session = data.sessions[sid];
-    // If incomplete, reconcile exercises against current plan (adds new exercises, refreshes metadata)
-    if (!session.completed && type !== 'rest' && type !== 'cardio' && type !== 'dive') {
-      const planDay = getPlanDay(type, getCurrentWeekNumber());
-      const planExercises = planDay && planDay.exercises ? planDay.exercises : [];
-      let changed = false;
-      const existingNames = (session.exercises || []).map(e => e.name);
-      for (const planEx of planExercises) {
-        const existing = (session.exercises || []).find(e => e.name === planEx.name);
-        if (!existing) {
-          // New exercise in plan — add it with prefilled sets
-          const numSets = parseInt(planEx.sets, 10) || 3;
-          const lastSession = getLastSession(session.day_type);
-          let prevWeight = '';
-          if (lastSession) {
-            const prevEx = lastSession.exercises && lastSession.exercises.find(e => e.name === planEx.name);
-            if (prevEx) {
-              const realSets = (prevEx.sets || []).filter(isRealSet);
-              if (realSets.length > 0) prevWeight = realSets[0].weight;
-            }
-          }
-          const sets = [];
-          for (let i = 0; i < numSets; i++) {
-            sets.push({ weight: prevWeight, reps: '', effort: '', adjustment: '', note: '', ts: null, prefilled: true });
-          }
-          session.exercises.push({ name: planEx.name, bw_mode: false, plan_sets: planEx.sets || '', plan_reps: planEx.reps || '', sets });
-          changed = true;
-        } else {
-          // Update plan metadata (sets/reps targets) on existing exercise
-          if (existing.plan_sets !== planEx.sets || existing.plan_reps !== planEx.reps) {
-            existing.plan_sets = planEx.sets || '';
-            existing.plan_reps = planEx.reps || '';
-            changed = true;
-          }
-        }
-      }
-      if (changed) {
-        session.updated_at = Date.now();
-        data.sessions[sid] = session;
-        save(data);
-      }
-    }
-    return sid;
-  }
+  if (matching.length > 0) return matching[0];
 
   // Create new
   const now = Date.now();
