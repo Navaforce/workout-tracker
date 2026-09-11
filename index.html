@@ -2416,7 +2416,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
     const info = getExerciseInfo(ex.name);
     const rest = info?.rest || '';
     const parts = [];
-    if (planSets && planReps) parts.push(`${planSets} × ${planReps} reps`);
+    if (planSets && planReps) parts.push(`${planSets} × ${planReps}${isTimeExercise(ex) ? '' : ' reps'}`);
     if (rest) parts.push(`rest: ${rest}`);
     if (parts.length) targetLine = parts.join(', ');
   }
@@ -2428,13 +2428,14 @@ function renderExerciseCard(session, exIdx, lastSession) {
   if (prevReal) {
     const w = prevReal[prevReal.length - 1].weight;
     const repsArr = prevReal.map(s => s.reps).join('/');
-    lastSummary = `Last: ${w > 0 ? w + ' lbs' : 'BW'} ${repsArr} reps`;
+    lastSummary = isTimeExercise(ex) ? `Last: ${repsArr} sec` : `Last: ${w > 0 ? w + ' lbs' : 'BW'} ${repsArr} reps`;
     prevNotes = prevReal.map(s => s.note || '');
   }
 
+  const timeMode = isTimeExercise(ex);
   let setsHtml = '';
   for (let si = 0; si < (ex.sets || []).length; si++) {
-    setsHtml += renderSetRow(sid, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '', ex.name);
+    setsHtml += renderSetRow(sid, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '', ex.name, timeMode);
   }
 
   const exDone = totalSets > 0 && realSets.length >= totalSets;
@@ -2450,7 +2451,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
         onclick="event.stopPropagation()"
       >${esc(ex.name)}</span>
       ${hasInfo ? `<button class="ex-info-btn" data-exname="${esc(ex.name)}" onclick="event.stopPropagation();showExerciseInfo(this.dataset.exname)" title="Cues &amp; hold protocol">ⓘ</button>` : ''}
-      <button class="bw-btn${ex.bw_mode ? ' bw-active' : ''}" onclick="event.stopPropagation();toggleBWMode('${esc(sid)}',${exIdx})" title="Bodyweight mode">BW</button>
+      ${!timeMode ? `<button class="bw-btn${ex.bw_mode ? ' bw-active' : ''}" onclick="event.stopPropagation();toggleBWMode('${esc(sid)}',${exIdx})" title="Bodyweight mode">BW</button>` : ''}
       <span class="ex-progress">${progress}</span>
       <span class="ex-chevron">⌄</span>
     </div>
@@ -2465,7 +2466,11 @@ function renderExerciseCard(session, exIdx, lastSession) {
   </div>`;
 }
 
-function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName) {
+function isTimeExercise(ex) {
+  return !!(ex.plan_reps && ex.plan_reps.toLowerCase().includes('sec'));
+}
+
+function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName, timeMode) {
   const wVal = s.prefilled ? '' : (s.weight !== '' && s.weight !== null ? s.weight : '');
   const wPlaceholder = s.prefilled && s.weight !== '' ? s.weight : '';
 
@@ -2492,7 +2497,9 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName) {
   const timerBtn = restSecs ? `<button class="set-timer-btn" onclick="startTimerForDuration(${restSecs})">⏱</button>` : '';
 
   let weightHtml;
-  if (bwMode) {
+  if (timeMode) {
+    weightHtml = '';
+  } else if (bwMode) {
     const data = load();
     const bwVal = s.bw !== undefined ? s.bw : (data.bodyweight || 185);
     const bwaVal = s.bw_added !== undefined ? s.bw_added : '';
@@ -2508,9 +2515,9 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName) {
   return `<div class="set-row-wrap" id="srw-${esc(sid)}-${exIdx}-${setIdx}">
     <div class="set-row">
       <div class="set-row-line1">
-        ${weightHtml}
-        <span class="set-sep">×</span>
-        <input type="number" class="reps-input" value="${s.prefilled ? '' : (s.reps !== '' && s.reps !== null && s.reps !== undefined ? s.reps : '')}" placeholder="reps" oninput="handleRepInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
+        ${timeMode ? '' : weightHtml + '<span class="set-sep">×</span>'}
+        <input type="number" class="reps-input" value="${s.prefilled ? '' : (s.reps !== '' && s.reps !== null && s.reps !== undefined ? s.reps : '')}" placeholder="${timeMode ? 'sec' : 'reps'}" oninput="handleRepInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
+        ${timeMode ? '<span class="set-sep" style="font-size:13px;color:var(--dim);font-weight:400">sec</span>' : ''}
         <button class="set-delete-btn" onclick="deleteSet('${esc(sid)}',${exIdx},${setIdx})">✕</button>
       </div>
       <div class="set-row-line2">
@@ -2830,7 +2837,7 @@ function refreshSetRow(sessionId, exIdx, setIdx) {
   if (!wrap) return;
   const prevNotes = getPrevNotesForExercise(session.day_type, ex.name);
   const tmp = document.createElement('div');
-  tmp.innerHTML = renderSetRow(sessionId, exIdx, setIdx, set, ex.bw_mode, prevNotes[setIdx] || '', ex.name);
+  tmp.innerHTML = renderSetRow(sessionId, exIdx, setIdx, set, ex.bw_mode, prevNotes[setIdx] || '', ex.name, isTimeExercise(ex));
   wrap.replaceWith(tmp.firstElementChild);
 }
 
@@ -2840,7 +2847,8 @@ function addSet(sessionId, exIdx) {
   if (!session) return;
   const ex = session.exercises[exIdx];
   const prevSets = ex.sets.filter(isRealSet);
-  const prevWeight = prevSets.length > 0 ? prevSets[prevSets.length-1].weight : '';
+  const isTimEx = isTimeExercise(ex);
+  const prevWeight = (!isTimEx && prevSets.length > 0) ? prevSets[prevSets.length-1].weight : '';
   ex.sets.push({
     weight: prevWeight,
     reps: '',
@@ -2857,7 +2865,7 @@ function addSet(sessionId, exIdx) {
   if (listEl) {
     const si = ex.sets.length - 1;
     const tmp = document.createElement('div');
-    tmp.innerHTML = renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, '', ex.name);
+    tmp.innerHTML = renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, '', ex.name, isTimEx);
     listEl.appendChild(tmp.firstElementChild);
   }
   refreshExProgress(sessionId, exIdx);
@@ -2999,8 +3007,9 @@ function deleteSet(sessionId, exIdx, setIdx) {
     const ex = session.exercises[exIdx];
     const prevNotes = getPrevNotesForExercise(session.day_type, ex.name);
     let html = '';
+    const isTimExDel = isTimeExercise(ex);
     for (let si = 0; si < ex.sets.length; si++) {
-      html += renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '', ex.name);
+      html += renderSetRow(sessionId, exIdx, si, ex.sets[si], ex.bw_mode, prevNotes[si] || '', ex.name, isTimExDel);
     }
     listEl.innerHTML = html;
   }
