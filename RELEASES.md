@@ -6,6 +6,52 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## v1.5.0 — Freediving-first program overhaul (2026-10-02)
+
+**Tag:** `v1.5.0`
+**Commit:** fd5d493
+
+### What changed
+
+**Complete program and app overhaul driven by two findings:** pec/bicep tendon near-miss under TRT (muscle strength outpacing tendon remodeling), and overtraining suppressing the mammalian dive reflex (previous 8-day rotation caused sub-60s holds and inconsistent 50–60 ft depths; after 2-week break: 60–70 ft consistently, 75–81 ft multiple times).
+
+**New 7-day rotation:** Lift A / Apnea / Yoga / Lift B / Rest / Apnea / Rest — down from 6 sessions/8 days to 2 lift sessions/week. `WEEKLY_SEQUENCE` constant drives the `getNextWorkoutType()` function.
+
+**Two new day types — Yoga and Apnea standalone:**
+- Yoga day: 11-pose checklist with tap-to-expand instructions, check buttons, and YouTube search links. `renderYogaSession()`, `toggleYogaPose()`.
+- Apnea day: CO₂/O₂ mode toggle, 6-round tracking. `renderApneaStandaloneSession()`, `setApneaStandaloneMode()`, `handleApneaStandaloneInput()`.
+- Calendar colors: `--yoga: #a855f7`, `--apnea: #0ea5e9`. Type labels, tile badges, type sheet buttons added.
+
+**Next workout banner:** `#next-workout-banner` on calendar screen shows next session type/color with a tap-to-open button. `getNextWorkoutType()` reads last 14 days of sessions to find position in WEEKLY_SEQUENCE; `renderNextWorkoutBanner()` populates it; `openNextWorkout()` creates and opens the session.
+
+**Nutrition tab:** 3rd tab in calendar `cal-tabs` alongside Month/Week. `renderNutritionView()` shows macros, 4 meals with quantities, collagen protocol, supplements, dive-day nutrition rules, tendon protocol.
+
+**Video links:** `EXERCISE_INFO` and `YOGA_POSES` entries include `video:` YouTube search URLs. Exercise info modal now renders a video link row when present. Yoga pose cards show YouTube links inline.
+
+**Tendon-safe exercise selection (permanent exclusions):**
+- Removed: flat barbell bench press, weighted dips (pec tendon), incline DB curl, supinated heavy curls (bicep tendon)
+- New Lift A: Floor Press, Landmine Press, Neutral-Grip Lat Pulldown, Goblet Squat, Face Pulls, Hollow Body Hold
+- New Lift B: Cable Chest Press, Chest-Supported Row, Hip Thrust, Box Step-Up, Cable Pull-Through, Pallof Press
+
+**WARMUP_INFO** updated for Lift A/B with isometric tendon prep; added yoga and apnea entries.
+
+**Apnea targets recalibrated to 65% of current demonstrated max** (~50s holds) — previous 1:45 targets were above-max, counterproductive. `APNEA_TARGETS` gains `apnea_co2` and `apnea_o2` entries for standalone sessions.
+
+**Nutrition reduced from 3,170 → 2,800 kcal/day, protein from ~194g → ~140g.** Excess protein raises CO₂/calorie, directly shortening breath holds.
+
+---
+
+## v1.4.0 — Time-mode set rows for timed exercises (2026-08-26)
+
+**Tag:** `v1.4.0`
+**Commit:** 619fa4f
+
+### What changed
+
+**Timed exercise set rows.** Exercises with `timed: true` in `EXERCISE_INFO` (e.g., Hollow Body Hold) render a duration input instead of weight × reps. Time stored as seconds. Set row shows M:SS format. `isRealSet` checks `duration > 0` for timed sets. `plan_reps` hint displayed in the card target line as usual.
+
+---
+
 ## v1.3.3 — Ghost session fix (2026-06-30)
 
 **Tag:** `v1.3.3`
