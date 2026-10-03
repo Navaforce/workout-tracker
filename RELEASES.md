@@ -6,6 +6,16 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Auto-rotating apnea tables (2026-10-03)
+
+### What changed
+
+- Apnea day now rotates **CO₂ → Dynamic walk → O₂** automatically, based on the last apnea day with a logged hold. Stored on the session as `apnea_table_mode` at creation; CO₂/Walk/O₂ buttons override. Next Up banner and apnea block title show today's table. `suggestApneaMode()`, `getApneaMode()`, `setApneaTableMode()`.
+- Tables rescaled to tested maxes (static 2:50, walking 1:50), 8 rounds each: CO₂ 8 × 1:30 (rest 1:45 → 0:30); O₂ 1:00 → 2:10 (rest 2:00); new Dynamic walk 8 × 1:10 (~100 steps, rest 2:00 → 0:45) logging duration + steps.
+- Previous apnea day was 6 × 0:50, far below ability. Push-day apnea unchanged.
+
+---
+
 ## v1.5.0 — Freediving-first program overhaul (2026-10-02)
 
 **Tag:** `v1.5.0`

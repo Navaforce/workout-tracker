@@ -888,13 +888,17 @@ input:focus, textarea:focus { border-color: var(--accent); }
 <!-- ── Apnea mode info modal ── -->
 <div id="apnea-mode-modal" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeApneaModeModal()">
   <div style="background:var(--s1);border:1px solid var(--border);border-radius:var(--r);padding:24px;max-width:420px;width:100%;max-height:80vh;overflow-y:auto">
-    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:16px">CO₂ vs O₂ Table</div>
+    <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:16px">CO₂ / Dynamic / O₂ Tables</div>
     <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">CO₂ Table — Use by default</div>
-    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px">Fixed hold, decreasing rest. Trains your CO₂ chemoreceptors — reduces the urge-to-breathe reflex and builds tolerance to high CO₂. Best used 3 out of 4 push sessions. Goal: complete all 6 rounds at target without stress.</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px">Fixed hold, decreasing rest. Trains your CO₂ chemoreceptors — reduces the urge-to-breathe reflex and builds tolerance to high CO₂. Best used 3 out of 4 push sessions. Goal: complete every round at target without stress.</div>
     <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">O₂ Table — Use once per cycle</div>
     <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px">Fixed rest (2:00), escalating hold duration up toward your max. Trains hypoxia tolerance — pushes into O₂ depletion territory that CO₂ tables never reach. Breaks static plateaus. Use on the second push day of each 8-day cycle, or when CO₂ tables feel easy.</div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Dynamic Walk Table</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px">Apnea days only. Full inhale, then walk at an easy pace for 1:10 (your dive length), 8 rounds, with the surface interval shrinking from 2:00 to 0:45. Log time and steps. Trains the oxygen cost of moving, which is what spearfishing actually demands.</div>
+    <div style="font-size:13px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Which one today?</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:16px">On apnea days the app picks for you: CO₂ → Dynamic → O₂, then repeat, based on your last logged apnea day. Do one table per session. The buttons let you override.</div>
     <div style="font-size:13px;font-weight:700;color:#ff9800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Important</div>
-    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:24px">Never do O₂ tables in open water without a safety diver. Round 6 approaches near-maximum effort — stop if you feel dizzy or lightheaded. Always do these dry or in a pool with supervision.</div>
+    <div style="font-size:14px;color:var(--text);line-height:1.6;margin-bottom:24px">Never do O₂ tables in open water without a safety diver. The final round approaches near-maximum effort — stop if you feel dizzy or lightheaded. Always do these dry or in a pool with supervision.</div>
     <button onclick="closeApneaModeModal()" style="width:100%;height:48px;background:var(--accent);color:#000;font-weight:800;font-size:16px;border-radius:var(--rs);border:none;cursor:pointer">Got it</button>
   </div>
 </div>
@@ -976,26 +980,45 @@ const APNEA_TARGETS = {
     { mode: 'Partial exhale (~25%) walk', target: '0:45–0:55', recovery: 'Done' },
     { mode: 'Box breathing', target: '4 min 5-5-5-5', recovery: '—' },
   ],
-  // Standalone apnea day — CO2 table (fixed hold, decreasing rest)
+  // Standalone apnea day — scaled to tested maxes (static 2:50, walking 1:50); mode rotates CO2 → dynamic → O2
+  // CO2 table: fixed 1:30 hold (~53% of static max), rest shrinks 1:45 → 0:30
   apnea_co2: [
-    { breatheUp: '2:00', mode: 'CO₂ — Full inhale hold', target: '0:50', recovery: '2:00' },
-    { breatheUp: '2:00', mode: 'CO₂ — Full inhale hold', target: '0:50', recovery: '1:45' },
-    { breatheUp: '2:00', mode: 'CO₂ — Full inhale hold', target: '0:50', recovery: '1:30' },
-    { breatheUp: '2:00', mode: 'CO₂ — Full inhale hold', target: '0:50', recovery: '1:15' },
-    { breatheUp: '2:00', mode: 'CO₂ — Full inhale hold', target: '0:50', recovery: '1:00' },
-    { breatheUp: '2:00', mode: 'CO₂ — Full inhale hold', target: '0:50', recovery: 'Done' },
+    { breatheUp: '2:00', mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: '1:45' },
+    { mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: '1:30' },
+    { mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: '1:15' },
+    { mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: '1:00' },
+    { mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: '0:50' },
+    { mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: '0:40' },
+    { mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: '0:30' },
+    { mode: 'CO₂ — Full inhale hold', target: '1:30', recovery: 'Done' },
   ],
-  // Standalone apnea day — O2 table (fixed rest, escalating holds)
+  // O2 table: fixed 2:00 rest, holds climb 1:00 → 2:10 (~76% of static max)
   apnea_o2: [
-    { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '0:40', recovery: '2:00' },
-    { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '0:50', recovery: '2:00' },
     { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '1:00', recovery: '2:00' },
     { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '1:10', recovery: '2:00' },
     { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '1:20', recovery: '2:00' },
     { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '1:30', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '1:40', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '1:50', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '2:00', recovery: '2:00' },
+    { breatheUp: '2:00', mode: 'O₂ — Full inhale hold', target: '2:10', recovery: 'Done' },
+  ],
+  // Dynamic table: dive-length walks (1:10 ≈ 64% of walking max, inside your 60–75 s dive window), surface interval shrinks 2:00 → 0:45
+  apnea_dyn: [
+    { breatheUp: '2:00', mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: '2:00 easy walk' },
+    { mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: '1:45' },
+    { mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: '1:30' },
+    { mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: '1:15' },
+    { mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: '1:00' },
+    { mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: '0:50' },
+    { mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: '0:45' },
+    { mode: 'Dynamic — full inhale walk, dive pace', target: '1:10 · ~100 steps', recovery: 'Done' },
   ],
 };
 
+const APNEA_ROTATION = ['co2', 'dyn', 'o2'];
+const APNEA_MODE_LABELS = { co2: 'CO₂ table', dyn: 'Dynamic walk', o2: 'O₂ table' };
+const APNEA_MODE_SHORT = { co2: 'CO₂', dyn: 'Walk', o2: 'O₂' };
 let currentSessionId = null;
 let sheetDate = null;
 // Exercise cues, hold protocols, and rest periods — keyed by exact exercise name (case-sensitive)
@@ -1361,8 +1384,11 @@ const WARMUP_INFO = {
       '10 min prep: lie flat, eyes closed, slow diaphragmatic breathing (4 sec in, 4 sec out). Let heart rate drop before starting.',
       '3 × Uddiyana Bandha: exhale fully → draw abdomen in and up → hold 10 sec → release slowly.',
       'No caffeine within 3 hrs. No heavy food within 2 hrs. Have water nearby.',
-      'CO₂ table (1st apnea day): fixed 0:50 hold, rest decreases from 2:00 to 1:00. Trains CO₂ tolerance.',
-      'O₂ table (2nd apnea day): fixed 2:00 rest, holds escalate from 0:40 to 1:30. Trains O₂ efficiency.',
+      'The app picks one table per apnea day, rotating CO₂ → Dynamic walk → O₂. Do only that one.',
+      'CO₂ table: 8 × 1:30 hold, rest decreases from 1:45 to 0:30. Trains CO₂ tolerance.',
+      'Dynamic walk table: 8 × 1:10 full-inhale walks at an easy pace (~100 steps), rest decreases from 2:00 to 0:45. Trains oxygen efficiency while moving, like a dive.',
+      'O₂ table: fixed 2:00 rest, 8 holds escalate from 1:00 to 2:10. Trains O₂ efficiency.',
+      'Progression: when you finish a table with all holds hit and no hard contractions early, add 5 sec to the hold next time.',
       'After each round: 3 slow recovery breaths, then resume normal breathing until the next round.',
     ],
     protocol: 'Prioritize relaxation over hitting targets. If you feel dizzy or distressed, stop and breathe. Never do apnea training alone or unsupervised near water.',
@@ -2011,6 +2037,7 @@ function getOrCreateSession(date, type) {
   } else if (type === 'dive') {
     session.dive_log = { dives: '', max_depth_ft: '', max_hold_secs: '', note: '' };
   }
+  if (type === 'apnea') session.apnea_table_mode = suggestApneaMode(date);
 
   data.sessions[baseId] = session;
   save(data);
@@ -3144,6 +3171,35 @@ function deleteSet(sessionId, exIdx, setIdx) {
 // ════════════════════════════════════════════════════════════════
 // APNEA BLOCK
 // ════════════════════════════════════════════════════════════════
+function hasApneaHolds(s) {
+  return Object.values(s.apnea || {}).some(r => Number(r && r.actual_hold) > 0 || Number(r && r.actual_dur) > 0);
+}
+
+function suggestApneaMode(date) {
+  const done = Object.values(load().sessions)
+    .filter(s => s.day_type === 'apnea' && s.date && s.date < date && hasApneaHolds(s))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  if (!done.length) return 'co2';
+  const i = APNEA_ROTATION.indexOf(done[0].apnea_table_mode || 'co2');
+  return APNEA_ROTATION[(i + 1) % APNEA_ROTATION.length];
+}
+
+function getApneaMode(session) {
+  if (session.apnea_table_mode) return session.apnea_table_mode;
+  if (session.day_type !== 'apnea') return 'co2';
+  return hasApneaHolds(session) ? 'co2' : suggestApneaMode(session.date);
+}
+
+function setApneaTableMode(sessionId, mode) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session || !APNEA_ROTATION.includes(mode)) return;
+  session.apnea_table_mode = mode;
+  session.updated_at = Date.now();
+  save(data);
+  renderApneaBlock(session);
+}
+
 function toggleApneaTableMode(sessionId) {
   const data = load();
   const session = data.sessions[sessionId];
@@ -3163,24 +3219,26 @@ function renderApneaBlock(session) {
   const type = session.day_type;
   if (type === 'rest') { container.innerHTML = ''; return; }
 
-  const tableMode = (type === 'push' || type === 'apnea') ? (session.apnea_table_mode || 'co2') : null;
+  const tableMode = type === 'apnea' ? getApneaMode(session)
+    : type === 'push' ? (session.apnea_table_mode || 'co2') : null;
+  const isDynamic = type === 'apnea' && tableMode === 'dyn';
   const targetsKey = type === 'apnea'
-    ? (tableMode === 'o2' ? 'apnea_o2' : 'apnea_co2')
+    ? 'apnea_' + tableMode
     : (type === 'push' && tableMode === 'o2') ? 'push_o2' : type;
   const rounds = (APNEA_TARGETS[targetsKey] || []).length || 6;
   const apnea = session.apnea || {};
 
   let fieldsForType;
-  if (type === 'push' || type === 'apnea') {
-    fieldsForType = [
-      { key: 'actual_hold', label: 'Hold (M:SS)', format: 'mss' },
-      { key: 'contraction', label: 'Contraction', format: 'mss' },
-      { key: 'note', label: 'Note', format: 'text' },
-    ];
-  } else if (type === 'pull' || type === 'cardio') {
+  if (isDynamic || type === 'pull' || type === 'cardio') {
     fieldsForType = [
       { key: 'actual_dur', label: 'Duration (M:SS)', format: 'mss' },
       { key: 'steps', label: 'Steps', format: 'num' },
+      { key: 'note', label: 'Note', format: 'text' },
+    ];
+  } else if (type === 'push' || type === 'apnea') {
+    fieldsForType = [
+      { key: 'actual_hold', label: 'Hold (M:SS)', format: 'mss' },
+      { key: 'contraction', label: 'Contraction', format: 'mss' },
       { key: 'note', label: 'Note', format: 'text' },
     ];
   } else if (type === 'legs') {
@@ -3248,10 +3306,15 @@ function renderApneaBlock(session) {
   }
 
   // Apnea done = all rounds have their primary hold field logged as a positive number
-  const holdKey = (type === 'pull' || type === 'cardio') ? 'actual_dur' : 'actual_hold';
+  const holdKey = (isDynamic || type === 'pull' || type === 'cardio') ? 'actual_dur' : 'actual_hold';
   const apneaDone = Array.from({length: rounds}, (_, i) => `r${i}`)
     .every(rk => Number(apnea[rk]?.[holdKey]) > 0);
-  const modeToggleHtml = (type === 'push' || type === 'apnea') ? `
+  const sid = esc(session.session_id);
+  const modeToggleHtml = type === 'apnea' ? `
+    <div class="apnea-mode-toggle" onclick="event.stopPropagation()">
+      ${APNEA_ROTATION.map(m => `<button class="apnea-mode-btn${tableMode === m ? ' active' : ''}" onclick="setApneaTableMode('${sid}','${m}')">${APNEA_MODE_SHORT[m]}</button>`).join('')}
+      <button class="apnea-mode-info-btn" onclick="document.getElementById('apnea-mode-modal').style.display='flex'">ⓘ</button>
+    </div>` : type === 'push' ? `
     <div class="apnea-mode-toggle" onclick="event.stopPropagation()">
       <button class="apnea-mode-btn${tableMode === 'co2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}')">CO₂</button>
       <button class="apnea-mode-btn${tableMode === 'o2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}')">O₂</button>
@@ -3260,7 +3323,7 @@ function renderApneaBlock(session) {
 
   const html = `<div class="apnea-block${openApnea ? ' open' : ''}${apneaDone ? ' apnea-done' : ''}">
     <div class="apnea-header" onclick="toggleApneaBlock()">
-      <span class="apnea-title">⬦ Apnea</span>
+      <span class="apnea-title">⬦ Apnea${type === 'apnea' ? ' · ' + APNEA_MODE_LABELS[tableMode] : ''}</span>
       <span class="apnea-chevron">⌄</span>
     </div>
     <div class="apnea-body">${modeToggleHtml}${roundsHtml}</div>
@@ -4504,7 +4567,13 @@ function renderNextWorkoutBanner() {
   const name = typeName(nextType);
   const color = typeColor(nextType);
   el.classList.remove('hidden');
-  el.innerHTML = '<div><div class="nwb-label">Next Up</div><div class="nwb-type" style="color:' + color + '">' + esc(name) + '</div></div><button class="nwb-start-btn" onclick="openNextWorkout()">Start →</button>';
+  let sub = '';
+  if (nextType === 'apnea') {
+    const today = todayISO();
+    const existing = Object.values(load().sessions).find(s => s.date === today && s.day_type === 'apnea');
+    sub = '<div class="nwb-label" style="margin-top:2px">' + esc(APNEA_MODE_LABELS[existing ? getApneaMode(existing) : suggestApneaMode(today)]) + '</div>';
+  }
+  el.innerHTML = '<div><div class="nwb-label">Next Up</div><div class="nwb-type" style="color:' + color + '">' + esc(name) + '</div>' + sub + '</div><button class="nwb-start-btn" onclick="openNextWorkout()">Start →</button>';
 }
 
 function openNextWorkout() {
