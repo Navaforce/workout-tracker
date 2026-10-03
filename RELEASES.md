@@ -6,6 +6,16 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Two-lift-day volume + protein (2026-10-03)
+
+### What changed
+
+- Plan (Supabase `david_plan`, both weeks): main compounds 2 → 3 sets (Floor Press, Landmine Press, Lat Pulldown, Goblet Squat, Cable Chest Press, Chest-Supported Row, Hip Thrust, Box Step-Up). Added Seated Leg Curl (Lift A) and Seated Calf Raise (Lift B). Accessories stay at 2 sets. Previous plan backed up at `~/.claude/doctor-backup/david_plan.2026-10-03.json`. Sessions already opened keep their old set counts.
+- Progression suggestion is reps-only: never suggests a heavier load; at the top of the rep range it says to hold the load. A ↓ tap still suggests backing off 5 lb.
+- Dive-eve notice on Lift A / Lift B when a Dive session is on tomorrow's calendar (`diveEveNotice()`): Lift A skips the leg lifts, Lift B is skipped.
+- Nutrition tab: protein ~140g → ~160g (30–40g per meal); 1 whey scoop added to Meal 2, rice at Meal 4 cut to 1 cup.
+- EXERCISE_INFO entries for Seated Leg Curl and Seated Calf Raise.
+
 ## Unreleased — Auto-rotating apnea tables (2026-10-03)
 
 ### What changed

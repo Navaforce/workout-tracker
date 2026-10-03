@@ -1663,6 +1663,25 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+function nextDayISO(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const dt = new Date(y, m-1, d+1);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+const DIVE_EVE_LEG_LIFTS = ['Goblet Squat', 'Seated Leg Curl', 'Box Step-Up', 'Hip Thrust', 'Cable Pull-Through', 'Seated Calf Raise'];
+
+function diveEveNotice(session) {
+  if (session.day_type !== 'push' && session.day_type !== 'pull') return '';
+  const tomorrow = nextDayISO(session.date || todayISO());
+  const diveTomorrow = Object.values(load().sessions).some(s => s.day_type === 'dive' && s.date === tomorrow);
+  if (!diveTomorrow) return '';
+  const msg = session.day_type === 'pull'
+    ? 'Dive tomorrow — skip Lift B (pull and leg work) and rest instead.'
+    : 'Dive tomorrow — do the upper-body lifts only. Skip ' + DIVE_EVE_LEG_LIFTS.filter(n => (session.exercises || []).some(e => e.name === n)).join(', ') + '.';
+  return '<div class="ex-card" style="padding:12px 14px;font-size:14px;line-height:1.5;color:var(--text);border:1px solid var(--moderate)">' + esc(msg) + '</div>';
+}
+
 function formatDateDisplay(isoDate) {
   if (!isoDate) return '';
   const [y, m, d] = isoDate.split('-').map(Number);
@@ -1808,16 +1827,21 @@ function computeProgressionFromSession(exName, lastSession) {
   const repsArr = realSets.map(s => Number(s.reps)).filter(r => r > 0);
   const avgReps = repsArr.length > 0 ? Math.round(repsArr.reduce((a,b)=>a+b,0)/repsArr.length) : 0;
 
+  const repTop = parseInt(String(ex.plan_reps || '').split(/[–-]/).pop(), 10) || 0;
   let suggestWeight = lastWeight;
   let suggestReps = avgReps;
 
-  if (adj === 'increase') {
-    suggestWeight = lastWeight + (lastWeight < 50 ? 2.5 : 5);
-  } else if (adj === 'decrease') {
+  if (adj === 'decrease') {
     suggestWeight = Math.max(0, lastWeight - 5);
-  } else {
-    if (effort === 'easy') suggestReps = avgReps + 2;
-    else if (effort === 'moderate') suggestReps = avgReps + 1;
+  } else if (effort === 'easy' || adj === 'increase') {
+    suggestReps = avgReps + 2;
+  } else if (effort === 'moderate') {
+    suggestReps = avgReps + 1;
+  }
+
+  if (suggestWeight === lastWeight && repTop && suggestReps > repTop) {
+    if (avgReps >= repTop) return `Hold ${lastWeight > 0 ? lastWeight + ' lbs' : 'BW'} — top of range (${repTop}). No load jump without your OK.`;
+    suggestReps = repTop;
   }
 
   if (suggestWeight === lastWeight && suggestReps === avgReps) return null;
@@ -2541,7 +2565,7 @@ function renderExercises(session) {
   }
 
   const lastSession = getLastSession(session.day_type);
-  let html = '';
+  let html = diveEveNotice(session);
   for (let ei = 0; ei < session.exercises.length; ei++) {
     html += renderExerciseCard(session, ei, lastSession);
   }
@@ -4596,7 +4620,7 @@ function openNextWorkout() {
 function renderNutritionView() {
   const el = document.getElementById('nutrition-view');
   if (!el) return;
-  el.innerHTML = '<div class="nutr-section"><h3>Daily Targets</h3><div class="nutr-macro-grid"><div class="nutr-macro-card"><div class="nutr-macro-val">2,800</div><div class="nutr-macro-label">kcal/day</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">~140g</div><div class="nutr-macro-label">Protein</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">11AM–8PM</div><div class="nutr-macro-label">Eating window</div></div></div><div class="nutr-note">IF 9-hour window. Moderate carb, high protein. Primary carb: rolled oats + white rice. EVOO daily — do not skip (LDL protection).</div></div><div class="nutr-section"><h3>Meals</h3><div class="nutr-meal"><div class="nutr-meal-name">Meal 1 — 11:00 AM</div><div class="nutr-meal-time">~650 kcal</div><div class="nutr-food-list">Rolled oats ¾ cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nNOW Whey Isolate 1 scoop\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 2 — 1:30 PM</div><div class="nutr-meal-time">~621 kcal</div><div class="nutr-food-list">Rolled oats 1 cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 3 — 4:00 PM (pre-workout)</div><div class="nutr-meal-time">~503 kcal</div><div class="nutr-food-list">Liquid egg whites 8 oz\nPepper Jack cheese 1 oz\nEVOO 1 tbsp\nMorningstar Sausage Patties 2 patties</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 4 — 7:30–8:00 PM (post-workout)</div><div class="nutr-meal-time">~1,030 kcal</div><div class="nutr-food-list">Daring Cajun Pieces 9 oz\nPepper Jack cheese ½ oz\nWhite rice 1.5 cups cooked\nRatio Protein Yogurt Strawberry 1 container\nFrozen strawberries 1 oz\nEVOO 1 tbsp</div></div></div><div class="nutr-section"><h3>Pre-Dive Rules</h3><div class="nutr-food-list" style="line-height:2">No caffeine within 3 hrs of water entry\nPre-dive meal: oatmeal + honey 1.5–2 hrs before entry\nNo protein or high-fat foods on dive day\nElectrolyte drink: ¼ tsp Morton Salt + ⅛ tsp No Salt + lemon in 20 oz water\nOn-water fuel: mango, dates (simple carbs only)</div></div><div class="nutr-section"><h3>Supplements (nightly before bed)</h3><div class="nutr-food-list" style="line-height:2">Magnesium Glycinate 240mg — CO₂ tolerance + sleep\nL-Theanine 200mg — relaxed focus + sleep quality\nMelatonin 10mg</div></div><div class="nutr-section"><h3>Collagen Protocol (lifting days only)</h3><div class="nutr-food-list">15–20g collagen peptides + 50mg Vitamin C taken 60 min before Lift A or Lift B session. Supports tendon remodeling. Take consistently — benefits accumulate over 8–12 weeks.</div></div>';
+  el.innerHTML = '<div class="nutr-section"><h3>Daily Targets</h3><div class="nutr-macro-grid"><div class="nutr-macro-card"><div class="nutr-macro-val">2,800</div><div class="nutr-macro-label">kcal/day</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">~160g</div><div class="nutr-macro-label">Protein</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">11AM–8PM</div><div class="nutr-macro-label">Eating window</div></div></div><div class="nutr-note">IF 9-hour window. Moderate carb, high protein — 30–40g per meal, 4 meals. Primary carb: rolled oats + white rice. EVOO daily — do not skip (LDL protection).</div></div><div class="nutr-section"><h3>Meals</h3><div class="nutr-meal"><div class="nutr-meal-name">Meal 1 — 11:00 AM</div><div class="nutr-meal-time">~650 kcal</div><div class="nutr-food-list">Rolled oats ¾ cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nNOW Whey Isolate 1 scoop\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 2 — 1:30 PM</div><div class="nutr-meal-time">~735 kcal</div><div class="nutr-food-list">Rolled oats 1 cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nNOW Whey Isolate 1 scoop\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 3 — 4:00 PM (pre-workout)</div><div class="nutr-meal-time">~503 kcal</div><div class="nutr-food-list">Liquid egg whites 8 oz\nPepper Jack cheese 1 oz\nEVOO 1 tbsp\nMorningstar Sausage Patties 2 patties</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 4 — 7:30–8:00 PM (post-workout)</div><div class="nutr-meal-time">~925 kcal</div><div class="nutr-food-list">Daring Cajun Pieces 9 oz\nPepper Jack cheese ½ oz\nWhite rice 1 cup cooked\nRatio Protein Yogurt Strawberry 1 container\nFrozen strawberries 1 oz\nEVOO 1 tbsp</div></div></div><div class="nutr-section"><h3>Pre-Dive Rules</h3><div class="nutr-food-list" style="line-height:2">No caffeine within 3 hrs of water entry\nPre-dive meal: oatmeal + honey 1.5–2 hrs before entry\nNo protein or high-fat foods on dive day\nElectrolyte drink: ¼ tsp Morton Salt + ⅛ tsp No Salt + lemon in 20 oz water\nOn-water fuel: mango, dates (simple carbs only)</div></div><div class="nutr-section"><h3>Supplements (nightly before bed)</h3><div class="nutr-food-list" style="line-height:2">Magnesium Glycinate 240mg — CO₂ tolerance + sleep\nL-Theanine 200mg — relaxed focus + sleep quality\nMelatonin 10mg</div></div><div class="nutr-section"><h3>Collagen Protocol (lifting days only)</h3><div class="nutr-food-list">15–20g collagen peptides + 50mg Vitamin C taken 60 min before Lift A or Lift B session. Supports tendon remodeling. Take consistently — benefits accumulate over 8–12 weeks.</div></div>';
 }
 
 function renderYogaSession(session) {
