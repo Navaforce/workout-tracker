@@ -15,6 +15,9 @@ To view what's in a release: `git show <tag>:index.html`
 - Dive-eve notice on Lift A / Lift B when a Dive session is on tomorrow's calendar (`diveEveNotice()`): Lift A skips the leg lifts, Lift B is skipped.
 - Nutrition tab: protein ~140g → ~160g (30–40g per meal); 1 whey scoop added to Meal 2, rice at Meal 4 cut to 1 cup.
 - EXERCISE_INFO entries for Seated Leg Curl and Seated Calf Raise.
+- YouTube search links on all 14 plan lifts; full EXERCISE_INFO entries for Face Pulls and Chest-Supported Row.
+- Calendar day picker now matches the program: Lift A, Lift B, Apnea, Yoga, Dive, Rest, Fitness Test (Legs and Cardio removed).
+- Hotel A / Hotel B (no equipment) in the day picker. Sessions carry `variant: 'hotel'`; templates live in the `HOTEL_PLAN` constant (not Supabase). Hotel A: feet-elevated push-up 3, pike push-up 3, table inverted row 3, rear-foot-elevated split squat 3, bridge walk-out 3, prone Y-T-W 2, hollow body 2. Hotel B: tempo push-up 3, backpack row 3, single-leg hip thrust 3, tempo reverse lunge 3, single-leg calf raise 3, wall sit 2, side plank 2. Same set totals (19) as the gym lifts; progression is slower tempo / more elevation / backpack load. `getLastSession(type, variant)` keeps hotel and gym history separate; `isTimeExercise` now detects "20–30s".
 
 ## Unreleased — Auto-rotating apnea tables (2026-10-03)
 

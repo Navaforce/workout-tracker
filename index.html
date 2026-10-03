@@ -185,6 +185,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
   height: 52px; border-radius: var(--r); font-size: 17px; font-weight: 800;
   color: #0a0a0a; border: none;
 }
+.tsb-hotel-a { background: var(--s2); border: 2px solid var(--push); color: var(--text); }
+.tsb-hotel-b { background: var(--s2); border: 2px solid var(--pull); color: var(--text); }
 .tsb-push { background: var(--push); }
 .tsb-pull { background: var(--pull); }
 .tsb-legs { background: var(--legs); }
@@ -747,6 +749,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
     <button class="type-sheet-btn tsb-apnea" onclick="pickType('apnea')">Apnea</button>
     <button class="type-sheet-btn tsb-yoga" onclick="pickType('yoga')">Yoga</button>
     <button class="type-sheet-btn tsb-dive" onclick="pickType('dive')">Dive</button>
+    <button class="type-sheet-btn tsb-hotel-a" onclick="pickType('push','hotel')">Hotel A — No Gym</button>
+    <button class="type-sheet-btn tsb-hotel-b" onclick="pickType('pull','hotel')">Hotel B — No Gym</button>
     <button class="type-sheet-btn tsb-rest" onclick="pickType('rest')">Rest</button>
     <button class="type-sheet-btn tsb-fitness" onclick="pickType('fitness')">Fitness Test</button>
     <button id="type-sheet-remove" class="type-sheet-btn" style="display:none;background:var(--s2);border:1px solid var(--hard);color:var(--hard)" onclick="deleteRestDay(sheetDate)">Delete This Day</button>
@@ -1128,6 +1132,71 @@ const EXERCISE_INFO = {
     hold: 'INHALE hold — 40 sec · After ALL sets\nRest 30 sec → full inhale → hold 40 sec → breathe → resume rest.',
     video: 'https://www.youtube.com/results?search_query=chest+supported+row+form',
   },
+  'Feet-Elevated Push-Up': {
+    rest: '2:00', cues: 'Feet on the bed or a chair, hands slightly wider than shoulders, body in one line. Lower over 3 sec with elbows about 45° from the torso, stop 1 inch above the floor (no bounce), press to full lockout. Stop each set 1–3 reps before failure. When the top of the range feels easy, raise the feet higher — do not add reps forever.',
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nPress up → rest 30 sec → exhale hold 40 sec → breathe → resume rest.',
+    video: 'https://www.youtube.com/results?search_query=feet+elevated+push+up+form',
+  },
+  'Pike Push-Up': {
+    rest: '2:00', cues: 'Hips high in an inverted V, hands shoulder-width, feet on the floor (raise them on the bed for more load). Lower the top of the head toward the floor just ahead of the hands, elbows at about 45°, then press back up. The shoulder press for a no-gym day. Progress to a wall handstand push-up only when you can do 12 clean reps with feet high. Stop if you feel a sharp twinge in the left pec or shoulder.',
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nPress up → rest 30 sec → exhale hold 40 sec → breathe → resume rest.',
+    video: 'https://www.youtube.com/results?search_query=pike+push+up+form',
+  },
+  'Inverted Row (Sturdy Table)': {
+    rest: '2:00', cues: 'Test the table first: lean your full weight on the edge — it must not tip, slide, or flex (no glass tops). Lie under it, overhand grip on the edge, body straight, heels on the floor. Pull the chest to the table edge, squeeze the shoulder blades, lower over 3 sec. Bend the knees to make it easier, raise the feet to make it harder. Overhand only — no underhand grip (bicep tendon). If there is no sturdy table, do extra Prone Y-T-W Raises instead.',
+    hold: 'INHALE hold — 40 sec · After ALL sets\nLower → rest 30 sec → full diaphragmatic inhale → hold 40 sec → breathe → resume rest.',
+    video: 'https://www.youtube.com/results?search_query=inverted+row+table+form',
+  },
+  'Rear-Foot-Elevated Split Squat': {
+    rest: '2:00', cues: 'Rear foot on the bed or a chair, front foot about two feet forward. Lower over 3 sec until the rear knee is 1 inch off the floor, front shin near vertical, torso upright. Drive through the front heel. Do all reps on one leg, then the other; start with the weaker leg. Hold a loaded backpack at the chest to add load. Replaces the loaded squat on gym days.',
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale fully → hold 40 sec → breathe → resume rest.',
+    video: 'https://www.youtube.com/results?search_query=bulgarian+split+squat+bodyweight+form',
+  },
+  'Bridge Walk-Out': {
+    rest: '1:30', cues: 'Lie on your back, knees bent, feet flat. Lift into a glute bridge and keep the hips high. Walk the heels out slowly until the legs are nearly straight, then walk them back in. Ribs stay down — no arching the lower back. Carpet-friendly hamstring work with zero spinal load; stands in for the leg curl.',
+    hold: 'No hold — hamstring control needs full focus.',
+    video: 'https://www.youtube.com/results?search_query=glute+bridge+walk+out+hamstring',
+  },
+  'Prone Y-T-W Raise': {
+    rest: '1:00', cues: 'Lie face down, forehead on a folded towel. Arms overhead in a Y, thumbs up: lift the arms 1–2 inches, hold 1 sec, lower. Repeat with arms out to the sides (T), then elbows bent at the sides (W). 8–10 reps of each is one set. Light and strict — stands in for face pulls.',
+    hold: 'No hold — light accessory; keep the session moving.',
+    video: 'https://www.youtube.com/results?search_query=prone+y+t+w+raise+form',
+  },
+  'Tempo Push-Up': {
+    rest: '2:00', cues: 'Hands shoulder-width, body in one line. Lower over 4 sec to 1 inch above the floor, no bounce and no rest on the chest, then press up fast. The slow lowering is what makes bodyweight hard enough. Add a backpack on the back or raise the feet once 15 reps feel easy.',
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nPress up → rest 30 sec → exhale hold 40 sec → breathe → resume rest.',
+    video: 'https://www.youtube.com/results?search_query=tempo+push+up+slow+eccentric',
+  },
+  'Backpack Row (Supported)': {
+    rest: '1:30', cues: 'Pack a backpack with books or water bottles (15–30 lb). One hand and same-side knee on the bed, back flat, bag held by the strap or top handle with a neutral grip. Row to the hip, elbow close to the body, squeeze the shoulder blade, lower over 3 sec. Always keep the hand and knee supported — never a free-standing bent-over row.',
+    hold: 'INHALE hold — 40 sec · After ALL sets\nLower → rest 30 sec → full diaphragmatic inhale → hold 40 sec → breathe → resume rest.',
+    video: 'https://www.youtube.com/results?search_query=single+arm+dumbbell+row+bench+supported+form',
+  },
+  'Single-Leg Hip Thrust (Bed)': {
+    rest: '1:30', cues: 'Upper back against the edge of the bed, one foot flat on the floor, other leg extended. Drive the hips to full lockout, squeeze the glute hard, lower over 3 sec. Rest a loaded backpack on the hips to add load. Glutes, not lower back — if the back takes over, tuck the ribs down.',
+    hold: 'No hold — single-leg stability demands full focus.',
+    video: 'https://www.youtube.com/results?search_query=single+leg+hip+thrust+form',
+  },
+  'Tempo Reverse Lunge': {
+    rest: '2:00', cues: 'Step back, lower over 3 sec until the back knee is 1 inch off the floor, front shin near vertical, torso upright. Drive through the front heel to stand. Do all reps on one leg, then the other. Hold a backpack at the chest to add load.',
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale fully → hold 40 sec → breathe → resume rest.',
+    video: 'https://www.youtube.com/results?search_query=reverse+lunge+form+tempo',
+  },
+  'Single-Leg Calf Raise': {
+    rest: '1:00', cues: 'Ball of one foot on a stair edge or a thick book, fingertips on a wall for balance. Lower to a full stretch, pause 1 sec, rise as high as possible, lower over 3 sec. Full range matters more than speed — calves drive your fin kick.',
+    hold: 'No hold — accessory; keep the session moving.',
+    video: 'https://www.youtube.com/results?search_query=single+leg+calf+raise+form',
+  },
+  'Wall Sit': {
+    rest: '1:00', cues: 'Back flat against the wall, thighs parallel to the floor, knees over the ankles. Hold for the full time while breathing normally — no breath-holding. Leg endurance under low oxygen supply, the same demand as a long fin kick.',
+    hold: 'No hold — the whole set is an isometric hold.',
+    video: 'https://www.youtube.com/results?search_query=wall+sit+form',
+  },
+  'Side Plank': {
+    rest: '1:00', cues: 'Elbow under the shoulder, feet stacked, body in one straight line from head to ankles, hips lifted. Hold for the full time, then switch sides. Stands in for the anti-rotation core work on gym days.',
+    hold: 'No hold — the whole set is an isometric hold.',
+    video: 'https://www.youtube.com/results?search_query=side+plank+form',
+  },
   'Pallof Press': {
     rest: '1:30', cues: 'Cable or band at chest height, anchored to one side. Stand perpendicular to the anchor, feet shoulder-width. Hold handle at chest — press straight out, hold 1–2 sec, return. Core braces against rotation the entire time. Do not let the band pull you — stay square. Breathe normally; do not hold your breath.',
     hold: 'No hold — anti-rotation exercise; tension is continuous throughout the set.',
@@ -1337,7 +1406,60 @@ const EXERCISE_ALTERNATIVES = {
   'Hip Thrust':                  [['Single-Leg Hip Thrust','Unilateral — doubles glute demand, fixes asymmetry'],['Glute Bridge','Floor-based, no bench setup needed'],['Cable Pull-Through','Standing hip extension, great constant-tension finisher']],
 };
 
+// Equipment-free Lift A / Lift B. Pure constant: never written to the Supabase plan, so plan uploads can't touch it.
+const HOTEL_PLAN = {
+  push: { exercises: [
+    { name: 'Feet-Elevated Push-Up', sets: '3', reps: '15–25', bw: true },
+    { name: 'Pike Push-Up', sets: '3', reps: '8–12', bw: true },
+    { name: 'Inverted Row (Sturdy Table)', sets: '3', reps: '10–15', bw: true },
+    { name: 'Rear-Foot-Elevated Split Squat', sets: '3', reps: '12–20 each leg', bw: true },
+    { name: 'Bridge Walk-Out', sets: '3', reps: '8–12', bw: true },
+    { name: 'Prone Y-T-W Raise', sets: '2', reps: '8–10 each' },
+    { name: 'Hollow Body Hold', sets: '2', reps: '20–30 sec' },
+  ] },
+  pull: { exercises: [
+    { name: 'Tempo Push-Up', sets: '3', reps: '10–15', bw: true },
+    { name: 'Backpack Row (Supported)', sets: '3', reps: '10–15 each side' },
+    { name: 'Single-Leg Hip Thrust (Bed)', sets: '3', reps: '12–20 each leg', bw: true },
+    { name: 'Tempo Reverse Lunge', sets: '3', reps: '10–15 each leg', bw: true },
+    { name: 'Single-Leg Calf Raise', sets: '3', reps: '15–25 each leg', bw: true },
+    { name: 'Wall Sit', sets: '2', reps: '45–60 sec' },
+    { name: 'Side Plank', sets: '2', reps: '30–45 sec each side' },
+  ] },
+};
+
+function getSessionPlanDay(session) {
+  if (session.variant === 'hotel') return HOTEL_PLAN[session.day_type] || null;
+  return getPlanDay(session.day_type, getCurrentWeekNumber());
+}
+
 const WARMUP_INFO = {
+  hotel_push: {
+    title: 'Hotel A Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min marching in place or brisk hallway walk — nasal breathing only.',
+      '10 shoulder circles forward + 10 backward.',
+      '10 cat-cows on the floor — open the spine and thoracic area.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release.',
+      '8 scapular push-ups (arms straight, let the chest sink and rise between the shoulder blades).',
+      '2 × 10 push-ups at 50% effort to prime the pressing pattern.',
+    ],
+    protocol: 'EXHALE holds after push and leg exercises; INHALE hold after the row. Start 30 sec into rest. End 30 sec before next set.',
+  },
+  hotel_pull: {
+    title: 'Hotel B Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min marching in place or brisk hallway walk — nasal breathing only.',
+      '10 shoulder circles forward + 10 backward.',
+      '10 glute bridges — feel the glutes, not the lower back.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release.',
+      '10 bodyweight squats, slow — prime the knees and hips.',
+      '8 prone Y-raises on the floor — wake up the upper back.',
+    ],
+    protocol: 'EXHALE holds after push and leg exercises; INHALE hold after the row. Start 30 sec into rest. End 30 sec before next set.',
+  },
   push: {
     title: 'Push Day Warm-Up',
     duration: '5 min (0:00 – 5:00)',
@@ -1448,7 +1570,7 @@ function showWarmup() {
   const data = load();
   const session = data.sessions[currentSessionId];
   if (!session) return;
-  const info = WARMUP_INFO[session.day_type];
+  const info = WARMUP_INFO[session.variant === 'hotel' ? 'hotel_' + session.day_type : session.day_type];
   if (!info) return;
   const modal = document.getElementById('warmup-modal');
   document.getElementById('warmup-title').textContent = info.title;
@@ -1683,7 +1805,8 @@ function nextDayISO(iso) {
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
 }
 
-const DIVE_EVE_LEG_LIFTS = ['Goblet Squat', 'Seated Leg Curl', 'Box Step-Up', 'Hip Thrust', 'Cable Pull-Through', 'Seated Calf Raise'];
+const DIVE_EVE_LEG_LIFTS = ['Goblet Squat', 'Seated Leg Curl', 'Box Step-Up', 'Hip Thrust', 'Cable Pull-Through', 'Seated Calf Raise',
+  'Rear-Foot-Elevated Split Squat', 'Bridge Walk-Out', 'Single-Leg Hip Thrust (Bed)', 'Tempo Reverse Lunge', 'Wall Sit', 'Single-Leg Calf Raise'];
 
 function diveEveNotice(session) {
   if (session.day_type !== 'push' && session.day_type !== 'pull') return '';
@@ -1706,6 +1829,11 @@ function formatDateDisplay(isoDate) {
 function typeColor(type) {
   const map = { push: 'var(--push)', pull: 'var(--pull)', legs: 'var(--legs)', cardio: 'var(--cardio)', rest: 'var(--rest)', dive: 'var(--dive)', yoga: 'var(--yoga)', apnea: 'var(--apnea)' };
   return map[type] || 'var(--muted)';
+}
+
+function sessionTypeName(session) {
+  if (session.variant === 'hotel') return session.day_type === 'push' ? 'Hotel A' : 'Hotel B';
+  return typeName(session.day_type);
 }
 
 function typeName(type) {
@@ -1736,11 +1864,12 @@ function getPlanDay(type, weekNumber) {
   return week.days.find(d => d.type === type) || null;
 }
 
-function getLastSession(type) {
+function getLastSession(type, variant) {
   const data = load();
   const sessions = Object.values(data.sessions)
     .filter(s =>
       s.day_type === type &&
+      (s.variant || '') === (variant || '') &&
       s.date &&
       s.session_id !== currentSessionId &&
       s.exercises && s.exercises.some(ex => (ex.sets || []).some(isRealSet))
@@ -1770,7 +1899,7 @@ function getLastExerciseSets(exName, dayType) {
 }
 
 function prefillExercises(session, planDay) {
-  const lastSession = getLastSession(session.day_type);
+  const lastSession = getLastSession(session.day_type, session.variant);
   const exercises = [];
 
   const planExercises = planDay && planDay.exercises ? planDay.exercises : [];
@@ -1804,7 +1933,7 @@ function prefillExercises(session, planDay) {
 
     exercises.push({
       name: planEx.name,
-      bw_mode: false,
+      bw_mode: !!planEx.bw,
       plan_sets: planEx.sets || '',
       plan_reps: planEx.reps || '',
       sets,
@@ -1854,7 +1983,7 @@ function computeProgressionFromSession(exName, lastSession) {
   }
 
   if (suggestWeight === lastWeight && repTop && suggestReps > repTop) {
-    if (avgReps >= repTop) return `Hold ${lastWeight > 0 ? lastWeight + ' lbs' : 'BW'} — top of range (${repTop}). No load jump without your OK.`;
+    if (avgReps >= repTop) return ex.bw_mode ? `Top of range (${repTop}) — make it harder: slower lowering, a pause, or more elevation.` : `Hold ${lastWeight > 0 ? lastWeight + ' lbs' : 'BW'} — top of range (${repTop}). No load jump without your OK.`;
     suggestReps = repTop;
   }
 
@@ -2046,7 +2175,7 @@ function setSyncStatus(msg) {
 // ════════════════════════════════════════════════════════════════
 // SESSION MANAGEMENT
 // ════════════════════════════════════════════════════════════════
-function getOrCreateSession(date, type) {
+function getOrCreateSession(date, type, variant) {
   const data = load();
   const baseId = getSessionId(USER_ID, date, type);
 
@@ -2059,7 +2188,7 @@ function getOrCreateSession(date, type) {
 
   // Create new
   const now = Date.now();
-  const planDay = getPlanDay(type, getCurrentWeekNumber());
+  const planDay = variant === 'hotel' ? HOTEL_PLAN[type] : getPlanDay(type, getCurrentWeekNumber());
   const session = {
     session_id: baseId,
     user_id: USER_ID,
@@ -2073,6 +2202,7 @@ function getOrCreateSession(date, type) {
     exercises: [],
     apnea: {},
   };
+  if (variant === 'hotel') session.variant = 'hotel';
 
   if (type !== 'rest' && type !== 'cardio' && type !== 'dive') {
     session.exercises = prefillExercises(session, planDay);
@@ -2217,7 +2347,7 @@ function renderMonthView() {
 
     let typeLabel = '';
     if (isFitnessDay) typeLabel = `<span class="cal-type-label" style="color:var(--legs)">Fitness</span>`;
-    else if (session) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${typeName(session.day_type)}</span>`;
+    else if (session) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${sessionTypeName(session)}</span>`;
 
     // Sets + duration info for non-rest sessions; duration for fitness days
     let infoHtml = '';
@@ -2309,7 +2439,7 @@ function renderWeekView() {
       dateColor = 'var(--legs)';
       extraClass = ' fitness-day';
     } else if (session) {
-      badgeHtml = `<span class="wc-badge type-${session.day_type}">${session.day_type === 'dive' ? 'Dive' : typeName(session.day_type)}</span>`;
+      badgeHtml = `<span class="wc-badge type-${session.day_type}">${session.day_type === 'dive' ? 'Dive' : sessionTypeName(session)}</span>`;
       if      (session.completed)                     dateColor = 'var(--easy)';
       else if (session.day_type !== 'dive' && countRealSetsInSession(session) > 0) dateColor = 'var(--moderate)';
       else if (session.day_type === 'dive' && session.dive_log?.dives) dateColor = 'var(--moderate)';
@@ -2416,7 +2546,7 @@ function deleteDay(iso) {
   }
 }
 
-function pickType(type) {
+function pickType(type, variant) {
   const iso = sheetDate;
   closeTypeSheet();
   if (!iso) return;
@@ -2430,7 +2560,7 @@ function pickType(type) {
     showFitness(iso);
     return;
   }
-  const sessionId = getOrCreateSession(iso, type);
+  const sessionId = getOrCreateSession(iso, type, variant);
   if (type === 'rest') {
     renderCalendar();
     return;
@@ -2446,7 +2576,7 @@ function reconcileSessionWithPlan(sessionId) {
   const session = data.sessions[sessionId];
   if (!session || session.completed) return;
   if (['rest', 'cardio', 'dive', 'yoga', 'apnea'].includes(session.day_type)) return;
-  const planDay = getPlanDay(session.day_type, getCurrentWeekNumber());
+  const planDay = getSessionPlanDay(session);
   const planExercises = planDay && planDay.exercises ? planDay.exercises : [];
   if (!planExercises.length) return;
   let changed = false;
@@ -2455,7 +2585,7 @@ function reconcileSessionWithPlan(sessionId) {
     const existing = session.exercises.find(e => e.name === planEx.name);
     if (!existing) {
       const numSets = parseInt(planEx.sets, 10) || 3;
-      const lastSession = getLastSession(session.day_type);
+      const lastSession = getLastSession(session.day_type, session.variant);
       let prevWeight = '';
       if (lastSession) {
         const prevEx = lastSession.exercises && lastSession.exercises.find(e => e.name === planEx.name);
@@ -2468,7 +2598,7 @@ function reconcileSessionWithPlan(sessionId) {
       for (let i = 0; i < numSets; i++) {
         sets.push({ weight: prevWeight, reps: '', effort: '', adjustment: '', note: '', ts: null, prefilled: true });
       }
-      session.exercises.push({ name: planEx.name, bw_mode: false, plan_sets: planEx.sets || '', plan_reps: planEx.reps || '', sets });
+      session.exercises.push({ name: planEx.name, bw_mode: !!planEx.bw, plan_sets: planEx.sets || '', plan_reps: planEx.reps || '', sets });
       changed = true;
     } else {
       if (existing.plan_sets !== planEx.sets || existing.plan_reps !== planEx.reps) {
@@ -2500,7 +2630,7 @@ function renderWorkout(sessionId) {
   // Header
   const isRest = session.day_type === 'rest';
   const isDive = session.day_type === 'dive';
-  const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${isDive ? 'Dive' : typeName(session.day_type)}</span>`;
+  const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${isDive ? 'Dive' : sessionTypeName(session)}</span>`;
   let dur = '';
   if (!isRest) {
     if (session.started_at && session.completed_at) {
@@ -2578,7 +2708,7 @@ function renderExercises(session) {
     return;
   }
 
-  const lastSession = getLastSession(session.day_type);
+  const lastSession = getLastSession(session.day_type, session.variant);
   let html = diveEveNotice(session);
   for (let ei = 0; ei < session.exercises.length; ei++) {
     html += renderExerciseCard(session, ei, lastSession);
@@ -2613,7 +2743,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
     const info = getExerciseInfo(ex.name);
     const rest = info?.rest || '';
     const parts = [];
-    if (planSets && planReps) parts.push(`${planSets} × ${planReps}${isTimeExercise(ex) ? '' : ' reps'}`);
+    if (planSets && planReps) parts.push(`${planSets} × ${planReps}${isTimeExercise(ex) || /each/.test(planReps) ? '' : ' reps'}`);
     if (rest) parts.push(`rest: ${rest}`);
     if (parts.length) targetLine = parts.join(', ');
   }
@@ -2664,7 +2794,7 @@ function renderExerciseCard(session, exIdx, lastSession) {
 }
 
 function isTimeExercise(ex) {
-  return !!(ex.plan_reps && ex.plan_reps.toLowerCase().includes('sec'));
+  return !!(ex.plan_reps && /\d\s*s(ec)?\b/i.test(ex.plan_reps));
 }
 
 function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName, timeMode) {
