@@ -6,6 +6,10 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Cleanup (2026-10-04)
+
+- Removing an exercise keeps the right cards expanded; removed unused progression helper.
+
 ## Unreleased — Supabase sign-in (2026-10-04)
 
 - Sync requests now use a signed-in user's token (email + password, refreshed automatically) instead of the public anon key. Sign-in prompt appears when the server rejects a request. Prerequisite for enabling row-level security.

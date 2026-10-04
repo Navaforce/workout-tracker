@@ -1998,10 +1998,6 @@ function computeProgressionFromSession(exName, lastSession) {
   return `${weightStr} × ${suggestReps} reps`;
 }
 
-function computeProgression(exName, dayType) {
-  return computeProgressionFromSession(exName, getLastSession(dayType));
-}
-
 // ════════════════════════════════════════════════════════════════
 // SYNC
 // ════════════════════════════════════════════════════════════════
@@ -3253,6 +3249,7 @@ function deleteExercise(sessionId, exIdx) {
     if (removed && !(session2.dropped || []).includes(removed.name)) session2.dropped = (session2.dropped || []).concat(removed.name);
     session2.updated_at = Date.now();
     save(data2);
+    openCards = new Set([...openCards].filter(i => i !== exIdx).map(i => i > exIdx ? i - 1 : i));
     renderExercises(session2);
   };
   const body = hasRealSets ? 'All logged sets will be deleted. This cannot be undone.' : 'This cannot be undone.';
