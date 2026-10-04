@@ -6,6 +6,10 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Supabase sign-in (2026-10-04)
+
+- Sync requests now use a signed-in user's token (email + password, refreshed automatically) instead of the public anon key. Sign-in prompt appears when the server rejects a request. Prerequisite for enabling row-level security.
+
 ## Unreleased — Review follow-ups round 2 (2026-10-04)
 
 - Swap list: removed Single-Leg RDL and DB Romanian Deadlift from Kettlebell Swings alternatives (back safety).
