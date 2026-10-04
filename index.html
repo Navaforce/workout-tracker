@@ -1778,10 +1778,14 @@ function todayISO() {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
-function nextDayISO(iso) {
+function addDaysISO(iso, n) {
   const [y, m, d] = iso.split('-').map(Number);
-  const dt = new Date(y, m-1, d+1);
+  const dt = new Date(y, m - 1, d + n);
   return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+function nextDayISO(iso) {
+  return addDaysISO(iso, 1);
 }
 
 const DIVE_EVE_LEG_LIFTS = ['Goblet Squat', 'Seated Leg Curl', 'Box Step-Up', 'Hip Thrust', 'Cable Pull-Through', 'Seated Calf Raise',
@@ -4691,17 +4695,30 @@ const YOGA_POSES = [
 function getNextWorkoutType() {
   const data = load();
   const today = todayISO();
-  const cutoff = new Date(today);
-  cutoff.setDate(cutoff.getDate() - 14);
-  const cutoffISO = cutoff.toISOString().slice(0, 10);
-  const recent = Object.values(data.sessions)
-    .filter(s => s.date && s.date >= cutoffISO && s.date <= today)
-    .sort((a, b) => b.date.localeCompare(a.date));
-  if (recent.length === 0) return WEEKLY_SEQUENCE[0];
-  const lastType = recent[0].day_type;
-  const idx = WEEKLY_SEQUENCE.indexOf(lastType);
-  if (idx === -1) return WEEKLY_SEQUENCE[0];
-  return WEEKLY_SEQUENCE[(idx + 1) % WEEKLY_SEQUENCE.length];
+  const cutoffISO = addDaysISO(today, -14);
+  const hist = Object.values(data.sessions)
+    .filter(s => s.date && s.date >= cutoffISO && s.date <= today && WEEKLY_SEQUENCE.includes(s.day_type))
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.updated_at || 0) - (a.updated_at || 0))
+    .map(s => s.day_type);
+  if (hist.length === 0) return WEEKLY_SEQUENCE[0];
+
+  // The sequence repeats 'apnea' and 'rest', so the last type alone is ambiguous.
+  // Pick the position whose preceding steps best match recent history; an unlogged 'rest' may be skipped.
+  const n = WEEKLY_SEQUENCE.length;
+  const mod = x => ((x % n) + n) % n;
+  let bestPos = -1, bestScore = -1;
+  for (let p = 0; p < n; p++) {
+    if (WEEKLY_SEQUENCE[p] !== hist[0]) continue;
+    let score = 0, e = p - 1, h = 1;
+    for (let step = 0; step < n && h < hist.length; step++) {
+      const exp = WEEKLY_SEQUENCE[mod(e)];
+      if (hist[h] === exp) { score++; h++; e--; }
+      else if (exp === 'rest') { e--; }
+      else break;
+    }
+    if (score > bestScore) { bestScore = score; bestPos = p; }
+  }
+  return WEEKLY_SEQUENCE[mod(bestPos + 1)];
 }
 
 function renderNextWorkoutBanner() {

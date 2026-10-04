@@ -17,6 +17,7 @@ To view what's in a release: `git show <tag>:index.html`
 - EXERCISE_INFO entries for Seated Leg Curl and Seated Calf Raise.
 - YouTube search links on all 14 plan lifts; full EXERCISE_INFO entries for Face Pulls and Chest-Supported Row.
 - Calendar day picker now matches the program: Lift A, Lift B, Apnea, Yoga, Dive, Rest, Fitness Test (Legs and Cardio removed).
+- Fix: Next Up never suggested Lift A again after the first week (repeated Apnea/Rest entries made the sequence position ambiguous). It now matches recent history to find the position, ignores Dive/Fitness days, and uses local-date arithmetic for the 14-day window.
 - Fix: deleted or swapped-away exercises no longer reappear when the workout is reopened (session `dropped` list); swapped exercises get prefilled set rows.
 - Fix: deleted/moved days can no longer come back. Deletes are recorded as tombstones (`deleted_sessions`, stored in the meta record, 60-day TTL), honored on every device, and the cloud delete is retried each sync until it succeeds.
 - Fix: completing a day no longer trips on prefilled sets, timed holds, or bodyweight sets (validation skips prefilled sets; weight is only required for loaded exercises).
