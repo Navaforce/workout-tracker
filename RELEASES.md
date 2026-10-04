@@ -6,6 +6,14 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Review round 3: data safety (2026-10-04)
+
+- Deleting or moving a day no longer bumps the meta timestamp (it could overwrite another device's fitness tests and injury days).
+- Cloud rows with unexpected session ids/types are ignored; values rendered into set rows, calendar and headers are escaped (`'` now escaped too).
+- Delete Day re-reads data when confirmed instead of saving a stale snapshot.
+- If the open day is deleted on another device, the app returns to the calendar with a message.
+- Complete-day validation tolerates sessions without exercises.
+
 ## Unreleased — Cleanup (2026-10-04)
 
 - Removing an exercise keeps the right cards expanded; removed unused progression helper.

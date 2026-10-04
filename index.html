@@ -1855,7 +1855,7 @@ function toast(msg) {
 }
 
 function esc(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2075,7 +2075,7 @@ async function syncNow(silent) {
       `${SUPABASE_URL}/rest/v1/${TABLE}?user_id=eq.${USER_ID}&select=session_id,data,updated_at`
     );
     if (!res.ok) throw new Error(`Fetch failed: ${res.status}`);
-    const cloudRows = await res.json();
+    const cloudRows = (await res.json()).filter(r => r && /^[\w-]+$/.test(r.session_id) && !(r.data && r.data.day_type && !/^[\w-]+$/.test(r.data.day_type)));
 
     const local = load();
     const upsertQueue = [];
@@ -2203,7 +2203,10 @@ async function syncNow(silent) {
 
     // Re-render current screen
     if (currentScreen === 'calendar') renderCalendar();
-    else if (currentScreen === 'workout' && currentSessionId) renderWorkout(currentSessionId);
+    else if (currentScreen === 'workout' && currentSessionId) {
+      if (!load().sessions[currentSessionId]) { goBack(); toast('This day was deleted on another device'); }
+      else renderWorkout(currentSessionId);
+    }
 
   } catch(err) {
     setSyncStatus('Sync failed');
@@ -2249,7 +2252,6 @@ async function supabaseDelete(sessionId) {
 function markSessionDeleted(data, sid) {
   if (!data.deleted_sessions) data.deleted_sessions = {};
   data.deleted_sessions[sid] = Date.now();
-  data._meta_updated_at = Date.now();
 }
 
 function hardReload() {
@@ -2426,7 +2428,7 @@ function renderMonthView() {
     const isPartial = session && !session.completed && realCount > 0 && !isRest;
 
     let cellClass = 'cal-cell';
-    if (session) cellClass += ` has-${session.day_type}`;
+    if (session) cellClass += ` has-${esc(session.day_type)}`;
     if (isFitnessDay) cellClass += ' fitness-day';
     if (isToday) cellClass += ' today';
     if (injured) cellClass += ' injured';
@@ -2435,7 +2437,7 @@ function renderMonthView() {
 
     let typeLabel = '';
     if (isFitnessDay) typeLabel = `<span class="cal-type-label" style="color:var(--legs)">Fitness</span>`;
-    else if (session) typeLabel = `<span class="cal-type-label type-text-${session.day_type}">${sessionTypeName(session)}</span>`;
+    else if (session) typeLabel = `<span class="cal-type-label type-text-${esc(session.day_type)}">${esc(sessionTypeName(session))}</span>`;
 
     // Sets + duration info for non-rest sessions; duration for fitness days
     let infoHtml = '';
@@ -2451,8 +2453,8 @@ function renderMonthView() {
       if (session.day_type === 'dive') {
         const dl = session.dive_log || {};
         const parts = [];
-        if (dl.dives) parts.push(`${dl.dives} dives`);
-        if (dl.max_depth_ft) parts.push(`${dl.max_depth_ft}ft`);
+        if (dl.dives) parts.push(`${esc(dl.dives)} dives`);
+        if (dl.max_depth_ft) parts.push(`${esc(dl.max_depth_ft)}ft`);
         if (parts.length) infoHtml = `<div class="cal-info"><span class="cal-sets">${parts.join(' · ')}</span></div>`;
       } else {
         const planned = countPlannedSetsInSession(session);
@@ -2558,6 +2560,7 @@ function deleteDay(iso) {
   const hasNotes = !!(session.week_notes && session.week_notes.trim());
   const label = (session.day_type || 'day').charAt(0).toUpperCase() + (session.day_type || 'day').slice(1);
   const confirmDelete = () => {
+    const data = load();
     delete data.sessions[sid];
     markSessionDeleted(data, sid);
     if (session.day_type === 'fitness' && data.fitness_test_days) {
@@ -2665,14 +2668,14 @@ function renderWorkout(sessionId) {
   // Header
   const isRest = session.day_type === 'rest';
   const isDive = session.day_type === 'dive';
-  const badge = `<span class="day-type-badge type-${session.day_type}" style="font-weight:800">${isDive ? 'Dive' : sessionTypeName(session)}</span>`;
+  const badge = `<span class="day-type-badge type-${esc(session.day_type)}" style="font-weight:800">${isDive ? 'Dive' : esc(sessionTypeName(session))}</span>`;
   let dur = '';
   if (!isRest) {
     if (session.started_at && session.completed_at) {
       const mins = Math.round((session.completed_at - session.started_at) / 60000);
-      dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Edit duration">${mins}m ✎</span>`;
+      dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${esc(sessionId)}')" title="Edit duration">${mins}m ✎</span>`;
     } else {
-      dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${sessionId}')" title="Set duration">+ time ✎</span>`;
+      dur = ` · <span class="dur-edit-btn" onclick="openDurModal('${esc(sessionId)}')" title="Set duration">+ time ✎</span>`;
     }
   }
   const weekLabel = (() => { try { const d=load(); const w=d.plan?.weeks?.find(wk=>wk.week_number===getCurrentWeekNumber()); return w?.label||''; } catch(e){return '';} })();
@@ -2868,19 +2871,19 @@ function renderSetRow(sid, exIdx, setIdx, s, bwMode, prevNote, exName, timeMode)
     const bwVal = s.bw !== undefined ? s.bw : (data.bodyweight || 185);
     const bwaVal = s.bw_added !== undefined ? s.bw_added : '';
     weightHtml = `<div class="bw-wrap">
-      <input type="number" class="bw-input" value="${bwVal}" placeholder="BW" oninput="handleBWInput('${esc(sid)}',${exIdx},${setIdx},'bw',this.value)">
+      <input type="number" class="bw-input" value="${esc(bwVal)}" placeholder="BW" oninput="handleBWInput('${esc(sid)}',${exIdx},${setIdx},'bw',this.value)">
       <span class="bw-plus">+</span>
-      <input type="number" class="bwa-input" value="${bwaVal !== '' ? bwaVal : ''}" placeholder="0" oninput="handleBWInput('${esc(sid)}',${exIdx},${setIdx},'bw_added',this.value)">
+      <input type="number" class="bwa-input" value="${bwaVal !== '' ? esc(bwaVal) : ''}" placeholder="0" oninput="handleBWInput('${esc(sid)}',${exIdx},${setIdx},'bw_added',this.value)">
     </div>`;
   } else {
-    weightHtml = `<input type="number" class="weight-input" value="${wVal}" placeholder="${wPlaceholder}" oninput="handleWeightInput('${esc(sid)}',${exIdx},${setIdx},this.value)">`;
+    weightHtml = `<input type="number" class="weight-input" value="${esc(wVal)}" placeholder="${esc(wPlaceholder)}" oninput="handleWeightInput('${esc(sid)}',${exIdx},${setIdx},this.value)">`;
   }
 
   return `<div class="set-row-wrap" id="srw-${esc(sid)}-${exIdx}-${setIdx}">
     <div class="set-row">
       <div class="set-row-line1">
         ${timeMode ? '' : weightHtml + '<span class="set-sep">×</span>'}
-        <input type="number" class="reps-input" value="${s.prefilled ? '' : (s.reps !== '' && s.reps !== null && s.reps !== undefined ? s.reps : '')}" placeholder="${timeMode ? 'sec' : 'reps'}" oninput="handleRepInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
+        <input type="number" class="reps-input" value="${s.prefilled ? '' : (s.reps !== '' && s.reps !== null && s.reps !== undefined ? esc(s.reps) : '')}" placeholder="${timeMode ? 'sec' : 'reps'}" oninput="handleRepInput('${esc(sid)}',${exIdx},${setIdx},this.value)">
         ${timeMode ? '<span class="set-sep" style="font-size:13px;color:var(--dim);font-weight:400">sec</span>' : ''}
         <button class="set-delete-btn" onclick="deleteSet('${esc(sid)}',${exIdx},${setIdx})">✕</button>
       </div>
@@ -3485,7 +3488,7 @@ function renderApneaBlock(session) {
           oninput="handleApneaInput('${esc(session.session_id)}','${rKey}','${f.key}','mss',this)"
           onblur="handleApneaBlur(this,'${esc(session.session_id)}','${rKey}','${f.key}')">`;
       } else if (f.format === 'num') {
-        inputHtml = `<input type="number" class="apnea-input" value="${saved !== '' ? saved : ''}" placeholder="0"
+        inputHtml = `<input type="number" class="apnea-input" value="${saved !== '' ? esc(saved) : ''}" placeholder="0"
           oninput="handleApneaInput('${esc(session.session_id)}','${rKey}','${f.key}','num',this)">`;
       } else {
         inputHtml = `<input type="text" class="apnea-note-input" value="${esc(saved)}" placeholder="note…"
@@ -3700,8 +3703,9 @@ function handleApneaEffort(sessionId, roundKey, effort) {
 function validateDayForComplete(session) {
   const errors = [];
   if (session.day_type === 'dive') return errors;
-  for (let ei = 0; ei < session.exercises.length; ei++) {
-    const ex = session.exercises[ei];
+  const exercises = session.exercises || [];
+  for (let ei = 0; ei < exercises.length; ei++) {
+    const ex = exercises[ei];
     const needsWeight = !isTimeExercise(ex) && !ex.bw_mode;
     for (let si = 0; si < ex.sets.length; si++) {
       const s = ex.sets[si];
