@@ -17,6 +17,9 @@ To view what's in a release: `git show <tag>:index.html`
 - EXERCISE_INFO entries for Seated Leg Curl and Seated Calf Raise.
 - YouTube search links on all 14 plan lifts; full EXERCISE_INFO entries for Face Pulls and Chest-Supported Row.
 - Calendar day picker now matches the program: Lift A, Lift B, Apnea, Yoga, Dive, Rest, Fitness Test (Legs and Cardio removed).
+- Fix: completing a day no longer trips on prefilled sets, timed holds, or bodyweight sets (validation skips prefilled sets; weight is only required for loaded exercises).
+- Fix: Apnea-day M:SS fields saved to the wrong field (contraction dropped; Dynamic duration stored as hold and lost on re-render). Fields now save on input to the field they were rendered for.
+- Security: fitness notes, custom labels and values are HTML-escaped before rendering. Supabase RLS still needs tightening (anon key is public).
 - Mark Complete now asks for confirmation when planned sets have no reps logged (previously validation only checked sets you had touched, so a day could be completed with most sets empty).
 - Removed the Week tab (and its code/CSS); the calendar now has Month and Nutrition tabs.
 - Lift A / Lift B no longer append an apnea block (apnea is its own day). Older lift sessions with logged apnea data still show it.

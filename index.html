@@ -3359,7 +3359,7 @@ function renderApneaBlock(session) {
         const displayVal = saved !== '' && saved !== null ? fmtMSS(saved) : '';
         inputHtml = `<input type="text" class="apnea-input" value="${esc(displayVal)}" placeholder="0:00"
           oninput="handleApneaInput('${esc(session.session_id)}','${rKey}','${f.key}','mss',this)"
-          onblur="handleApneaBlur(this)">`;
+          onblur="handleApneaBlur(this,'${esc(session.session_id)}','${rKey}','${f.key}')">`;
       } else if (f.format === 'num') {
         inputHtml = `<input type="number" class="apnea-input" value="${saved !== '' ? saved : ''}" placeholder="0"
           oninput="handleApneaInput('${esc(session.session_id)}','${rKey}','${f.key}','num',this)">`;
@@ -3518,8 +3518,13 @@ function handleApneaInput(sessionId, roundKey, field, format, inputEl) {
 
   const val = inputEl.value;
   if (format === 'mss') {
-    // Store on blur, not on input — just validate visually
     inputEl.classList.remove('invalid');
+    const parsed = parseMSS(val.trim());
+    if (parsed !== null) {
+      session.apnea[roundKey][field] = parsed;
+      session.updated_at = Date.now();
+      save(data);
+    }
   } else if (format === 'num') {
     const n = parseFloat(val);
     session.apnea[roundKey][field] = isFinite(n) ? n : '';
@@ -3532,7 +3537,7 @@ function handleApneaInput(sessionId, roundKey, field, format, inputEl) {
   }
 }
 
-function handleApneaBlur(inputEl) {
+function handleApneaBlur(inputEl, sessionId, roundKey, field) {
   const val = inputEl.value.trim();
   if (!val) { inputEl.classList.remove('invalid'); return; }
   const parsed = parseMSS(val);
@@ -3543,35 +3548,12 @@ function handleApneaBlur(inputEl) {
   }
   inputEl.classList.remove('invalid');
 
-  // Find the session and field from the input's context
-  const roundDiv = inputEl.closest('.apnea-round');
-  if (!roundDiv) return;
-  const rounds = Array.from(document.querySelectorAll('.apnea-round'));
-  const roundIdx = rounds.indexOf(roundDiv);
-  if (roundIdx < 0 || !currentSessionId) return;
-
   const data = load();
-  const session = data.sessions[currentSessionId];
+  const session = data.sessions[sessionId];
   if (!session) return;
   if (!session.apnea) session.apnea = {};
-  const rKey = `r${roundIdx}`;
-  if (!session.apnea[rKey]) session.apnea[rKey] = {};
-
-  // Determine which field based on placeholder
-  const ph = inputEl.placeholder;
-  const field = ph === '0:00' ? (session.day_type === 'push' || session.day_type === 'legs' ? 'actual_hold' : 'actual_dur') : 'contraction';
-  const allInputs = roundDiv.querySelectorAll('.apnea-input');
-  const fieldIdx = Array.from(allInputs).indexOf(inputEl);
-  const type = session.day_type;
-  const fieldKeys = type === 'push'
-    ? ['actual_hold', 'contraction']
-    : type === 'pull' || type === 'cardio'
-    ? ['actual_dur']
-    : ['actual_hold'];
-
-  if (fieldIdx < fieldKeys.length) {
-    session.apnea[rKey][fieldKeys[fieldIdx]] = parsed;
-  }
+  if (!session.apnea[roundKey]) session.apnea[roundKey] = {};
+  session.apnea[roundKey][field] = parsed;
   session.updated_at = Date.now();
   save(data);
 }
@@ -3596,13 +3578,15 @@ function validateDayForComplete(session) {
   if (session.day_type === 'dive') return errors;
   for (let ei = 0; ei < session.exercises.length; ei++) {
     const ex = session.exercises[ei];
+    const needsWeight = !isTimeExercise(ex) && !ex.bw_mode;
     for (let si = 0; si < ex.sets.length; si++) {
       const s = ex.sets[si];
-      const hasWeight = s.weight !== '' && s.weight !== null && isFinite(Number(s.weight));
-      const hasReps = s.reps > 0;
-      const touched = hasWeight || hasReps;
+      if (s.prefilled) continue;
+      const hasWeight = s.weight !== '' && s.weight !== null && s.weight !== undefined && isFinite(Number(s.weight));
+      const hasReps = Number(s.reps) > 0;
+      const touched = hasReps || (needsWeight && hasWeight);
       if (!touched) continue;
-      if (!hasWeight) errors.push(`${ex.name} set ${si+1}: missing weight`);
+      if (needsWeight && !hasWeight) errors.push(`${ex.name} set ${si+1}: missing weight`);
       if (!hasReps) errors.push(`${ex.name} set ${si+1}: missing reps`);
       if (!s.effort) errors.push(`${ex.name} set ${si+1}: missing effort`);
       if (!s.adjustment) errors.push(`${ex.name} set ${si+1}: missing adjustment`);
@@ -4207,7 +4191,7 @@ function renderFTFields() {
   container.innerHTML = cfg.map((f, i) => {
     const hasCue = !f.custom && FT_CUES[f.key];
     const infoBtn = hasCue
-      ? `<button class="ft-info-btn" onclick="event.stopPropagation();showFTInfo('${f.key}')">ⓘ</button>`
+      ? `<button class="ft-info-btn" onclick="event.stopPropagation();showFTInfo('${esc(f.key)}')">ⓘ</button>`
       : '';
 
     // Prev/best stats — handle compound BSS values
@@ -4215,33 +4199,33 @@ function renderFTFields() {
     const bestRaw = f.key in best ? best[f.key] : null;
     const prevStr = prevRaw != null ? formatFTValue(f.key, prevRaw) : '—';
     const bestStr = bestRaw != null ? formatFTValue(f.key, bestRaw) : '—';
-    const statsHtml = `<span style="font-size:11px;color:var(--text)">Prev: ${prevStr} · Best: ${bestStr}</span>`;
+    const statsHtml = `<span style="font-size:11px;color:var(--text)">Prev: ${esc(prevStr)} · Best: ${esc(bestStr)}</span>`;
 
     const labelHtml = f.custom
       ? `<input type="text" class="ft-input ft-custom-label" placeholder="Exercise name"
-           value="${(f.label || '').replace(/"/g,'&quot;')}"
+           value="${esc(f.label || '')}"
            oninput="ftUpdateCustomLabel(${i}, this.value)">`
-      : `<label class="ft-label">${f.label}</label>`;
+      : `<label class="ft-label">${esc(f.label)}</label>`;
 
     // Main input area — compound (BSS), steps+time (walking), or simple
     let inputsHtml;
     if (f.compound) {
       inputsHtml = `<div class="ft-sub-inputs">
-        <input type="number" class="ft-input" id="ft-weight-${f.key}" placeholder="lb (0=BW)" oninput="ftAutoSave()">
-        <input type="number" class="ft-input" id="ft-reps-${f.key}" placeholder="reps" oninput="ftAutoSave()">
+        <input type="number" class="ft-input" id="ft-weight-${esc(f.key)}" placeholder="lb (0=BW)" oninput="ftAutoSave()">
+        <input type="number" class="ft-input" id="ft-reps-${esc(f.key)}" placeholder="reps" oninput="ftAutoSave()">
       </div>`;
     } else if (f.steps) {
       inputsHtml = `<div class="ft-sub-inputs">
-        <input type="text" class="ft-input" id="ft-val-${f.key}" placeholder="M:SS" oninput="ftAutoSave()">
-        <input type="number" class="ft-input" id="ft-steps-${f.key}" placeholder="steps" oninput="ftAutoSave()">
+        <input type="text" class="ft-input" id="ft-val-${esc(f.key)}" placeholder="M:SS" oninput="ftAutoSave()">
+        <input type="number" class="ft-input" id="ft-steps-${esc(f.key)}" placeholder="steps" oninput="ftAutoSave()">
       </div>`;
     } else {
       const inputType = f.time ? 'text' : 'number';
       const ph = f.time ? 'M:SS' : 'reps / cal';
-      inputsHtml = `<input type="${inputType}" class="ft-input" id="ft-val-${f.key}" placeholder="${ph}" oninput="ftAutoSave()">`;
+      inputsHtml = `<input type="${inputType}" class="ft-input" id="ft-val-${esc(f.key)}" placeholder="${ph}" oninput="ftAutoSave()">`;
     }
 
-    return `<div class="ft-field-row" data-key="${f.key}" draggable="true"
+    return `<div class="ft-field-row" data-key="${esc(f.key)}" draggable="true"
         ondragstart="ftDragStart(event,${i})"
         ondragover="ftDragOver(event,${i})"
         ondrop="ftDrop(event,${i})">
@@ -4250,11 +4234,11 @@ function renderFTFields() {
         ${labelHtml}
         ${statsHtml}
         ${inputsHtml}
-        <input type="text" class="ft-notes-input" id="ft-note-${f.key}" placeholder="Notes…" oninput="ftAutoSave()">
+        <input type="text" class="ft-notes-input" id="ft-note-${esc(f.key)}" placeholder="Notes…" oninput="ftAutoSave()">
       </div>
       <div class="ft-row-actions">
         ${infoBtn}
-        <button class="ft-remove-btn" onclick="ftRemoveField('${f.key}')">✕</button>
+        <button class="ft-remove-btn" onclick="ftRemoveField('${esc(f.key)}')">✕</button>
       </div>
     </div>`;
   }).join('');
@@ -4545,11 +4529,11 @@ function renderFitnessHistory() {
       const trend = ftTrendIcon(val, prevVal);
       const prevStr = formatFTValue(key, prevVal);
       const bestStr = formatFTValue(key, bestVal);
-      const noteStr = notes[key] ? `<div style="font-size:11px;color:var(--dim);margin-top:2px">${notes[key]}</div>` : '';
+      const noteStr = notes[key] ? `<div style="font-size:11px;color:var(--dim);margin-top:2px">${esc(notes[key])}</div>` : '';
       metricsHtml += `<div class="ft-metric-row">
-        <span class="ft-metric-name">${label}${noteStr}</span>
-        <span class="ft-metric-sub">Prev: ${prevStr}<br>Best: ${bestStr}</span>
-        <span class="ft-metric-val">${displayed}</span>
+        <span class="ft-metric-name">${esc(label)}${noteStr}</span>
+        <span class="ft-metric-sub">Prev: ${esc(prevStr)}<br>Best: ${esc(bestStr)}</span>
+        <span class="ft-metric-val">${esc(displayed)}</span>
         ${trend}
       </div>`;
     }
