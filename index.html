@@ -1372,7 +1372,7 @@ const EXERCISE_ALTERNATIVES = {
   'Weighted Dips':               [['Close-Grip Bench Press','Triceps + chest, heavy load possible'],['DB Floor Press','Low-back friendly, eliminates leg drive'],['Dip Bar Dips','Same movement, dip bars allow fuller depth than bench dips']],
   'Dumbbell Shoulder Press':     [['Arnold Press','Rotational cue hits all three delt heads'],['Cable Overhead Press','Constant tension overhead, no momentum possible'],['Seated DB Press','Strict upright position removes lower-back arch tendency']],
   'Pull-Ups':                    [['Neutral-Grip Lat Pulldown','Elbow-safe machine alternative — no dead hang, same vertical pull pattern'],['Neutral-Grip Pull-Up','Palms facing each other reduces elbow stress'],['Chest-Supported DB Row','Removes bicep as limiter — isolates lats and rhomboids']],
-  'Kettlebell Swings':           [['Single-Leg RDL','Unilateral hip hinge — adds balance demand and glute focus'],['DB Romanian Deadlift','Bilateral hip hinge, heavier load possible'],['Cable Pull-Through','Constant tension on the hip extension pattern']],
+  'Kettlebell Swings':           [['Cable Pull-Through','Constant tension on the hip extension pattern']],
   'T-Bar Row':                   [['Lat Pulldown','Vertical pull — changes angle, hits lats more than rhomboids'],['Seated Cable Row','Horizontal pull with constant tension, great for mid-back'],['Bent-Over DB Row','Free-weight horizontal pull, each side independent']],
   'Chest-Supported Incline Row': [['T-Bar Row','Heavier load possible, hinge position'],['Seated Cable Row','Constant tension, no stability demand'],['Bent-Over DB Row','Free-weight option when cables are occupied']],
   'Weighted Hanging Leg Raises': [['Ab Wheel Rollout','Full anti-extension core — high dive-specific tension'],['Cable Crunch','Loaded flexion, easy to progress'],['Dragon Flag','Full-body tension hold — hardest option']],
@@ -1574,6 +1574,7 @@ let cdAlarmTimeouts = [];
 let audioCtx = null;
 let toastTimer = null;
 let syncInFlight = false;
+let syncPending = false;
 
 // ════════════════════════════════════════════════════════════════
 // STORAGE
@@ -1709,9 +1710,9 @@ function _calDragEnd(e) {
   if (existing) { toast('Target date already has a session'); return; }
 
   // Find and move the session
-  const entry = Object.entries(data.sessions).find(([, s]) => s.date === sourceIso);
-  if (!entry) return;
-  const [oldId, session] = entry;
+  const shown = findSessionForDate(data, sourceIso);
+  if (!shown) return;
+  const oldId = shown.session_id, session = shown;
 
   // Build new session_id with target date
   const newId = oldId.replace(sourceIso, targetIso);
@@ -1984,7 +1985,7 @@ function computeProgression(exName, dayType) {
 // SYNC
 // ════════════════════════════════════════════════════════════════
 async function syncNow(silent) {
-  if (syncInFlight) return;
+  if (syncInFlight) { syncPending = true; return; }
   syncInFlight = true;
   if (!silent) setSyncStatus('Syncing…');
 
@@ -2134,6 +2135,7 @@ async function syncNow(silent) {
     if (!silent) toast('Sync failed: ' + err.message);
   } finally {
     syncInFlight = false;
+    if (syncPending) { syncPending = false; syncNow(true); }
   }
 }
 
@@ -2198,12 +2200,12 @@ function setSyncStatus(msg) {
 // ════════════════════════════════════════════════════════════════
 function getOrCreateSession(date, type, variant) {
   const data = load();
-  const baseId = getSessionId(USER_ID, date, type);
+  const baseId = getSessionId(USER_ID, date, type) + (variant === 'hotel' ? '_hotel' : '');
 
   // Check for existing session on this date+type (may have suffix)
   const matching = Object.keys(data.sessions).filter(sid => {
     const s = data.sessions[sid];
-    return s.date === date && s.day_type === type;
+    return s.date === date && s.day_type === type && (s.variant || '') === (variant || '');
   });
   if (matching.length > 0) return matching[0];
 
@@ -2482,9 +2484,9 @@ function deleteRestDay(iso) { deleteDay(iso); }
 function deleteDay(iso) {
   if (!iso) return;
   const data = load();
-  const entry = Object.entries(data.sessions).find(([, s]) => s.date === iso);
-  if (!entry) { closeTypeSheet(); return; }
-  const [sid, session] = entry;
+  const shown = findSessionForDate(data, iso);
+  if (!shown) { closeTypeSheet(); return; }
+  const sid = shown.session_id, session = shown;
   const hasLoggedSets = session.exercises && session.exercises.some(ex => (ex.sets || []).some(isRealSet));
   const hasNotes = !!(session.week_notes && session.week_notes.trim());
   const label = (session.day_type || 'day').charAt(0).toUpperCase() + (session.day_type || 'day').slice(1);
@@ -2539,6 +2541,7 @@ function reconcileSessionWithPlan(sessionId) {
   const session = data.sessions[sessionId];
   if (!session || session.completed) return;
   if (['rest', 'cardio', 'dive', 'yoga', 'apnea'].includes(session.day_type)) return;
+  if (session.date && session.date < todayISO()) return;
   const planDay = getSessionPlanDay(session);
   const planExercises = planDay && planDay.exercises ? planDay.exercises : [];
   if (!planExercises.length) return;
@@ -3347,12 +3350,15 @@ function setApneaTableMode(sessionId, mode) {
   renderApneaBlock(session);
 }
 
-function toggleApneaTableMode(sessionId) {
+function toggleApneaTableMode(sessionId, mode) {
   const data = load();
   const session = data.sessions[sessionId];
   if (!session) return;
   const cur = session.apnea_table_mode || 'co2';
-  session.apnea_table_mode = cur === 'co2' ? 'o2' : 'co2';
+  const next = mode || (cur === 'co2' ? 'o2' : 'co2');
+  if (next === cur) return;
+  session.apnea_table_mode = next;
+  session.updated_at = Date.now();
   save(data);
   renderApneaBlock(session);
 }
@@ -3463,8 +3469,8 @@ function renderApneaBlock(session) {
       <button class="apnea-mode-info-btn" onclick="document.getElementById('apnea-mode-modal').style.display='flex'">ⓘ</button>
     </div>` : type === 'push' ? `
     <div class="apnea-mode-toggle" onclick="event.stopPropagation()">
-      <button class="apnea-mode-btn${tableMode === 'co2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}')">CO₂</button>
-      <button class="apnea-mode-btn${tableMode === 'o2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}')">O₂</button>
+      <button class="apnea-mode-btn${tableMode === 'co2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}','co2')">CO₂</button>
+      <button class="apnea-mode-btn${tableMode === 'o2' ? ' active' : ''}" onclick="toggleApneaTableMode('${esc(session.session_id)}','o2')">O₂</button>
       <button class="apnea-mode-info-btn" onclick="document.getElementById('apnea-mode-modal').style.display='flex'">ⓘ</button>
     </div>` : '';
 
@@ -4034,6 +4040,8 @@ function cdSetCustom() {
   cdTotal = parsed;
   cdRemaining = parsed;
   clearInterval(cdInterval);
+  cdAlarmTimeouts.forEach(clearTimeout);
+  cdAlarmTimeouts = [];
   cdRunning = false;
   document.getElementById('cd-start-btn').textContent = 'Start';
   renderCDPresets();
@@ -4742,9 +4750,17 @@ function openNextWorkout() {
   const type = getNextWorkoutType();
   const iso = todayISO();
   if (type === 'fitness') { showFitness(iso); return; }
-  const sessionId = getOrCreateSession(iso, type);
-  if (type === 'rest') { renderCalendar(); return; }
-  openWorkout(sessionId);
+  const todays = findSessionForDate(load(), iso);
+  const start = () => {
+    const sessionId = getOrCreateSession(iso, type);
+    if (type === 'rest') { renderCalendar(); return; }
+    openWorkout(sessionId);
+  };
+  if (todays && todays.day_type !== type) {
+    showConfirmModal('Add a second session today?', `Today already has ${sessionTypeName(todays)}. Add ${typeName(type)} as well?`, start);
+    return;
+  }
+  start();
 }
 
 function renderNutritionView() {
@@ -4798,6 +4814,10 @@ function toggleYogaPose(sessionId, poseIdx) {
 // ════════════════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════════════════
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') syncNow(true);
+});
+
 function init() {
   const today = todayISO();
   const [y, m] = today.split('-').map(Number);

@@ -6,6 +6,15 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Review follow-ups round 2 (2026-10-04)
+
+- Swap list: removed Single-Leg RDL and DB Romanian Deadlift from Kettlebell Swings alternatives (back safety).
+- Sync: a sync requested while one is running is now queued and re-run after it; also syncs when the app is hidden.
+- Hotel sessions get their own id (`david_DATE_type_hotel`), so a hotel and a gym session can share a date. Old hotel sessions still work via `variant`.
+- Delete Day and drag-move act on the session shown on the calendar; starting a different workout on a day that already has one asks first.
+- Past-dated sessions are no longer reconciled against the current plan.
+- Apnea CO2/O2 toggle sets the chosen mode (and syncs); custom countdown clears pending alarms.
+
 ## Unreleased — Two-lift-day volume + protein (2026-10-03)
 
 ### What changed
