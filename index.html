@@ -1719,10 +1719,12 @@ function _calDragEnd(e) {
   session.date = targetIso;
 
   delete data.sessions[oldId];
+  markSessionDeleted(data, oldId);
+  session.updated_at = Date.now();
   data.sessions[newId] = session;
 
   save(data);
-  supabaseDelete(oldId).then(() => syncNow(true));
+  syncNow(true);
   renderCalendar();
   toast(`Moved to ${targetIso}`);
 }
@@ -2004,6 +2006,21 @@ async function syncNow(silent) {
       cloudMap[row.session_id] = row;
     }
 
+    // Deleted-session tombstones: union of local and cloud (newest delete time wins per id)
+    const TOMB_TTL = 60 * 24 * 3600 * 1000;
+    const cloudMetaRow0 = cloudMap[`${USER_ID}_meta`];
+    const cloudTomb = (cloudMetaRow0 && cloudMetaRow0.data && cloudMetaRow0.data.deleted_sessions) || {};
+    const tomb = { ...(local.deleted_sessions || {}) };
+    for (const [sid, ts] of Object.entries(cloudTomb)) if (!(tomb[sid] >= ts)) tomb[sid] = ts;
+    let tombDirty = false;
+    for (const [sid, ts] of Object.entries(tomb)) {
+      if (Date.now() - ts > TOMB_TTL) { delete tomb[sid]; continue; }
+      if (!(cloudTomb[sid] >= ts)) tombDirty = true;
+    }
+    local.deleted_sessions = tomb;
+    const deleteQueue = [];
+    const isTombstoned = (sid, updatedAt) => !!tomb[sid] && updatedAt <= tomb[sid];
+
     // Merge cloud → local
     for (const row of cloudRows) {
       const sid = row.session_id;
@@ -2025,6 +2042,11 @@ async function syncNow(silent) {
         }
       } else {
         const localSession = local.sessions[sid];
+        if (isTombstoned(sid, cloudUpdated) && !(localSession && (localSession.updated_at || 0) > tomb[sid])) {
+          deleteQueue.push(sid);
+          delete local.sessions[sid];
+          continue;
+        }
         // Always inject session_id and updated_at into the data object so
         // the app can find them after load() — cloud data may lack these.
         const normalized = { ...row.data, session_id: sid, updated_at: cloudUpdated };
@@ -2043,6 +2065,11 @@ async function syncNow(silent) {
     for (const [sid, session] of Object.entries(local.sessions)) {
       const cloudRow = cloudMap[sid];
       const localUpdated = session.updated_at || 0;
+      if (isTombstoned(sid, localUpdated)) {
+        if (cloudRow && !deleteQueue.includes(sid)) deleteQueue.push(sid);
+        delete local.sessions[sid];
+        continue;
+      }
       if (!cloudRow) {
         upsertQueue.push({ session_id: sid, data: session, updated_at: new Date(localUpdated || Date.now()).toISOString() });
       } else {
@@ -2059,10 +2086,10 @@ async function syncNow(silent) {
       const localMetaUpdated = local._meta_updated_at || 0;
       const cloudMetaRow = cloudMap[metaSid];
       const cloudMetaUpdated = cloudMetaRow ? new Date(cloudMetaRow.updated_at).getTime() : 0;
-      const hasLocalMeta = (local.fitness_records || []).length > 0 ||
+      const hasLocalMeta = Object.keys(tomb).length > 0 || (local.fitness_records || []).length > 0 ||
                            Object.keys(local.injured_days || {}).length > 0 ||
                            Object.keys(local.fitness_test_days || {}).length > 0;
-      if (localMetaUpdated > cloudMetaUpdated || (!cloudMetaRow && hasLocalMeta)) {
+      if (localMetaUpdated > cloudMetaUpdated || tombDirty || (!cloudMetaRow && hasLocalMeta)) {
         const pushTs = localMetaUpdated > 0 ? new Date(localMetaUpdated).toISOString() : new Date().toISOString();
         upsertQueue.push({
           session_id: metaSid,
@@ -2070,6 +2097,7 @@ async function syncNow(silent) {
             fitness_records:    local.fitness_records   || [],
             injured_days:       local.injured_days      || {},
             fitness_test_days:  local.fitness_test_days || {},
+            deleted_sessions:   tomb,
           },
           updated_at: pushTs,
         });
@@ -2082,6 +2110,11 @@ async function syncNow(silent) {
     // Upsert queued rows
     for (const item of upsertQueue) {
       await supabaseUpsert(item.session_id, item.data, item.updated_at);
+    }
+
+    // Cloud deletes are retried every sync until they succeed (tombstone stays until TTL)
+    for (const sid of deleteQueue) {
+      try { await supabaseDelete(sid); } catch (e) { /* retried next sync */ }
     }
 
     const now = new Date();
@@ -2127,7 +2160,7 @@ async function supabaseUpsert(sessionId, data, updatedAt) {
 }
 
 async function supabaseDelete(sessionId) {
-  await fetch(
+  const res = await fetch(
     `${SUPABASE_URL}/rest/v1/${TABLE}?user_id=eq.${USER_ID}&session_id=eq.${encodeURIComponent(sessionId)}`,
     {
       method: 'DELETE',
@@ -2137,6 +2170,13 @@ async function supabaseDelete(sessionId) {
       },
     }
   );
+  if (!res.ok) throw new Error(`Delete failed for ${sessionId}: ${res.status}`);
+}
+
+function markSessionDeleted(data, sid) {
+  if (!data.deleted_sessions) data.deleted_sessions = {};
+  data.deleted_sessions[sid] = Date.now();
+  data._meta_updated_at = Date.now();
 }
 
 function hardReload() {
@@ -2446,12 +2486,13 @@ function deleteDay(iso) {
   const label = (session.day_type || 'day').charAt(0).toUpperCase() + (session.day_type || 'day').slice(1);
   const confirmDelete = () => {
     delete data.sessions[sid];
+    markSessionDeleted(data, sid);
     if (session.day_type === 'fitness' && data.fitness_test_days) {
       delete data.fitness_test_days[iso];
       data._meta_updated_at = Date.now();
     }
     save(data);
-    supabaseDelete(sid).then(() => syncNow(true));
+    syncNow(true);
     closeTypeSheet();
     renderCalendar();
   };
@@ -2499,9 +2540,11 @@ function reconcileSessionWithPlan(sessionId) {
   if (!planExercises.length) return;
   let changed = false;
   if (!session.exercises) session.exercises = [];
+  const dropped = session.dropped || [];
   for (const planEx of planExercises) {
     const existing = session.exercises.find(e => e.name === planEx.name);
     if (!existing) {
+      if (dropped.includes(planEx.name)) continue;
       const numSets = parseInt(planEx.sets, 10) || 3;
       const lastSession = getLastSession(session.day_type, session.variant);
       let prevWeight = '';
@@ -3128,7 +3171,8 @@ function deleteExercise(sessionId, exIdx) {
     const data2 = load();
     const session2 = data2.sessions[sessionId];
     if (!session2) return;
-    session2.exercises.splice(exIdx, 1);
+    const [removed] = session2.exercises.splice(exIdx, 1);
+    if (removed && !(session2.dropped || []).includes(removed.name)) session2.dropped = (session2.dropped || []).concat(removed.name);
     session2.updated_at = Date.now();
     save(data2);
     renderExercises(session2);
@@ -3202,9 +3246,12 @@ function confirmSwap(sid, exIdx, newName) {
   const planSets = ex.plan_sets;
   const planReps = ex.plan_reps;
   ex.name = newName;
-  ex.sets = [];
+  const numSets = parseInt(planSets, 10) || 3;
+  ex.sets = Array.from({ length: numSets }, () => ({ weight: '', reps: '', effort: '', adjustment: '', note: '', ts: null, prefilled: true }));
   ex.plan_sets = planSets;
   ex.plan_reps = planReps;
+  session.dropped = (session.dropped || []).filter(n => n !== newName);
+  if (!session.dropped.includes(oldName)) session.dropped.push(oldName);
   session.updated_at = Date.now();
   save(data);
   // Re-load after save so renderExercises sees the persisted state including new EXERCISE_INFO entries
