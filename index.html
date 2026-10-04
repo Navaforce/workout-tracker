@@ -100,7 +100,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.rest-day      { border-color: #38bdf8; background: rgba(56,189,248,0.08); }
 .cal-cell.injured       { border-color: var(--hard); }
 .cal-cell.fitness-day   { border-color: var(--legs); }
-.cal-cell.other-month   { opacity: 0.3; }
+.cal-cell.other-month   { opacity: 0.55; }
 .cal-cell .cal-date { font-size: 14px; font-weight: 700; line-height: 1; color: var(--text); }
 .cal-cell .cal-info { display: flex; flex-direction: column; align-items: center; gap: 3px; margin-top: 4px; width: 100%; }
 .cal-cell .cal-sets { font-size: 10px; font-weight: 700; color: var(--text); line-height: 1; text-align: center; }
@@ -2403,38 +2403,7 @@ function renderCalendar() {
   if (calTab === 'month') renderMonthView();
 }
 
-function renderMonthView() {
-  const data = load();
-  const today = todayISO();
-  const [ty, tm] = today.split('-').map(Number);
-
-  const year = calYear;
-  const month = calMonth;
-
-  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month+1, 0).getDate();
-  const daysInPrev = new Date(year, month, 0).getDate();
-
-  let html = `<div class="month-nav">
-    <button class="month-nav-btn" onclick="shiftMonth(-1)">‹</button>
-    <span class="month-title">${monthNames[month]} ${year}</span>
-    <button class="month-nav-btn" onclick="shiftMonth(1)">›</button>
-  </div>
-  <div class="month-grid">
-    <div class="dow-header">Su</div><div class="dow-header">Mo</div>
-    <div class="dow-header">Tu</div><div class="dow-header">We</div>
-    <div class="dow-header">Th</div><div class="dow-header">Fr</div>
-    <div class="dow-header">Sa</div>`;
-
-  // Previous month tail
-  for (let i = 0; i < firstDay; i++) {
-    const d = daysInPrev - firstDay + i + 1;
-    html += `<div class="cal-cell other-month"><span class="cal-date">${d}</span></div>`;
-  }
-
-  for (let d = 1; d <= daysInMonth; d++) {
-    const iso = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+function monthCellHtml(data, today, iso, d, otherMonth) {
     const isToday = iso === today;
     const session = findSessionForDate(data, iso);
     let dotHtml = '';
@@ -2445,7 +2414,7 @@ function renderMonthView() {
     const isComplete = session && session.completed;
     const isPartial = session && !session.completed && realCount > 0 && !isRest;
 
-    let cellClass = 'cal-cell';
+    let cellClass = 'cal-cell' + (otherMonth ? ' other-month' : '');
     if (session) cellClass += ` has-${esc(session.day_type)}`;
     if (isFitnessDay) cellClass += ' fitness-day';
     if (isToday) cellClass += ' today';
@@ -2496,21 +2465,54 @@ function renderMonthView() {
     const deleteIcon = (session && !isComplete)
       ? `<span class="cal-delete" onclick="event.stopPropagation();deleteDay('${iso}')" title="Delete">🗑</span>`
       : '';
-    html += `<div class="${cellClass}" data-iso="${iso}"
+    return `<div class="${cellClass}" data-iso="${iso}"
       onclick="calDayTapGuarded('${iso}')"
       ontouchstart="calCellHoldStart(event,'${iso}')"
       ontouchend="calCellHoldEnd(event)"
       ontouchmove="calCellHoldMove(event)"
       oncontextmenu="event.preventDefault();toggleInjury('${iso}')"
     ><span class="cal-date">${d}</span>${typeLabel}${infoHtml}${progressBar}${deleteIcon}</div>`;
+}
+
+function renderMonthView() {
+  const data = load();
+  const today = todayISO();
+  const [ty, tm] = today.split('-').map(Number);
+
+  const year = calYear;
+  const month = calMonth;
+
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const daysInPrev = new Date(year, month, 0).getDate();
+  const isoOf = (y, m, d) => `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+  const prevY = month === 0 ? year - 1 : year, prevM = month === 0 ? 11 : month - 1;
+  const nextY = month === 11 ? year + 1 : year, nextM = month === 11 ? 0 : month + 1;
+
+  let html = `<div class="month-nav">
+    <button class="month-nav-btn" onclick="shiftMonth(-1)">‹</button>
+    <span class="month-title">${monthNames[month]} ${year}</span>
+    <button class="month-nav-btn" onclick="shiftMonth(1)">›</button>
+  </div>
+  <div class="month-grid">
+    <div class="dow-header">Su</div><div class="dow-header">Mo</div>
+    <div class="dow-header">Tu</div><div class="dow-header">We</div>
+    <div class="dow-header">Th</div><div class="dow-header">Fr</div>
+    <div class="dow-header">Sa</div>`;
+
+  // Previous month tail
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrev - firstDay + i + 1;
+    html += monthCellHtml(data, today, isoOf(prevY, prevM, d), d, true);
   }
+
+  for (let d = 1; d <= daysInMonth; d++) html += monthCellHtml(data, today, isoOf(year, month, d), d, false);
 
   // Next month pad
   const total = firstDay + daysInMonth;
   const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
-  for (let i = 1; i <= remaining; i++) {
-    html += `<div class="cal-cell other-month"><span class="cal-date">${i}</span></div>`;
-  }
+  for (let i = 1; i <= remaining; i++) html += monthCellHtml(data, today, isoOf(nextY, nextM, i), i, true);
 
   html += '</div>';
   document.getElementById('month-view').innerHTML = html;

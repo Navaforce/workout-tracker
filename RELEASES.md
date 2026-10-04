@@ -6,6 +6,10 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Calendar edge days (2026-10-04)
+
+- Days from the previous/next month shown at the edges of a month now display their session (type, sets, dive info, status) and are tappable, same as in their own month.
+
 ## Unreleased — Review round 3: sync and sign-in behaviour (2026-10-04)
 
 - Syncs when the app returns to the foreground as well as when it's hidden.
