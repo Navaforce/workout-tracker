@@ -3626,6 +3626,24 @@ function markComplete() {
     return;
   }
 
+  const unlogged = countPlannedSetsInSession(session) - countRealSetsInSession(session);
+  if (unlogged > 0) {
+    const sid = currentSessionId;
+    showConfirmModal(
+      'Finish with unlogged sets?',
+      `${unlogged} of ${countPlannedSetsInSession(session)} planned sets have no reps logged. Mark the day complete anyway?`,
+      () => finalizeComplete(sid)
+    );
+    return;
+  }
+  finalizeComplete(currentSessionId);
+}
+
+function finalizeComplete(sessionId) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session || session.completed) return;
+
   session.completed = true;
   session.completed_at = Date.now();
   if (!session.date) session.date = todayISO();
@@ -3636,7 +3654,7 @@ function markComplete() {
   btn.textContent = '✓ Completed';
   btn.classList.add('completed');
 
-  const d = data.sessions[currentSessionId];
+  const d = data.sessions[sessionId];
   let dur = '';
   if (d.started_at && d.completed_at) {
     const mins = Math.round((d.completed_at - d.started_at) / 60000);
