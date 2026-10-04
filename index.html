@@ -2678,7 +2678,9 @@ function renderWorkout(sessionId) {
     renderApneaBlock(session);
   } else {
     renderExercises(session);
-    renderApneaBlock(session);
+    const liftWithoutApnea = (session.day_type === 'push' || session.day_type === 'pull') && !hasApneaHolds(session);
+    if (liftWithoutApnea) document.getElementById('apnea-container').innerHTML = '';
+    else renderApneaBlock(session);
   }
 
   // Complete button — hidden on rest days
