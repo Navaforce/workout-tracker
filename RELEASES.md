@@ -6,6 +6,13 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Review round 3: sync and sign-in behaviour (2026-10-04)
+
+- Syncs when the app returns to the foreground as well as when it's hidden.
+- Opening a session no longer counts as an edit when only the plan's sets/reps label changed (stale devices can't overwrite logged sets).
+- Sign-in box: "Later" button (snoozed 10 min), Enter submits, network errors shown, opens on 401 only.
+- Next Up opens today's existing unfinished session instead of creating a second one on the same date.
+
 ## Unreleased — Review round 3: data safety (2026-10-04)
 
 - Deleting or moving a day no longer bumps the meta timestamp (it could overwrite another device's fitness tests and injury days).
