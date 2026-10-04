@@ -133,26 +133,6 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .cal-cell.cal-drag-source { opacity: 0.35; }
 .cal-cell.cal-drag-target { border-color: var(--accent) !important; background: rgba(0,212,255,0.12); }
 
-/* Week strip */
-#week-view { }
-.week-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-.week-card {
-  flex: 1; min-width: 80px; background: var(--s1); border-radius: var(--r);
-  border: 1px solid var(--border); padding: 12px 8px; cursor: pointer;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  min-height: 90px; transition: border-color 0.15s;
-}
-.week-card.today-card { border-color: var(--accent); }
-.week-card.fitness-day { border-color: var(--legs); }
-.week-card .wc-dow { font-size: 11px; color: var(--text); font-weight: 600; }
-.week-card .wc-date { font-size: 20px; font-weight: 800; }
-.week-card .wc-badge {
-  font-size: 11px; font-weight: 800; padding: 2px 6px; border-radius: 4px;
-  background: rgba(255,255,255,0.08);
-}
-.week-strip-nav { display: flex; justify-content: space-between; margin-bottom: 12px; }
-.strip-nav-btn { min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--text); border-radius: var(--rs); background: var(--s1); border: 1px solid var(--border); }
-
 /* Type colors */
 .type-push { color: var(--push); }
 .type-pull { color: var(--pull); }
@@ -686,12 +666,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
 <div id="cal-screen" class="screen active">
   <div class="cal-tabs">
     <button class="cal-tab active" onclick="switchCalTab('month')">Month</button>
-    <button class="cal-tab" onclick="switchCalTab('week')">Week</button>
     <button class="cal-tab" onclick="switchCalTab('nutrition')">Nutrition</button>
   </div>
   <div id="next-workout-banner" class="hidden"></div>
   <div id="month-view"></div>
-  <div id="week-view" style="display:none"></div>
   <div id="nutrition-view" style="display:none"></div>
 </div>
 
@@ -937,7 +915,6 @@ const STORAGE_KEY = 'wt_v2';
 let currentScreen = 'calendar';
 let calTab = 'month';
 let calYear, calMonth;
-let weekStripOffset = 0;
 // Apnea round targets by day type — shown as instructions above each round's fields
 const APNEA_TARGETS = {
   push: [
@@ -2280,10 +2257,9 @@ function showFitness(dateIso) {
 function switchCalTab(tab) {
   calTab = tab;
   document.querySelectorAll('.cal-tab').forEach((btn, i) => {
-    btn.classList.toggle('active', (i === 0 && tab === 'month') || (i === 1 && tab === 'week') || (i === 2 && tab === 'nutrition'));
+    btn.classList.toggle('active', (i === 0 && tab === 'month') || (i === 1 && tab === 'nutrition'));
   });
   document.getElementById('month-view').style.display = tab === 'month' ? '' : 'none';
-  document.getElementById('week-view').style.display = tab === 'week' ? '' : 'none';
   document.getElementById('nutrition-view').style.display = tab === 'nutrition' ? '' : 'none';
   if (tab === 'nutrition') { renderNutritionView(); return; }
   renderCalendar();
@@ -2292,7 +2268,6 @@ function switchCalTab(tab) {
 function renderCalendar() {
   renderNextWorkoutBanner();
   if (calTab === 'month') renderMonthView();
-  else renderWeekView();
 }
 
 function renderMonthView() {
@@ -2408,58 +2383,6 @@ function renderMonthView() {
   document.getElementById('month-view').innerHTML = html;
 }
 
-function renderWeekView() {
-  const data = load();
-  const today = todayISO();
-  const todayDate = new Date(today + 'T00:00:00');
-  const days = [];
-  for (let i = -3 + weekStripOffset; i <= 3 + weekStripOffset; i++) {
-    const d = new Date(todayDate);
-    d.setDate(d.getDate() + i);
-    const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    days.push({ iso, d });
-  }
-
-  const dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  let html = `<div class="week-strip-nav">
-    <button class="strip-nav-btn" onclick="shiftWeekStrip(-1)">‹</button>
-    <button class="strip-nav-btn" onclick="shiftWeekStrip(1)">›</button>
-  </div>
-  <div class="week-strip">`;
-
-  for (const { iso, d } of days) {
-    const isToday = iso === today;
-    const session = findSessionForDate(data, iso);
-    const isFitnessDay = (data.fitness_test_days || {})[iso];
-    let badgeHtml = '';
-    let dateColor = 'var(--text)';
-    let extraClass = '';
-    if (isFitnessDay) {
-      badgeHtml = `<span class="wc-badge" style="color:var(--legs)">Fitness</span>`;
-      dateColor = 'var(--legs)';
-      extraClass = ' fitness-day';
-    } else if (session) {
-      badgeHtml = `<span class="wc-badge type-${session.day_type}">${session.day_type === 'dive' ? 'Dive' : sessionTypeName(session)}</span>`;
-      if      (session.completed)                     dateColor = 'var(--easy)';
-      else if (session.day_type !== 'dive' && countRealSetsInSession(session) > 0) dateColor = 'var(--moderate)';
-      else if (session.day_type === 'dive' && session.dive_log?.dives) dateColor = 'var(--moderate)';
-      else {
-        const typeColors = { push:'var(--push)', pull:'var(--pull)', legs:'#ff6eb4', cardio:'var(--cardio)', rest:'#38bdf8', dive:'var(--dive)', yoga:'var(--yoga)', apnea:'var(--apnea)' };
-        dateColor = typeColors[session.day_type] || 'var(--text)';
-      }
-    }
-    html += `<div class="week-card${isToday ? ' today-card' : ''}${extraClass}" onclick="calDayTapGuarded('${iso}')">
-      <span class="wc-dow">${dows[d.getDay()]}</span>
-      <span class="wc-date" style="color:${dateColor}">${d.getDate()}</span>
-      ${badgeHtml}
-      ${session && session.completed ? '<span style="font-size:11px;color:var(--easy)">✓</span>' : ''}
-    </div>`;
-  }
-
-  html += '</div>';
-  document.getElementById('week-view').innerHTML = html;
-}
-
 function findSessionForDate(data, iso) {
   const matches = Object.values(data.sessions).filter(s => s.date === iso);
   if (matches.length === 0) return null;
@@ -2478,11 +2401,6 @@ function shiftMonth(delta) {
   if (calMonth < 0) { calMonth = 11; calYear--; }
   if (calMonth > 11) { calMonth = 0; calYear++; }
   renderMonthView();
-}
-
-function shiftWeekStrip(delta) {
-  weekStripOffset += delta;
-  renderWeekView();
 }
 
 function calDayTap(iso) {
