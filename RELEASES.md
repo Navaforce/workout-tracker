@@ -6,6 +6,10 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Cycle summary (2026-10-06)
+
+- Tap the fish icon in the calendar header to see the 7-day cycle (Lift A > Apnea > Yoga > Lift B > Rest > Apnea > Rest) with a one-line note per day; the next day in your cycle is highlighted. Tap anywhere else to close.
+
 ## Unreleased — Calendar edge days (2026-10-04)
 
 - Days from the previous/next month shown at the edges of a month now display their session (type, sets, dive info, status) and are tappable, same as in their own month.

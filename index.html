@@ -532,6 +532,20 @@ input:focus, textarea:focus { border-color: var(--accent); }
 }
 #login-modal.open { display: flex; }
 #login-modal input { width: 100%; height: 44px; margin-bottom: 10px; font-size: 16px; padding: 0 10px; border-radius: var(--rs); }
+#cycle-pop {
+  position: fixed; top: 60px; left: 12px; z-index: 450; display: none;
+  width: calc(100% - 24px); max-width: 340px; padding: 14px 16px;
+  background: var(--s1); border: 1px solid var(--border); border-radius: var(--r);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+}
+#cycle-pop.open { display: block; }
+#cycle-pop .cp-title { font-size: 15px; font-weight: 800; margin-bottom: 2px; }
+#cycle-pop .cp-sub { font-size: 12px; color: var(--text); margin-bottom: 10px; }
+#cycle-pop .cp-row { display: flex; gap: 10px; padding: 6px 8px; border-radius: var(--rs); font-size: 14px; color: var(--text); align-items: baseline; }
+#cycle-pop .cp-row.next { background: var(--s2); border: 1px solid var(--accent); }
+#cycle-pop .cp-n { font-weight: 800; color: var(--accent); min-width: 14px; }
+#cycle-pop .cp-name { font-weight: 700; min-width: 64px; }
+#cycle-pop .cp-note { font-size: 12px; }
 #confirm-modal {
   position: fixed; inset: 0; z-index: 400; display: none;
   align-items: center; justify-content: center; background: rgba(0,0,0,0.6);
@@ -613,7 +627,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
   <div id="header-left">
     <span id="app-name" style="display:flex;align-items:center;gap:8px">
       Spearo
-      <svg xmlns="http://www.w3.org/2000/svg" width="38" height="22" viewBox="0 0 120 70" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <svg onclick="toggleCyclePop(event)" style="cursor:pointer" xmlns="http://www.w3.org/2000/svg" width="38" height="22" viewBox="0 0 120 70" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <!-- body -->
         <path d="M28 35 C32 18 55 10 75 14 C90 17 105 25 110 35 C105 45 90 53 75 56 C55 60 32 52 28 35 Z"/>
         <!-- tail fin -->
@@ -824,6 +838,9 @@ input:focus, textarea:focus { border-color: var(--accent); }
     </div>
   </div>
 </div>
+
+<!-- ── Cycle summary popover ── -->
+<div id="cycle-pop" onclick="event.stopPropagation()"></div>
 
 <!-- ── Login modal ── -->
 <div id="login-modal">
@@ -4792,6 +4809,10 @@ const YOGA_POSES = [
 ];
 
 function getNextWorkoutType() {
+  return WEEKLY_SEQUENCE[getNextSequencePos()];
+}
+
+function getNextSequencePos() {
   const data = load();
   const today = todayISO();
   const cutoffISO = addDaysISO(today, -14);
@@ -4799,7 +4820,7 @@ function getNextWorkoutType() {
     .filter(s => s.date && s.date >= cutoffISO && s.date <= today && WEEKLY_SEQUENCE.includes(s.day_type))
     .sort((a, b) => b.date.localeCompare(a.date) || (b.updated_at || 0) - (a.updated_at || 0))
     .map(s => s.day_type);
-  if (hist.length === 0) return WEEKLY_SEQUENCE[0];
+  if (hist.length === 0) return 0;
 
   // The sequence repeats 'apnea' and 'rest', so the last type alone is ambiguous.
   // Pick the position whose preceding steps best match recent history; an unlogged 'rest' may be skipped.
@@ -4817,7 +4838,7 @@ function getNextWorkoutType() {
     }
     if (score > bestScore) { bestScore = score; bestPos = p; }
   }
-  return WEEKLY_SEQUENCE[mod(bestPos + 1)];
+  return mod(bestPos + 1);
 }
 
 function renderNextWorkoutBanner() {
@@ -4903,6 +4924,29 @@ function toggleYogaPose(sessionId, poseIdx) {
 // ════════════════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════════════════
+const CYCLE_NOTES = {
+  push: 'Upper push, legs light — no gym? Hotel A',
+  pull: 'Pull + legs/glutes — no gym? Hotel B',
+  apnea: 'CO₂ / dynamic / O₂ tables, rotating',
+  yoga: '40 min mobility + breathwork',
+  rest: 'Full rest',
+};
+
+function toggleCyclePop(e) {
+  if (e) e.stopPropagation();
+  const el = document.getElementById('cycle-pop');
+  if (el.classList.contains('open')) { el.classList.remove('open'); return; }
+  const nextPos = getNextSequencePos();
+  const rows = WEEKLY_SEQUENCE.map((t, i) => {
+    const isNext = i === nextPos;
+    return `<div class="cp-row${isNext ? ' next' : ''}"><span class="cp-n">${i + 1}</span><span class="cp-name">${esc(typeName(t))}</span><span class="cp-note">${esc(CYCLE_NOTES[t] || '')}</span></div>`;
+  }).join('');
+  el.innerHTML = `<div class="cp-title">${WEEKLY_SEQUENCE.length}-day cycle</div><div class="cp-sub">${WEEKLY_SEQUENCE.map(t => esc(typeName(t))).join(' › ')} › repeat</div>${rows}`;
+  el.classList.add('open');
+}
+
+document.addEventListener('click', () => document.getElementById('cycle-pop').classList.remove('open'));
+
 document.addEventListener('visibilitychange', () => {
   syncNow(true);
 });
