@@ -167,6 +167,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
 }
 .tsb-hotel-a { background: var(--s2); border: 2px solid var(--push); color: var(--text); }
 .tsb-hotel-b { background: var(--s2); border: 2px solid var(--pull); color: var(--text); }
+.tsb-predive-a { background: var(--s2); border: 2px solid var(--push); color: var(--text); }
+.tsb-predive-b { background: var(--s2); border: 2px solid var(--pull); color: var(--text); }
 .tsb-push { background: var(--push); }
 .tsb-pull { background: var(--pull); }
 .tsb-legs { background: var(--legs); }
@@ -749,6 +751,8 @@ input:focus, textarea:focus { border-color: var(--accent); }
     <button class="type-sheet-btn tsb-dive" onclick="pickType('dive')">Dive</button>
     <button class="type-sheet-btn tsb-hotel-a" onclick="pickType('push','hotel')">Hotel A — No Gym</button>
     <button class="type-sheet-btn tsb-hotel-b" onclick="pickType('pull','hotel')">Hotel B — No Gym</button>
+    <button class="type-sheet-btn tsb-predive-a" onclick="pickType('push','predive')">Pre-Dive Lift A</button>
+    <button class="type-sheet-btn tsb-predive-b" onclick="pickType('pull','predive')">Pre-Dive Lift B</button>
     <button class="type-sheet-btn tsb-rest" onclick="pickType('rest')">Rest</button>
     <button class="type-sheet-btn tsb-fitness" onclick="pickType('fitness')">Fitness Test</button>
     <button id="type-sheet-remove" class="type-sheet-btn" style="display:none;background:var(--s2);border:1px solid var(--hard);color:var(--hard)" onclick="deleteRestDay(sheetDate)">Delete This Day</button>
@@ -1138,6 +1142,46 @@ const EXERCISE_INFO = {
     hold: 'No hold — machine accessory; keep the session moving.',
     video: 'https://www.youtube.com/results?search_query=seated+calf+raise+machine+form',
   },
+  'Incline Dumbbell Press': {
+    rest: '2:00', cues: 'Bench at 30°. Dumbbells at chest level, elbows ~45° from the torso. Press up and slightly together, lower under control to a deep but comfortable stretch. Shoulder blades pinned back and down. Feet flat, no arching off the bench.',
+    hold: 'EXHALE hold after the set. Start 30 sec into rest. End 30 sec before next set.',
+    video: 'https://www.youtube.com/results?search_query=incline+dumbbell+press+form',
+  },
+  'Cable Lateral Raise': {
+    rest: '1:00', cues: 'Cable low, handle in the far hand. Stand side-on, slight lean away. Raise the arm out to shoulder height with a soft elbow, thumb slightly down. Lower slowly — no swinging, no shrugging.',
+    hold: 'No hold — light isolation; keep the session moving.',
+    video: 'https://www.youtube.com/results?search_query=cable+lateral+raise+form',
+  },
+  'Dumbbell Lateral Raise': {
+    rest: '1:00', cues: 'Light dumbbells, slight forward lean from the hips. Raise out to shoulder height with a soft elbow, lead with the elbows. Pause 1 sec at the top, lower over 3 sec. No swinging, no shrugging.',
+    hold: 'No hold — light isolation; keep the session moving.',
+    video: 'https://www.youtube.com/results?search_query=dumbbell+lateral+raise+form',
+  },
+  'Overhead Cable Triceps Extension': {
+    rest: '1:30', cues: 'Rope at the cable, face away, split stance. Elbows point forward and stay close to the head. Extend fully, squeeze the triceps, return to a deep stretch. Ribs down — do not arch the lower back.',
+    hold: 'No hold — keep the session moving.',
+    video: 'https://www.youtube.com/results?search_query=overhead+cable+triceps+extension+form',
+  },
+  'Cable Triceps Pushdown': {
+    rest: '1:30', cues: 'Cable high, rope or bar. Elbows pinned to the ribs. Press down to full extension, squeeze, return until forearms are just past parallel. Upper arms do not move; no leaning over the stack.',
+    hold: 'No hold — keep the session moving.',
+    video: 'https://www.youtube.com/results?search_query=cable+triceps+pushdown+form',
+  },
+  'Cable Crossover': {
+    rest: '1:30', cues: 'Cables set high, one foot forward. Slight forward lean, soft elbows. Sweep the hands down and together in an arc, squeeze the chest for 1 sec, return to a controlled stretch. Keep the elbow angle fixed.',
+    hold: 'EXHALE hold after the set. Start 30 sec into rest. End 30 sec before next set.',
+    video: 'https://www.youtube.com/results?search_query=cable+crossover+form',
+  },
+  'Dead Bug': {
+    rest: '1:00', cues: 'On your back, arms up, hips and knees at 90°. Press the lower back into the floor. Lower the opposite arm and leg slowly toward the floor without the back lifting, return, switch sides. Exhale as you extend.',
+    hold: 'No hold — core stability work; breathe steadily.',
+    video: 'https://www.youtube.com/results?search_query=dead+bug+exercise+form',
+  },
+  'Dumbbell Hammer Curl': {
+    rest: '1:00', cues: 'Neutral grip, elbows pinned to the sides. Curl to the shoulder, squeeze, lower over 3 sec. Stand tall — no swinging or leaning back.',
+    hold: 'No hold — light accessory; keep the session moving.',
+    video: 'https://www.youtube.com/results?search_query=dumbbell+hammer+curl+form',
+  },
   'Face Pulls': {
     rest: '1:00', cues: 'Cable at upper-chest to face height, rope attachment. Pull the rope toward your face, splitting the ends apart beside your ears, elbows high. Squeeze the rear delts and upper back for 1 sec, return slowly. Light weight, strict form — no leaning back. Counterbalances all the pressing and keeps the shoulders healthy.',
     hold: 'No hold — light accessory; keep the session moving.',
@@ -1444,8 +1488,37 @@ const HOTEL_PLAN = {
   ] },
 };
 
+// Lift A / Lift B swapped to upper-body-only, same set count (19), for the day before a dive. Pure constant like HOTEL_PLAN.
+const PREDIVE_PLAN = {
+  push: { exercises: [
+    { name: 'Floor Press', sets: '3', reps: '10–12' },
+    { name: 'Landmine Press', sets: '3', reps: '10–12' },
+    { name: 'Incline Dumbbell Press', sets: '3', reps: '10–12' },
+    { name: 'Cable Lateral Raise', sets: '3', reps: '12–15' },
+    { name: 'Overhead Cable Triceps Extension', sets: '3', reps: '12–15' },
+    { name: 'Face Pulls', sets: '2', reps: '15–20' },
+    { name: 'Hollow Body Hold', sets: '2', reps: '20–30s' },
+  ] },
+  pull: { exercises: [
+    { name: 'Cable Chest Press', sets: '3', reps: '10–12' },
+    { name: 'Cable Crossover', sets: '3', reps: '12–15' },
+    { name: 'Dumbbell Lateral Raise', sets: '3', reps: '12–15' },
+    { name: 'Cable Triceps Pushdown', sets: '3', reps: '12–15' },
+    { name: 'Dead Bug', sets: '2', reps: '10 each side' },
+    { name: 'Pallof Press', sets: '2', reps: '12' },
+    { name: 'Dumbbell Hammer Curl', sets: '3', reps: '10–12' },
+  ] },
+};
+
+const VARIANT_PLANS = { hotel: HOTEL_PLAN, predive: PREDIVE_PLAN };
+
+function getVariantPlanDay(variant, type) {
+  const plan = VARIANT_PLANS[variant];
+  return plan ? plan[type] || null : null;
+}
+
 function getSessionPlanDay(session) {
-  if (session.variant === 'hotel') return HOTEL_PLAN[session.day_type] || null;
+  if (VARIANT_PLANS[session.variant]) return getVariantPlanDay(session.variant, session.day_type);
   return getPlanDay(session.day_type, getCurrentWeekNumber());
 }
 
@@ -1475,6 +1548,32 @@ const WARMUP_INFO = {
       '8 prone Y-raises on the floor — wake up the upper back.',
     ],
     protocol: 'EXHALE holds after push and leg exercises; INHALE hold after the row. Start 30 sec into rest. End 30 sec before next set.',
+  },
+  predive_push: {
+    title: 'Pre-Dive Lift A Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min easy echo bike Zone 1 — nasal breathing only.',
+      '10 shoulder circles forward + 10 backward — open the rotator cuff.',
+      '10 slow thoracic extensions over foam roller or bench edge.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release.',
+      '10 band pull-aparts or face pulls with light resistance.',
+      '2 × 10 push-ups at 50% effort to prime the pressing pattern.',
+    ],
+    protocol: 'Dive tomorrow — keep every set 1–2 reps short of failure. EXHALE holds after press exercises. Start 30 sec into rest. End 30 sec before next set.',
+  },
+  predive_pull: {
+    title: 'Pre-Dive Lift B Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min easy echo bike Zone 1 — nasal breathing only.',
+      '10 shoulder circles forward + 10 backward.',
+      '10 slow thoracic extensions over foam roller or bench edge.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release.',
+      '10 band pull-aparts with light resistance.',
+      '8 dead bugs, slow — brace the trunk without loading the spine.',
+    ],
+    protocol: 'Dive tomorrow — keep every set 1–2 reps short of failure. EXHALE holds after press and fly exercises. Start 30 sec into rest. End 30 sec before next set.',
   },
   push: {
     title: 'Push Day Warm-Up',
@@ -1586,7 +1685,7 @@ function showWarmup() {
   const data = load();
   const session = data.sessions[currentSessionId];
   if (!session) return;
-  const info = WARMUP_INFO[session.variant === 'hotel' ? 'hotel_' + session.day_type : session.day_type];
+  const info = WARMUP_INFO[session.variant ? session.variant + '_' + session.day_type : session.day_type];
   if (!info) return;
   const modal = document.getElementById('warmup-modal');
   document.getElementById('warmup-title').textContent = info.title;
@@ -1828,17 +1927,23 @@ function nextDayISO(iso) {
   return addDaysISO(iso, 1);
 }
 
-const DIVE_EVE_LEG_LIFTS = ['Goblet Squat', 'Seated Leg Curl', 'Box Step-Up', 'Hip Thrust', 'Cable Pull-Through', 'Seated Calf Raise',
-  'Rear-Foot-Elevated Split Squat', 'Bridge Walk-Out', 'Single-Leg Hip Thrust (Bed)', 'Tempo Reverse Lunge', 'Wall Sit', 'Single-Leg Calf Raise'];
+function hasDiveOn(iso) {
+  return Object.values(load().sessions).some(s => s.day_type === 'dive' && s.date === iso);
+}
+
+// Lifts on the eve of a dive swap to the upper-body Pre-Dive variant.
+function getNextWorkoutVariant(type, iso) {
+  if (type !== 'push' && type !== 'pull') return '';
+  return hasDiveOn(nextDayISO(iso)) ? 'predive' : '';
+}
 
 function diveEveNotice(session) {
   if (session.day_type !== 'push' && session.day_type !== 'pull') return '';
+  if (session.variant) return '';
   const tomorrow = nextDayISO(session.date || todayISO());
-  const diveTomorrow = Object.values(load().sessions).some(s => s.day_type === 'dive' && s.date === tomorrow);
+  const diveTomorrow = hasDiveOn(tomorrow);
   if (!diveTomorrow) return '';
-  const msg = session.day_type === 'pull'
-    ? 'Dive tomorrow — skip Lift B (pull and leg work) and rest instead.'
-    : 'Dive tomorrow — do the upper-body lifts only. Skip ' + DIVE_EVE_LEG_LIFTS.filter(n => (session.exercises || []).some(e => e.name === n)).join(', ') + '.';
+  const msg = 'Dive tomorrow — this day should be Pre-Dive ' + typeName(session.day_type) + ' (upper-body only, same volume). Delete this session from the calendar, then reassign the day as Pre-Dive ' + typeName(session.day_type) + '.';
   return '<div class="ex-card" style="padding:12px 14px;font-size:14px;line-height:1.5;color:var(--text);border:1px solid var(--moderate)">' + esc(msg) + '</div>';
 }
 
@@ -1854,9 +1959,14 @@ function typeColor(type) {
   return map[type] || 'var(--muted)';
 }
 
+function variantTypeName(type, variant) {
+  if (variant === 'hotel') return type === 'push' ? 'Hotel A' : 'Hotel B';
+  if (variant === 'predive') return 'Pre-Dive ' + typeName(type);
+  return typeName(type);
+}
+
 function sessionTypeName(session) {
-  if (session.variant === 'hotel') return session.day_type === 'push' ? 'Hotel A' : 'Hotel B';
-  return typeName(session.day_type);
+  return variantTypeName(session.day_type, session.variant);
 }
 
 function typeName(type) {
@@ -2304,7 +2414,7 @@ function setSyncStatus(msg) {
 // ════════════════════════════════════════════════════════════════
 function getOrCreateSession(date, type, variant) {
   const data = load();
-  const baseId = getSessionId(USER_ID, date, type) + (variant === 'hotel' ? '_hotel' : '');
+  const baseId = getSessionId(USER_ID, date, type) + (variant ? '_' + variant : '');
 
   // Check for existing session on this date+type (may have suffix)
   const matching = Object.keys(data.sessions).filter(sid => {
@@ -2315,7 +2425,7 @@ function getOrCreateSession(date, type, variant) {
 
   // Create new
   const now = Date.now();
-  const planDay = variant === 'hotel' ? HOTEL_PLAN[type] : getPlanDay(type, getCurrentWeekNumber());
+  const planDay = VARIANT_PLANS[variant] ? getVariantPlanDay(variant, type) : getPlanDay(type, getCurrentWeekNumber());
   const session = {
     session_id: baseId,
     user_id: USER_ID,
@@ -2329,7 +2439,7 @@ function getOrCreateSession(date, type, variant) {
     exercises: [],
     apnea: {},
   };
-  if (variant === 'hotel') session.variant = 'hotel';
+  if (VARIANT_PLANS[variant]) session.variant = variant;
 
   if (type !== 'rest' && type !== 'cardio' && type !== 'dive') {
     session.exercises = prefillExercises(session, planDay);
@@ -4820,25 +4930,23 @@ function getNextSequencePos() {
     .filter(s => s.date && s.date >= cutoffISO && s.date <= today && WEEKLY_SEQUENCE.includes(s.day_type))
     .sort((a, b) => b.date.localeCompare(a.date) || (b.updated_at || 0) - (a.updated_at || 0))
     .map(s => s.day_type);
-  if (hist.length === 0) return 0;
+  const last = hist.findIndex(t => t !== 'rest');
+  if (last === -1) return 0;
 
-  // The sequence repeats 'apnea' and 'rest', so the last type alone is ambiguous.
-  // Pick the position whose preceding steps best match recent history; an unlogged 'rest' may be skipped.
+  // Anchor on the last non-rest session; a rest logged for a missed workout must not advance the cycle.
+  // 'apnea' occurs twice, so tell its slots apart by the previous non-rest session (pull precedes the second).
   const n = WEEKLY_SEQUENCE.length;
-  const mod = x => ((x % n) + n) % n;
-  let bestPos = -1, bestScore = -1;
-  for (let p = 0; p < n; p++) {
-    if (WEEKLY_SEQUENCE[p] !== hist[0]) continue;
-    let score = 0, e = p - 1, h = 1;
-    for (let step = 0; step < n && h < hist.length; step++) {
-      const exp = WEEKLY_SEQUENCE[mod(e)];
-      if (hist[h] === exp) { score++; h++; e--; }
-      else if (exp === 'rest') { e--; }
-      else break;
-    }
-    if (score > bestScore) { bestScore = score; bestPos = p; }
+  let p = WEEKLY_SEQUENCE.indexOf(hist[last]);
+  if (hist[last] === 'apnea') {
+    const prev = hist.slice(last + 1).find(t => t !== 'rest');
+    p = prev === 'pull' ? 5 : 1;
   }
-  return mod(bestPos + 1);
+  // Each rest logged since then only consumes a slot if the cycle was actually due a rest.
+  let q = (p + 1) % n;
+  for (let r = 0; r < last; r++) {
+    if (WEEKLY_SEQUENCE[q] === 'rest') q = (q + 1) % n;
+  }
+  return q;
 }
 
 function renderNextWorkoutBanner() {
@@ -4846,14 +4954,18 @@ function renderNextWorkoutBanner() {
   if (!el) return;
   if (calTab === 'nutrition') { el.classList.add('hidden'); return; }
   const nextType = getNextWorkoutType();
-  const name = typeName(nextType);
+  const name = variantTypeName(nextType, getNextWorkoutVariant(nextType, todayISO()));
   const color = typeColor(nextType);
   el.classList.remove('hidden');
   let sub = '';
+  const todays = findSessionForDate(load(), todayISO());
+  if (todays && !todays.variant && getNextWorkoutVariant(todays.day_type, todays.date)) {
+    sub = '<div class="nwb-label" style="margin-top:2px;color:var(--moderate)">Today should be ' + esc(variantTypeName(todays.day_type, 'predive')) + ' — delete the current session and reassign</div>';
+  }
   if (nextType === 'apnea') {
     const today = todayISO();
     const existing = Object.values(load().sessions).find(s => s.date === today && s.day_type === 'apnea');
-    sub = '<div class="nwb-label" style="margin-top:2px">' + esc(APNEA_MODE_LABELS[existing ? getApneaMode(existing) : suggestApneaMode(today)]) + '</div>';
+    sub += '<div class="nwb-label" style="margin-top:2px">' + esc(APNEA_MODE_LABELS[existing ? getApneaMode(existing) : suggestApneaMode(today)]) + '</div>';
   }
   el.innerHTML = '<div><div class="nwb-label">Next Up</div><div class="nwb-type" style="color:' + color + '">' + esc(name) + '</div>' + sub + '</div><button class="nwb-start-btn" onclick="openNextWorkout()">Start →</button>';
 }
@@ -4868,7 +4980,8 @@ function openNextWorkout() {
     else openWorkout(todays.session_id);
     return;
   }
-  const sessionId = getOrCreateSession(iso, type);
+  if (todays && todays.day_type === type) { openWorkout(todays.session_id); return; }
+  const sessionId = getOrCreateSession(iso, type, getNextWorkoutVariant(type, iso));
   if (type === 'rest') { renderCalendar(); return; }
   openWorkout(sessionId);
 }
