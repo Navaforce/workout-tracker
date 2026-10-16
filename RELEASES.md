@@ -6,6 +6,12 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Pre-Dive Lift A/B (2026-10-16)
+
+- New upper-body-only Pre-Dive Lift A and B (same 19 sets as the regular lifts, no leg, hinge, or pull work). Pick from the calendar day sheet.
+- When a dive is logged for tomorrow, Next Up offers the Pre-Dive version of the next Lift A or B.
+- If today already has a regular Lift A/B and a dive is tomorrow, the Next Up banner and the workout screen say today should be the Pre-Dive version (delete the session, then reassign).
+
 ## Unreleased — Cycle summary (2026-10-06)
 
 - Tap the fish icon in the calendar header to see the 7-day cycle (Lift A > Apnea > Yoga > Lift B > Rest > Apnea > Rest) with a one-line note per day; the next day in your cycle is highlighted. Tap anywhere else to close.
