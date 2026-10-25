@@ -11,7 +11,7 @@ To view what's in a release: `git show <tag>:index.html`
 - Cycle is now Lift A / Yoga / Lift B / Apnea / Lift C / Apnea + Yoga / Rest, 15 sets per lift (45/week). New Lift C day type and Apnea + Yoga combined session (yoga renders under the apnea block).
 - Pre-Dive variants now cover Lift A, B and C (15 upper-body sets each).
 - A dive counts as apnea in the cycle: a Saturday dive makes Sunday rest, a Sunday dive makes Monday a lift. A dive on a lift day is left for you to decide.
-- Hotel C (no-gym Lift C) added; Pre-Dive B swaps Hammer Curl for Spider Curl.
+- Hotel C (no-gym Lift C) added; Pre-Dive B swaps Hammer Curl for Spider Curl; Pre-Dive C swaps Dead Bug for Plank Body Saw.
 - New exercise cues: Single-Arm DB Row, Lying Hamstring Curl, Hanging Knee Raise.
 
 ## Unreleased — Pre-Dive Lift A/B (2026-10-16)
