@@ -25,6 +25,7 @@
   --dive: #0077b6;
   --yoga: #a855f7;
   --apnea: #0ea5e9;
+  --liftc: #a3e635;
   --easy: #4caf50;
   --moderate: #ff9800;
   --hard: #f44336;
@@ -110,6 +111,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 /* Date color follows workout type label */
 .cal-cell.has-push .cal-date    { color: var(--push); }
 .cal-cell.has-pull .cal-date    { color: var(--pull); }
+.cal-cell.has-lift_c .cal-date  { color: var(--liftc); }
 .cal-cell.has-legs .cal-date    { color: #ff6eb4; }
 .cal-cell.has-cardio .cal-date  { color: var(--cardio); }
 .cal-cell.has-dive .cal-date    { color: var(--dive); }
@@ -122,6 +124,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 }
 .type-text-push    { color: var(--push); }
 .type-text-pull    { color: var(--pull); }
+.type-text-lift_c  { color: var(--liftc); }
 .type-text-legs    { color: #ff6eb4; }
 .type-text-cardio  { color: var(--cardio); }
 .type-text-rest    { color: var(--rest); }
@@ -136,6 +139,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 /* Type colors */
 .type-push { color: var(--push); }
 .type-pull { color: var(--pull); }
+.type-lift_c { color: var(--liftc); }
 .type-legs { color: var(--legs); }
 .type-cardio { color: var(--cardio); }
 .type-rest { color: var(--rest); }
@@ -144,6 +148,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .type-apnea { color: var(--apnea); }
 .bg-push    { background: var(--push); }
 .bg-pull    { background: var(--pull); }
+.bg-lift_c  { background: var(--liftc); }
 .bg-legs    { background: var(--legs); }
 .bg-cardio  { background: var(--cardio); }
 .bg-rest    { background: var(--rest); }
@@ -167,10 +172,13 @@ input:focus, textarea:focus { border-color: var(--accent); }
 }
 .tsb-hotel-a { background: var(--s2); border: 2px solid var(--push); color: var(--text); }
 .tsb-hotel-b { background: var(--s2); border: 2px solid var(--pull); color: var(--text); }
+.tsb-hotel-c { background: var(--s2); border: 2px solid var(--liftc); color: var(--text); }
 .tsb-predive-a { background: var(--s2); border: 2px solid var(--push); color: var(--text); }
 .tsb-predive-b { background: var(--s2); border: 2px solid var(--pull); color: var(--text); }
 .tsb-push { background: var(--push); }
 .tsb-pull { background: var(--pull); }
+.tsb-lift-c { background: var(--liftc); color: #0a0a0a; }
+.tsb-predive-c { background: var(--s2); border: 2px solid var(--liftc); color: var(--text); }
 .tsb-legs { background: var(--legs); }
 .tsb-cardio { background: var(--cardio); }
 .tsb-rest    { background: var(--rest); color: var(--text); }
@@ -702,6 +710,7 @@ input:focus, textarea:focus { border-color: var(--accent); }
   </div>
   <div id="exercises-container"></div>
   <div id="apnea-container"></div>
+  <div id="yoga-container"></div>
 </div>
 <button id="complete-btn" onclick="markComplete()">Mark Complete</button>
 
@@ -746,13 +755,17 @@ input:focus, textarea:focus { border-color: var(--accent); }
   <div class="type-sheet-btns">
     <button class="type-sheet-btn tsb-push" onclick="pickType('push')">Lift A</button>
     <button class="type-sheet-btn tsb-pull" onclick="pickType('pull')">Lift B</button>
+    <button class="type-sheet-btn tsb-lift-c" onclick="pickType('lift_c')">Lift C</button>
     <button class="type-sheet-btn tsb-apnea" onclick="pickType('apnea')">Apnea</button>
+    <button class="type-sheet-btn tsb-apnea" onclick="pickType('apnea','',true)">Apnea + Yoga</button>
     <button class="type-sheet-btn tsb-yoga" onclick="pickType('yoga')">Yoga</button>
     <button class="type-sheet-btn tsb-dive" onclick="pickType('dive')">Dive</button>
     <button class="type-sheet-btn tsb-hotel-a" onclick="pickType('push','hotel')">Hotel A — No Gym</button>
     <button class="type-sheet-btn tsb-hotel-b" onclick="pickType('pull','hotel')">Hotel B — No Gym</button>
+    <button class="type-sheet-btn tsb-hotel-c" onclick="pickType('lift_c','hotel')">Hotel C — No Gym</button>
     <button class="type-sheet-btn tsb-predive-a" onclick="pickType('push','predive')">Pre-Dive Lift A</button>
     <button class="type-sheet-btn tsb-predive-b" onclick="pickType('pull','predive')">Pre-Dive Lift B</button>
+    <button class="type-sheet-btn tsb-predive-c" onclick="pickType('lift_c','predive')">Pre-Dive Lift C</button>
     <button class="type-sheet-btn tsb-rest" onclick="pickType('rest')">Rest</button>
     <button class="type-sheet-btn tsb-fitness" onclick="pickType('fitness')">Fitness Test</button>
     <button id="type-sheet-remove" class="type-sheet-btn" style="display:none;background:var(--s2);border:1px solid var(--hard);color:var(--hard)" onclick="deleteRestDay(sheetDate)">Delete This Day</button>
@@ -1172,6 +1185,21 @@ const EXERCISE_INFO = {
     hold: 'EXHALE hold after the set. Start 30 sec into rest. End 30 sec before next set.',
     video: 'https://www.youtube.com/results?search_query=cable+crossover+form',
   },
+  'Single-Arm DB Row': {
+    rest: '1:30', cues: 'One hand and the same-side knee on a bench, flat back, other foot on the floor. Row the dumbbell to the hip, elbow close to the body, squeeze the lat at the top, lower over 2–3 sec. Keep the torso still — no twisting.',
+    hold: 'INHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → full inhale → pinch nose → hold 40 sec → breathe → continue rest.',
+    video: 'https://www.youtube.com/results?search_query=single+arm+dumbbell+row+form',
+  },
+  'Lying Hamstring Curl': {
+    rest: '1:30', cues: 'Lie face down, pad just above the heels, hips pressed into the bench. Curl to the glutes, pause 1 sec, lower over 3 sec. Keep the hips down — no arching the low back.',
+    hold: 'EXHALE hold — 40 sec · After ALL sets\nStand → rest 30 sec → exhale fully → hold 40 sec → breathe → continue rest.',
+    video: 'https://www.youtube.com/results?search_query=lying+leg+curl+machine+form',
+  },
+  'Hanging Knee Raise': {
+    rest: '1:30', cues: 'Hang from a bar with a full grip, shoulders packed down. Curl the pelvis up and bring the knees to the chest with no swinging, lower over 3 sec. Exhale as you lift. Progress to straight-leg raises when 15 clean reps feel easy.',
+    hold: 'No hold — core work; breathe steadily and exhale on the lift.',
+    video: 'https://www.youtube.com/results?search_query=hanging+knee+raise+form',
+  },
   'Dead Bug': {
     rest: '1:00', cues: 'On your back, arms up, hips and knees at 90°. Press the lower back into the floor. Lower the opposite arm and leg slowly toward the floor without the back lifting, return, switch sides. Exhale as you extend.',
     hold: 'No hold — core stability work; breathe steadily.',
@@ -1466,7 +1494,7 @@ const EXERCISE_ALTERNATIVES = {
   'Hip Thrust':                  [['Single-Leg Hip Thrust','Unilateral — doubles glute demand, fixes asymmetry'],['Glute Bridge','Floor-based, no bench setup needed'],['Cable Pull-Through','Standing hip extension, great constant-tension finisher']],
 };
 
-// Equipment-free Lift A / Lift B. Pure constant: never written to the Supabase plan, so plan uploads can't touch it.
+// Equipment-free Lift A / B / C. Pure constant: never written to the Supabase plan, so plan uploads can't touch it.
 const HOTEL_PLAN = {
   push: { exercises: [
     { name: 'Feet-Elevated Push-Up', sets: '3', reps: '15–25', bw: true },
@@ -1486,27 +1514,41 @@ const HOTEL_PLAN = {
     { name: 'Wall Sit', sets: '2', reps: '45–60 sec' },
     { name: 'Side Plank', sets: '2', reps: '30–45 sec each side' },
   ] },
+  lift_c: { exercises: [
+    { name: 'Feet-Elevated Push-Up', sets: '3', reps: '15–25', bw: true },
+    { name: 'Backpack Row (Supported)', sets: '3', reps: '10–15 each side' },
+    { name: 'Rear-Foot-Elevated Split Squat', sets: '3', reps: '12–20 each leg', bw: true },
+    { name: 'Single-Leg Hip Thrust (Bed)', sets: '2', reps: '12–20 each leg', bw: true },
+    { name: 'Pike Push-Up', sets: '2', reps: '8–12', bw: true },
+    { name: 'Hollow Body Hold', sets: '2', reps: '20–30 sec' },
+  ] },
 };
 
-// Lift A / Lift B swapped to upper-body-only, same set count (19), for the day before a dive. Pure constant like HOTEL_PLAN.
+// Lifts swapped to upper-body-only, 15 sets like the regular lifts, for the day before a dive. Pure constant like HOTEL_PLAN.
 const PREDIVE_PLAN = {
   push: { exercises: [
     { name: 'Floor Press', sets: '3', reps: '10–12' },
     { name: 'Landmine Press', sets: '3', reps: '10–12' },
     { name: 'Incline Dumbbell Press', sets: '3', reps: '10–12' },
-    { name: 'Cable Lateral Raise', sets: '3', reps: '12–15' },
-    { name: 'Overhead Cable Triceps Extension', sets: '3', reps: '12–15' },
+    { name: 'Cable Lateral Raise', sets: '2', reps: '12–15' },
+    { name: 'Overhead Cable Triceps Extension', sets: '2', reps: '12–15' },
     { name: 'Face Pulls', sets: '2', reps: '15–20' },
-    { name: 'Hollow Body Hold', sets: '2', reps: '20–30s' },
   ] },
   pull: { exercises: [
     { name: 'Cable Chest Press', sets: '3', reps: '10–12' },
     { name: 'Cable Crossover', sets: '3', reps: '12–15' },
     { name: 'Dumbbell Lateral Raise', sets: '3', reps: '12–15' },
-    { name: 'Cable Triceps Pushdown', sets: '3', reps: '12–15' },
-    { name: 'Dead Bug', sets: '2', reps: '10 each side' },
+    { name: 'Cable Triceps Pushdown', sets: '2', reps: '12–15' },
+    { name: 'Spider Curl', sets: '2', reps: '10–12' },
     { name: 'Pallof Press', sets: '2', reps: '12' },
-    { name: 'Dumbbell Hammer Curl', sets: '3', reps: '10–12' },
+  ] },
+  lift_c: { exercises: [
+    { name: 'Landmine Press', sets: '3', reps: '10–12' },
+    { name: 'Cable Chest Press', sets: '3', reps: '10–12' },
+    { name: 'Overhead Cable Triceps Extension', sets: '3', reps: '12–15' },
+    { name: 'Cable Lateral Raise', sets: '2', reps: '12–15' },
+    { name: 'Face Pulls', sets: '2', reps: '15–20' },
+    { name: 'Dead Bug', sets: '2', reps: '10 each side' },
   ] },
 };
 
@@ -1536,6 +1578,19 @@ const WARMUP_INFO = {
     ],
     protocol: 'EXHALE holds after push and leg exercises; INHALE hold after the row. Start 30 sec into rest. End 30 sec before next set.',
   },
+  hotel_lift_c: {
+    title: 'Hotel C Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min marching in place or brisk hallway walk — nasal breathing only.',
+      '10 shoulder circles forward + 10 backward.',
+      '10 glute bridges — feel the glutes, not the lower back.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release.',
+      '10 bodyweight split squats per leg, slow — prime the knees and hips.',
+      '8 prone Y-raises on the floor — wake up the upper back.',
+    ],
+    protocol: 'EXHALE holds after push-up and leg exercises; INHALE hold after the row. Start 30 sec into rest. End 30 sec before next set.',
+  },
   hotel_pull: {
     title: 'Hotel B Warm-Up',
     duration: '5 min (0:00 – 5:00)',
@@ -1548,6 +1603,32 @@ const WARMUP_INFO = {
       '8 prone Y-raises on the floor — wake up the upper back.',
     ],
     protocol: 'EXHALE holds after push and leg exercises; INHALE hold after the row. Start 30 sec into rest. End 30 sec before next set.',
+  },
+  lift_c: {
+    title: 'Lift C Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min easy echo bike Zone 1 — nasal breathing only.',
+      '10 shoulder circles forward + 10 backward — open the rotator cuff.',
+      '10 slow thoracic extensions over foam roller or bench edge.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release.',
+      '10 scapular pull-ups or band pull-aparts — wake up the lats and mid-back.',
+      '10 bodyweight split squats per leg, slow — prime the knees and hips.',
+    ],
+    protocol: 'EXHALE holds after press and leg exercises; INHALE hold after the row. Start 30 sec into rest. End 30 sec before next set.',
+  },
+  predive_lift_c: {
+    title: 'Pre-Dive Lift C Warm-Up',
+    duration: '5 min (0:00 – 5:00)',
+    steps: [
+      '2 min easy echo bike Zone 1 — nasal breathing only.',
+      '10 shoulder circles forward + 10 backward.',
+      '10 slow thoracic extensions over foam roller or bench edge.',
+      '3 × Uddiyana Bandha: exhale fully, suck abdomen in and up, hold 10 sec, release.',
+      '10 band pull-aparts or face pulls with light resistance.',
+      '8 dead bugs, slow — brace the trunk without loading the spine.',
+    ],
+    protocol: 'Dive tomorrow — keep every set 1–2 reps short of failure. EXHALE holds after press exercises. Start 30 sec into rest. End 30 sec before next set.',
   },
   predive_push: {
     title: 'Pre-Dive Lift A Warm-Up',
@@ -1927,18 +2008,20 @@ function nextDayISO(iso) {
   return addDaysISO(iso, 1);
 }
 
+const LIFT_TYPES = ['push', 'pull', 'lift_c'];
+
 function hasDiveOn(iso) {
   return Object.values(load().sessions).some(s => s.day_type === 'dive' && s.date === iso);
 }
 
 // Lifts on the eve of a dive swap to the upper-body Pre-Dive variant.
 function getNextWorkoutVariant(type, iso) {
-  if (type !== 'push' && type !== 'pull') return '';
+  if (!LIFT_TYPES.includes(type)) return '';
   return hasDiveOn(nextDayISO(iso)) ? 'predive' : '';
 }
 
 function diveEveNotice(session) {
-  if (session.day_type !== 'push' && session.day_type !== 'pull') return '';
+  if (!LIFT_TYPES.includes(session.day_type)) return '';
   if (session.variant) return '';
   const tomorrow = nextDayISO(session.date || todayISO());
   const diveTomorrow = hasDiveOn(tomorrow);
@@ -1955,22 +2038,23 @@ function formatDateDisplay(isoDate) {
 }
 
 function typeColor(type) {
-  const map = { push: 'var(--push)', pull: 'var(--pull)', legs: 'var(--legs)', cardio: 'var(--cardio)', rest: 'var(--rest)', dive: 'var(--dive)', yoga: 'var(--yoga)', apnea: 'var(--apnea)' };
+  const map = { push: 'var(--push)', pull: 'var(--pull)', lift_c: 'var(--liftc)', apnea_yoga: 'var(--apnea)', legs: 'var(--legs)', cardio: 'var(--cardio)', rest: 'var(--rest)', dive: 'var(--dive)', yoga: 'var(--yoga)', apnea: 'var(--apnea)' };
   return map[type] || 'var(--muted)';
 }
 
 function variantTypeName(type, variant) {
-  if (variant === 'hotel') return type === 'push' ? 'Hotel A' : 'Hotel B';
+  if (variant === 'hotel') return { push: 'Hotel A', pull: 'Hotel B', lift_c: 'Hotel C' }[type] || 'Hotel';
   if (variant === 'predive') return 'Pre-Dive ' + typeName(type);
   return typeName(type);
 }
 
 function sessionTypeName(session) {
+  if (session.day_type === 'apnea' && session.with_yoga) return typeName('apnea_yoga');
   return variantTypeName(session.day_type, session.variant);
 }
 
 function typeName(type) {
-  const names = { push: 'Lift A', pull: 'Lift B', legs: 'Legs', cardio: 'Cardio', rest: 'Rest', dive: 'Dive', yoga: 'Yoga', apnea: 'Apnea', fitness: 'Fitness' };
+  const names = { push: 'Lift A', pull: 'Lift B', lift_c: 'Lift C', apnea_yoga: 'Apnea + Yoga', legs: 'Legs', cardio: 'Cardio', rest: 'Rest', dive: 'Dive', yoga: 'Yoga', apnea: 'Apnea', fitness: 'Fitness' };
   return names[type] || (type ? type.charAt(0).toUpperCase() + type.slice(1) : '');
 }
 
@@ -2728,7 +2812,7 @@ function deleteDay(iso) {
   }
 }
 
-function pickType(type, variant) {
+function pickType(type, variant, withYoga) {
   const iso = sheetDate;
   closeTypeSheet();
   if (!iso) return;
@@ -2743,6 +2827,7 @@ function pickType(type, variant) {
     return;
   }
   const sessionId = getOrCreateSession(iso, type, variant);
+  if (withYoga) markWithYoga(sessionId);
   if (type === 'rest') {
     renderCalendar();
     return;
@@ -2753,6 +2838,15 @@ function pickType(type, variant) {
 // ════════════════════════════════════════════════════════════════
 // WORKOUT SCREEN
 // ════════════════════════════════════════════════════════════════
+function markWithYoga(sessionId) {
+  const data = load();
+  const session = data.sessions[sessionId];
+  if (!session || session.with_yoga) return;
+  session.with_yoga = true;
+  session.updated_at = Date.now();
+  save(data);
+}
+
 function reconcileSessionWithPlan(sessionId) {
   const data = load();
   const session = data.sessions[sessionId];
@@ -2850,6 +2944,8 @@ function renderWorkout(sessionId) {
   if (notesEl.value) notesEl.classList.add('has-content');
   else notesEl.classList.remove('has-content');
 
+  document.getElementById('yoga-container').innerHTML = '';
+
   // Exercises + Apnea (skipped for dive)
   if (isDive) {
     document.getElementById('exercises-container').innerHTML = '';
@@ -2861,9 +2957,10 @@ function renderWorkout(sessionId) {
   } else if (session.day_type === 'apnea') {
     document.getElementById('exercises-container').innerHTML = '';
     renderApneaBlock(session);
+    if (session.with_yoga) renderYogaSession(session);
   } else {
     renderExercises(session);
-    const liftWithoutApnea = (session.day_type === 'push' || session.day_type === 'pull') && !hasApneaHolds(session);
+    const liftWithoutApnea = LIFT_TYPES.includes(session.day_type) && !hasApneaHolds(session);
     if (liftWithoutApnea) document.getElementById('apnea-container').innerHTML = '';
     else renderApneaBlock(session);
   }
@@ -4902,7 +4999,16 @@ function seedFitnessHistory() {
 // ════════════════════════════════════════════════════════════════
 // WEEKLY SEQUENCE & NEXT WORKOUT
 // ════════════════════════════════════════════════════════════════
-const WEEKLY_SEQUENCE = ['push', 'apnea', 'yoga', 'pull', 'rest', 'apnea', 'rest'];
+// 'apnea_yoga' is a slot, not a day type: it is an 'apnea' session with with_yoga set.
+const WEEKLY_SEQUENCE = ['push', 'yoga', 'pull', 'apnea', 'lift_c', 'apnea_yoga', 'rest'];
+
+function slotBaseType(slot) {
+  return slot === 'apnea_yoga' ? 'apnea' : slot;
+}
+
+function sessionSlot(s) {
+  return s.day_type === 'apnea' && s.with_yoga ? 'apnea_yoga' : s.day_type;
+}
 
 const YOGA_POSES = [
   { name: 'Cat-Cow (10 reps)', dur: '2 min', cues: 'On hands and knees. Inhale: arch back, drop belly, lift head (Cow). Exhale: round spine up, tuck chin, draw navel in (Cat). 10 slow cycles. Builds thoracic mobility and diaphragm awareness.', video: 'https://www.youtube.com/results?search_query=cat+cow+yoga+pose+tutorial' },
@@ -4926,27 +5032,25 @@ function getNextSequencePos() {
   const data = load();
   const today = todayISO();
   const cutoffISO = addDaysISO(today, -14);
-  const hist = Object.values(data.sessions)
-    .filter(s => s.date && s.date >= cutoffISO && s.date <= today && WEEKLY_SEQUENCE.includes(s.day_type))
-    .sort((a, b) => b.date.localeCompare(a.date) || (b.updated_at || 0) - (a.updated_at || 0))
-    .map(s => s.day_type);
-  const last = hist.findIndex(t => t !== 'rest');
-  if (last === -1) return 0;
-
-  // Anchor on the last non-rest session; a rest logged for a missed workout must not advance the cycle.
-  // 'apnea' occurs twice, so tell its slots apart by the previous non-rest session (pull precedes the second).
   const n = WEEKLY_SEQUENCE.length;
-  let p = WEEKLY_SEQUENCE.indexOf(hist[last]);
-  if (hist[last] === 'apnea') {
-    const prev = hist.slice(last + 1).find(t => t !== 'rest');
-    p = prev === 'pull' ? 5 : 1;
+  const hist = Object.values(data.sessions)
+    .filter(s => s.date && s.date >= cutoffISO && s.date <= today && (s.day_type === 'dive' || WEEKLY_SEQUENCE.includes(sessionSlot(s))))
+    .sort((a, b) => a.date.localeCompare(b.date) || (a.updated_at || 0) - (b.updated_at || 0));
+
+  // Replay oldest to newest. A rest only consumes a slot if the cycle was due a rest (a rest logged for a
+  // missed workout must not advance it); a dive counts as apnea, so it fills any non-lift slot, and on a
+  // lift slot it is ignored (the user decides).
+  let q = null;
+  for (const s of hist) {
+    if (s.day_type === 'rest') {
+      if (q !== null && WEEKLY_SEQUENCE[q] === 'rest') q = (q + 1) % n;
+    } else if (s.day_type === 'dive') {
+      if (q !== null && !LIFT_TYPES.includes(WEEKLY_SEQUENCE[q])) q = (q + 1) % n;
+    } else {
+      q = (WEEKLY_SEQUENCE.indexOf(sessionSlot(s)) + 1) % n;
+    }
   }
-  // Each rest logged since then only consumes a slot if the cycle was actually due a rest.
-  let q = (p + 1) % n;
-  for (let r = 0; r < last; r++) {
-    if (WEEKLY_SEQUENCE[q] === 'rest') q = (q + 1) % n;
-  }
-  return q;
+  return q === null ? 0 : q;
 }
 
 function renderNextWorkoutBanner() {
@@ -4962,7 +5066,7 @@ function renderNextWorkoutBanner() {
   if (todays && !todays.variant && getNextWorkoutVariant(todays.day_type, todays.date)) {
     sub = '<div class="nwb-label" style="margin-top:2px;color:var(--moderate)">Today should be ' + esc(variantTypeName(todays.day_type, 'predive')) + ' — delete the current session and reassign</div>';
   }
-  if (nextType === 'apnea') {
+  if (slotBaseType(nextType) === 'apnea') {
     const today = todayISO();
     const existing = Object.values(load().sessions).find(s => s.date === today && s.day_type === 'apnea');
     sub += '<div class="nwb-label" style="margin-top:2px">' + esc(APNEA_MODE_LABELS[existing ? getApneaMode(existing) : suggestApneaMode(today)]) + '</div>';
@@ -4971,7 +5075,8 @@ function renderNextWorkoutBanner() {
 }
 
 function openNextWorkout() {
-  const type = getNextWorkoutType();
+  const slot = getNextWorkoutType();
+  const type = slotBaseType(slot);
   const iso = todayISO();
   if (type === 'fitness') { showFitness(iso); return; }
   const todays = findSessionForDate(load(), iso);
@@ -4982,6 +5087,7 @@ function openNextWorkout() {
   }
   if (todays && todays.day_type === type) { openWorkout(todays.session_id); return; }
   const sessionId = getOrCreateSession(iso, type, getNextWorkoutVariant(type, iso));
+  if (slot === 'apnea_yoga') markWithYoga(sessionId);
   if (type === 'rest') { renderCalendar(); return; }
   openWorkout(sessionId);
 }
@@ -4989,11 +5095,11 @@ function openNextWorkout() {
 function renderNutritionView() {
   const el = document.getElementById('nutrition-view');
   if (!el) return;
-  el.innerHTML = '<div class="nutr-section"><h3>Daily Targets</h3><div class="nutr-macro-grid"><div class="nutr-macro-card"><div class="nutr-macro-val">2,800</div><div class="nutr-macro-label">kcal/day</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">~160g</div><div class="nutr-macro-label">Protein</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">11AM–8PM</div><div class="nutr-macro-label">Eating window</div></div></div><div class="nutr-note">IF 9-hour window. Moderate carb, high protein — 30–40g per meal, 4 meals. Primary carb: rolled oats + white rice. EVOO daily — do not skip (LDL protection).</div></div><div class="nutr-section"><h3>Meals</h3><div class="nutr-meal"><div class="nutr-meal-name">Meal 1 — 11:00 AM</div><div class="nutr-meal-time">~650 kcal</div><div class="nutr-food-list">Rolled oats ¾ cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nNOW Whey Isolate 1 scoop\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 2 — 1:30 PM</div><div class="nutr-meal-time">~735 kcal</div><div class="nutr-food-list">Rolled oats 1 cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nNOW Whey Isolate 1 scoop\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 3 — 4:00 PM (pre-workout)</div><div class="nutr-meal-time">~503 kcal</div><div class="nutr-food-list">Liquid egg whites 8 oz\nPepper Jack cheese 1 oz\nEVOO 1 tbsp\nMorningstar Sausage Patties 2 patties</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 4 — 7:30–8:00 PM (post-workout)</div><div class="nutr-meal-time">~925 kcal</div><div class="nutr-food-list">Daring Cajun Pieces 9 oz\nPepper Jack cheese ½ oz\nWhite rice 1 cup cooked\nRatio Protein Yogurt Strawberry 1 container\nFrozen strawberries 1 oz\nEVOO 1 tbsp</div></div></div><div class="nutr-section"><h3>Pre-Dive Rules</h3><div class="nutr-food-list" style="line-height:2">No caffeine within 3 hrs of water entry\nPre-dive meal: oatmeal + honey 1.5–2 hrs before entry\nNo protein or high-fat foods on dive day\nElectrolyte drink: ¼ tsp Morton Salt + ⅛ tsp No Salt + lemon in 20 oz water\nOn-water fuel: mango, dates (simple carbs only)</div></div><div class="nutr-section"><h3>Supplements (nightly before bed)</h3><div class="nutr-food-list" style="line-height:2">Magnesium Glycinate 240mg — CO₂ tolerance + sleep\nL-Theanine 200mg — relaxed focus + sleep quality\nMelatonin 10mg</div></div><div class="nutr-section"><h3>Collagen Protocol (lifting days only)</h3><div class="nutr-food-list">15–20g collagen peptides + 50mg Vitamin C taken 60 min before Lift A or Lift B session. Supports tendon remodeling. Take consistently — benefits accumulate over 8–12 weeks.</div></div>';
+  el.innerHTML = '<div class="nutr-section"><h3>Daily Targets</h3><div class="nutr-macro-grid"><div class="nutr-macro-card"><div class="nutr-macro-val">2,800</div><div class="nutr-macro-label">kcal/day</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">~160g</div><div class="nutr-macro-label">Protein</div></div><div class="nutr-macro-card"><div class="nutr-macro-val">11AM–8PM</div><div class="nutr-macro-label">Eating window</div></div></div><div class="nutr-note">IF 9-hour window. Moderate carb, high protein — 30–40g per meal, 4 meals. Primary carb: rolled oats + white rice. EVOO daily — do not skip (LDL protection).</div></div><div class="nutr-section"><h3>Meals</h3><div class="nutr-meal"><div class="nutr-meal-name">Meal 1 — 11:00 AM</div><div class="nutr-meal-time">~650 kcal</div><div class="nutr-food-list">Rolled oats ¾ cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nNOW Whey Isolate 1 scoop\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 2 — 1:30 PM</div><div class="nutr-meal-time">~735 kcal</div><div class="nutr-food-list">Rolled oats 1 cup dry\nSmucker’s Natural PB Chunky 16g\nFrozen strawberries 2 oz\nWalnuts ½ oz\nNOW Whey Isolate 1 scoop\nRaw honey 1 tbsp (mandatory)</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 3 — 4:00 PM (pre-workout)</div><div class="nutr-meal-time">~503 kcal</div><div class="nutr-food-list">Liquid egg whites 8 oz\nPepper Jack cheese 1 oz\nEVOO 1 tbsp\nMorningstar Sausage Patties 2 patties</div></div><div class="nutr-meal"><div class="nutr-meal-name">Meal 4 — 7:30–8:00 PM (post-workout)</div><div class="nutr-meal-time">~925 kcal</div><div class="nutr-food-list">Daring Cajun Pieces 9 oz\nPepper Jack cheese ½ oz\nWhite rice 1 cup cooked\nRatio Protein Yogurt Strawberry 1 container\nFrozen strawberries 1 oz\nEVOO 1 tbsp</div></div></div><div class="nutr-section"><h3>Pre-Dive Rules</h3><div class="nutr-food-list" style="line-height:2">No caffeine within 3 hrs of water entry\nPre-dive meal: oatmeal + honey 1.5–2 hrs before entry\nNo protein or high-fat foods on dive day\nElectrolyte drink: ¼ tsp Morton Salt + ⅛ tsp No Salt + lemon in 20 oz water\nOn-water fuel: mango, dates (simple carbs only)</div></div><div class="nutr-section"><h3>Supplements (nightly before bed)</h3><div class="nutr-food-list" style="line-height:2">Magnesium Glycinate 240mg — CO₂ tolerance + sleep\nL-Theanine 200mg — relaxed focus + sleep quality\nMelatonin 10mg</div></div><div class="nutr-section"><h3>Collagen Protocol (lifting days only)</h3><div class="nutr-food-list">15–20g collagen peptides + 50mg Vitamin C taken 60 min before any Lift session (A, B or C). Supports tendon remodeling. Take consistently — benefits accumulate over 8–12 weeks.</div></div>';
 }
 
 function renderYogaSession(session) {
-  const container = document.getElementById('exercises-container');
+  const container = document.getElementById(session.day_type === 'yoga' ? 'exercises-container' : 'yoga-container');
   const poses = session.yoga_poses || {};
   const completedCount = Object.keys(poses).filter(k => poses[k]).length;
   let cards = '';
@@ -5038,10 +5144,12 @@ function toggleYogaPose(sessionId, poseIdx) {
 // INIT
 // ════════════════════════════════════════════════════════════════
 const CYCLE_NOTES = {
-  push: 'Upper push, legs light — no gym? Hotel A',
-  pull: 'Pull + legs/glutes — no gym? Hotel B',
-  apnea: 'CO₂ / dynamic / O₂ tables, rotating',
+  push: 'Full body, press + squat focus — no gym? Hotel A',
   yoga: '40 min mobility + breathwork',
+  pull: 'Full body, press + row + glutes — no gym? Hotel B',
+  apnea: 'CO₂ / dynamic / O₂ tables, rotating',
+  lift_c: 'Full body, incline + row + split squat',
+  apnea_yoga: 'Apnea table, then yoga',
   rest: 'Full rest',
 };
 
