@@ -618,6 +618,14 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .nutr-note { font-size: 12px; color: var(--muted); line-height: 1.6; margin-top: 10px; }
 
 /* Yoga session */
+.yoga-block { background: var(--s1); border-radius: var(--r); border: 1px solid var(--border); margin-bottom: 10px; overflow: hidden; }
+.yoga-header { display: flex; align-items: center; padding: 14px; gap: 10px; cursor: pointer; min-height: 56px; }
+.yoga-title { font-size: 16px; font-weight: 700; flex: 1; }
+.yoga-block.yoga-done .yoga-title { color: var(--easy); }
+.yoga-chevron { font-size: 18px; color: var(--text); transition: transform 0.2s; }
+.yoga-block.open .yoga-chevron { transform: rotate(180deg); }
+.yoga-body { display: none; padding: 0 14px 14px; }
+.yoga-block.open .yoga-body { display: block; }
 .yoga-card { background: var(--s1); border-radius: var(--r); border: 1px solid var(--border); margin-bottom: 8px; }
 .yoga-card-header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; cursor: pointer; min-height: 56px; }
 .yoga-pose-name { font-size: 15px; font-weight: 700; flex: 1; }
@@ -1789,6 +1797,7 @@ function closeWarmup() {
 
 let openCards = new Set();
 let openApnea = false;
+let openYoga = false;
 let _exDrag = null; // { exIdx, startY, ghost, container, cardEls, sourceEl }
 let startModalPending = null;
 let timerTab = 'sw';
@@ -2584,6 +2593,7 @@ function handleBack() {
 function goBack() {
   openCards.clear();
   openApnea = false;
+  openYoga = false;
   currentSessionId = null;
   document.getElementById('complete-btn').classList.remove('visible');
   showScreen('calendar');
@@ -5123,7 +5133,18 @@ function renderYogaSession(session) {
       '<a class="yoga-video-link" href="' + esc(pose.video) + '" target="_blank">▶ Watch video</a>' +
       '</div></div>';
   }
-  container.innerHTML = '<div style="padding:0 0 16px"><div style="font-size:13px;color:var(--muted);margin-bottom:12px">' + completedCount + '/' + YOGA_POSES.length + ' poses complete</div>' + cards + '</div>';
+  const yogaDone = completedCount === YOGA_POSES.length;
+  container.innerHTML = '<div class="yoga-block' + (openYoga ? ' open' : '') + (yogaDone ? ' yoga-done' : '') + '">' +
+    '<div class="yoga-header" onclick="toggleYogaBlock()">' +
+    '<span class="yoga-title">⬦ Yoga</span>' +
+    '<span style="font-size:13px;color:var(--text)">' + completedCount + '/' + YOGA_POSES.length + '</span>' +
+    '<span class="yoga-chevron">⌄</span></div>' +
+    '<div class="yoga-body">' + cards + '</div></div>';
+}
+
+function toggleYogaBlock() {
+  openYoga = !openYoga;
+  document.querySelector('.yoga-block')?.classList.toggle('open', openYoga);
 }
 
 function toggleYogaPoseExpand(i) {
