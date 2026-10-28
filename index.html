@@ -160,12 +160,24 @@ input:focus, textarea:focus { border-color: var(--accent); }
 #type-sheet {
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
   background: var(--s1); border-top: 1px solid var(--border);
-  border-radius: 20px 20px 0 0; padding: 20px 16px 32px;
+  border-radius: 20px 20px 0 0; padding: 16px 16px 0;
   transform: translateY(100%); transition: transform 0.25s ease;
+  max-height: 85vh; display: flex; flex-direction: column;
 }
 #type-sheet.open { transform: translateY(0); }
-#type-sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; text-align: center; }
-.type-sheet-btns { display: flex; flex-direction: column; gap: 10px; }
+.type-sheet-head { display: flex; align-items: center; margin-bottom: 12px; flex-shrink: 0; }
+#type-sheet-title { flex: 1; font-size: 16px; font-weight: 700; text-align: center; }
+.type-sheet-close {
+  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--s2); color: var(--text); font-size: 18px; line-height: 1; flex-shrink: 0;
+}
+.type-sheet-head::before { content: ''; width: 36px; flex-shrink: 0; }
+.type-sheet-btns {
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+.type-sheet-btn { flex-shrink: 0; }
 .type-sheet-btn {
   height: 52px; border-radius: var(--r); font-size: 17px; font-weight: 800;
   color: #0a0a0a; border: none;
@@ -759,7 +771,10 @@ input:focus, textarea:focus { border-color: var(--accent); }
 <!-- ── Type picker sheet ── -->
 <div id="sheet-backdrop" onclick="closeTypeSheet()"></div>
 <div id="type-sheet">
-  <div id="type-sheet-title">What type is this day?</div>
+  <div class="type-sheet-head">
+    <div id="type-sheet-title">What type is this day?</div>
+    <button class="type-sheet-close" aria-label="Close" onclick="closeTypeSheet()">✕</button>
+  </div>
   <div class="type-sheet-btns">
     <button class="type-sheet-btn tsb-push" onclick="pickType('push')">Lift A</button>
     <button class="type-sheet-btn tsb-pull" onclick="pickType('pull')">Lift B</button>
@@ -2785,6 +2800,7 @@ function openTypeSheet(iso) {
   const existingSession = findSessionForDate(load(), iso);
   document.getElementById('type-sheet-remove').style.display =
     existingSession ? '' : 'none';
+  document.querySelector('#type-sheet .type-sheet-btns').scrollTop = 0;
   document.getElementById('type-sheet').classList.add('open');
   document.getElementById('sheet-backdrop').classList.add('open');
 }
