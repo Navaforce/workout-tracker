@@ -6,6 +6,10 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Day picker scroll (2026-10-28)
+
+- Calendar day-type picker sheet is capped at 85% of the screen and scrolls; a ✕ button in the header closes it (backdrop tap still works).
+
 ## Unreleased — Three-lift cycle (2026-10-25)
 
 - Cycle is now Lift A / Yoga / Lift B / Apnea / Lift C / Apnea + Yoga / Rest, 15 sets per lift (45/week). New Lift C day type and Apnea + Yoga combined session (yoga renders under the apnea block).

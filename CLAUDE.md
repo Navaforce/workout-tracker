@@ -6,6 +6,7 @@
 - **Comments in code**: Default to none. Only add a comment when the WHY is non-obvious.
 - **Context window**: Statusline configured at `~/.claude/statusline-command.sh` — shows a draining bar + % remaining + tokens left (e.g. `████░░░░ 62% remaining (124k / 200k tokens left)`). Colors: green >50%, yellow >25%, magenta >10%, red ≤10%. Wired into `~/.claude/settings.json`. Do not reconfigure unless asked.
 - **Tech debt**: If the user suggests something that could introduce tech debt, caution them, explain why it's bad, and recommend the correct approach instead. Never silently implement a bad pattern.
+- **Docs folder for every project**: every project gets a `docs/` folder with a `BRIEF.md` at creation (sf-demo-template already includes one; for any other project create it before the first commit).
 - **Keep docs and skills current**: After any build that changes a pattern, gotcha, process, URL/config fact, or reverses an earlier assumption, update the relevant skill(s), project `docs/*.md`, and ledger/project memory in the same turn, without being asked. List the files changed in one line. Don't wait for the commit request.
 
 ---
