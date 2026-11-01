@@ -311,3 +311,6 @@ git add index.html
 git commit -m "revert: roll back to v1.0.0"
 git push origin main
 ```
+
+## Home-screen icon
+- Custom `apple-touch-icon.png` (180px): hogfish over a barbell in a cyan ring. Source SVG at `~/assets/spearo-icon.svg`. Added `apple-mobile-web-app-title` = Spearo.
