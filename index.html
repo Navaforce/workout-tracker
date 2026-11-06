@@ -644,7 +644,9 @@ input:focus, textarea:focus { border-color: var(--accent); }
 .yoga-card-header { display: flex; align-items: center; padding: 14px 16px; gap: 12px; cursor: pointer; min-height: 56px; }
 .yoga-pose-name { font-size: 15px; font-weight: 700; flex: 1; }
 .yoga-pose-dur { font-size: 12px; color: var(--muted); flex-shrink: 0; }
-.yoga-check-btn { width: 28px; height: 28px; border-radius: 14px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; color: transparent; background: transparent; transition: all 0.15s; }
+.yoga-check-btn { width: 28px; height: 28px; border-radius: 14px; border: 2px solid #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; color: transparent; background: transparent; transition: all 0.15s; }
+.yoga-timer-btn { width: 32px; height: 32px; border-radius: 16px; border: 1.5px solid #fff; background: transparent; color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; padding: 0; }
+.yoga-timer-btn svg { width: 18px; height: 18px; }
 .yoga-check-btn.done { background: var(--easy); border-color: var(--easy); color: #fff; }
 .yoga-card.done .yoga-pose-name { color: var(--easy); }
 .yoga-card-body { display: none; padding: 0 16px 14px; font-size: 13px; color: var(--text); line-height: 1.7; }
@@ -1745,7 +1747,7 @@ const WARMUP_INFO = {
       'Tap each pose card to expand full instructions. Tap the circle button to mark it done.',
       'Primary focus: diaphragm release, thoracic mobility, hip flexor opening, and parasympathetic activation.',
     ],
-    protocol: 'Yoga days are nervous system recovery — not cardio. Keep heart rate low throughout. Finish with Savasana box breathing: 4 sec in → 4 sec hold → 4 sec out → 4 sec hold.',
+    protocol: 'Yoga days are nervous system recovery — not cardio. Keep heart rate low throughout. Finish with Uddiyana Bandha: exhale fully → draw abdomen in and up → hold 10 sec → release slowly.',
   },
   apnea: {
     title: 'Apnea Training',
@@ -5044,17 +5046,17 @@ function sessionSlot(s) {
 }
 
 const YOGA_POSES = [
-  { name: 'Cat-Cow (10 reps)', dur: '2 min', cues: 'On hands and knees. Inhale: arch back, drop belly, lift head (Cow). Exhale: round spine up, tuck chin, draw navel in (Cat). 10 slow cycles. Builds thoracic mobility and diaphragm awareness.', video: 'https://www.youtube.com/results?search_query=cat+cow+yoga+pose+tutorial' },
-  { name: "Child's Pose", dur: '2 min', cues: 'Kneel, sit back on heels, fold torso forward, arms extended. Breathe into the back body — feel the ribcage expand sideways and backward. Hold 2 min total. Releases hip flexors and activates posterior breathing.', video: 'https://www.youtube.com/results?search_query=child%27s+pose+balasana+yoga+tutorial' },
-  { name: 'Downward-Facing Dog', dur: '1 min', cues: 'Hands shoulder-width, feet hip-width. Push the floor away, lengthen spine, press heels toward floor. Hold 5 breaths. Decompresses spine, opens lats and hamstrings.', video: 'https://www.youtube.com/results?search_query=downward+dog+yoga+adho+mukha+tutorial' },
-  { name: 'Low Lunge — Left side', dur: '1 min', cues: 'Left foot forward, right knee down. Sink hips toward floor. Arms overhead — open the chest and front hip. Keep spine long and upright. 8 slow breaths. Critical hip flexor stretch for monofin propulsion.', video: 'https://www.youtube.com/results?search_query=low+lunge+anjaneyasana+yoga+tutorial' },
-  { name: 'Low Lunge — Right side', dur: '1 min', cues: 'Right foot forward, left knee down. Same as left side — sink hips, arms overhead, 8 slow breaths. Match both sides evenly.', video: 'https://www.youtube.com/results?search_query=low+lunge+anjaneyasana+yoga+tutorial' },
-  { name: 'Seated Forward Fold', dur: '2 min', cues: 'Legs straight, fold forward from hips (not waist). Move chest toward shins — spine long, not rounded. Exhale deeper on each breath. Stretches posterior chain and trains relaxation under CO₂ buildup.', video: 'https://www.youtube.com/results?search_query=seated+forward+fold+paschimottanasana+yoga' },
-  { name: 'Supine Spinal Twist — Left', dur: '1 min', cues: 'Lie on back. Draw right knee to chest, guide it across to the left side with left hand. Arms wide, look right. Breathe into the compressed side. Releases thoracic and lumbar rotation tension.', video: 'https://www.youtube.com/results?search_query=supine+spinal+twist+yoga+tutorial' },
-  { name: 'Supine Spinal Twist — Right', dur: '1 min', cues: 'Same on the other side: left knee to chest, guide right, look left. Match both sides.', video: 'https://www.youtube.com/results?search_query=supine+spinal+twist+yoga+tutorial' },
-  { name: 'Bridge Pose × 3', dur: '3 rounds', cues: 'Lie on back, feet hip-width, knees bent. Press feet and arms into floor, lift hips high. Hard glute squeeze at top. Hold 5 breaths, lower slowly. 3 rounds. Glute activation + thoracic extension for dive posture.', video: 'https://www.youtube.com/results?search_query=bridge+pose+setu+bandhasana+yoga+tutorial' },
-  { name: 'Legs Up Wall (Viparita Karani)', dur: '5 min', cues: 'Sit sideways against wall, swing legs straight up. Arms by sides, eyes closed. Breathe slowly: 5 sec in, 5 sec hold, 5 sec out. Activates parasympathetic nervous system and lowers resting heart rate. Critical for pre-dive and recovery.', video: 'https://www.youtube.com/results?search_query=legs+up+wall+viparita+karani+yoga+tutorial' },
-  { name: 'Savasana with Box Breathing', dur: '5 min', cues: 'Lie flat, arms slightly out, eyes closed. Box breathing: 4 sec in → 4 sec hold → 4 sec out → 4 sec hold. Advance to 5-5-5-5 when comfortable. Complete parasympathetic reset — do not skip this.', video: 'https://www.youtube.com/results?search_query=savasana+box+breathing+relaxation+yoga' },
+  { name: 'Cat-Cow (10 reps)', secs: 120, dur: '2 min', cues: 'On hands and knees. Inhale: arch back, drop belly, lift head (Cow). Exhale: round spine up, tuck chin, draw navel in (Cat). 10 slow cycles. Builds thoracic mobility and diaphragm awareness.', video: 'https://www.youtube.com/results?search_query=cat+cow+yoga+pose+tutorial' },
+  { name: "Child's Pose", secs: 120, dur: '2 min', cues: 'Kneel, sit back on heels, fold torso forward, arms extended. Breathe into the back body — feel the ribcage expand sideways and backward. Hold 2 min total. Releases hip flexors and activates posterior breathing.', video: 'https://www.youtube.com/results?search_query=child%27s+pose+balasana+yoga+tutorial' },
+  { name: 'Downward-Facing Dog', secs: 60, dur: '1 min', cues: 'Hands shoulder-width, feet hip-width. Push the floor away, lengthen spine, press heels toward floor. Hold 5 breaths. Decompresses spine, opens lats and hamstrings.', video: 'https://www.youtube.com/results?search_query=downward+dog+yoga+adho+mukha+tutorial' },
+  { name: 'Low Lunge — Left side', secs: 60, dur: '1 min', cues: 'Left foot forward, right knee down. Sink hips toward floor. Arms overhead — open the chest and front hip. Keep spine long and upright. 8 slow breaths. Critical hip flexor stretch for monofin propulsion.', video: 'https://www.youtube.com/results?search_query=low+lunge+anjaneyasana+yoga+tutorial' },
+  { name: 'Low Lunge — Right side', secs: 60, dur: '1 min', cues: 'Right foot forward, left knee down. Same as left side — sink hips, arms overhead, 8 slow breaths. Match both sides evenly.', video: 'https://www.youtube.com/results?search_query=low+lunge+anjaneyasana+yoga+tutorial' },
+  { name: 'Seated Forward Fold', secs: 120, dur: '2 min', cues: 'Legs straight, fold forward from hips (not waist). Move chest toward shins — spine long, not rounded. Exhale deeper on each breath. Stretches posterior chain and trains relaxation under CO₂ buildup.', video: 'https://www.youtube.com/results?search_query=seated+forward+fold+paschimottanasana+yoga' },
+  { name: 'Supine Spinal Twist — Left', secs: 60, dur: '1 min', cues: 'Lie on back. Draw right knee to chest, guide it across to the left side with left hand. Arms wide, look right. Breathe into the compressed side. Releases thoracic and lumbar rotation tension.', video: 'https://www.youtube.com/results?search_query=supine+spinal+twist+yoga+tutorial' },
+  { name: 'Supine Spinal Twist — Right', secs: 60, dur: '1 min', cues: 'Same on the other side: left knee to chest, guide right, look left. Match both sides.', video: 'https://www.youtube.com/results?search_query=supine+spinal+twist+yoga+tutorial' },
+  { name: 'Bridge Pose × 3', secs: 90, dur: '3 rounds', cues: 'Lie on back, feet hip-width, knees bent. Press feet and arms into floor, lift hips high. Hard glute squeeze at top. Hold 5 breaths, lower slowly. 3 rounds. Glute activation + thoracic extension for dive posture.', video: 'https://www.youtube.com/results?search_query=bridge+pose+setu+bandhasana+yoga+tutorial' },
+  { name: 'Legs Up Wall (Viparita Karani)', secs: 300, dur: '5 min', cues: 'Sit sideways against wall, swing legs straight up. Arms by sides, eyes closed. Breathe slowly: 5 sec in, 5 sec hold, 5 sec out. Activates parasympathetic nervous system and lowers resting heart rate. Critical for pre-dive and recovery.', video: 'https://www.youtube.com/results?search_query=legs+up+wall+viparita+karani+yoga+tutorial' },
+  { name: 'Uddiyana Bandha', secs: 120, dur: '3 × 10 sec', cues: 'Stand or sit tall (or stay lying down). Exhale fully, then without inhaling draw the abdomen in and up under the ribcage. Hold 10 sec, release slowly, then breathe normally for several breaths. 3 rounds. Never practice on a full stomach. Activates the diaphragm and primes breath control.', video: 'https://www.youtube.com/results?search_query=uddiyana+bandha+tutorial' },
 ];
 
 function getNextWorkoutType() {
@@ -5144,6 +5146,7 @@ function renderYogaSession(session) {
       '<button class="yoga-check-btn' + (done ? ' done' : '') + '" onclick="event.stopPropagation();toggleYogaPose(\'' + esc(session.session_id) + '\',' + i + ')">' + (done ? '✓' : '') + '</button>' +
       '<span class="yoga-pose-name">' + esc(pose.name) + '</span>' +
       '<span class="yoga-pose-dur">' + esc(pose.dur) + '</span>' +
+      '<button class="yoga-timer-btn" aria-label="Start ' + esc(pose.dur) + ' timer" onclick="event.stopPropagation();startTimerForDuration(' + pose.secs + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></button>' +
       '<span style="font-size:18px;color:var(--dim);margin-left:4px">›</span>' +
       '</div>' +
       '<div class="yoga-card-body" id="yoga-body-' + i + '">' +
