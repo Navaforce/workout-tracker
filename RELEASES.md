@@ -6,6 +6,12 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Yoga timers and Uddiyana (2026-11-06)
+
+- Yoga check circles have a white outline.
+- Each yoga pose header has a timer button that starts the countdown preset to that pose's time.
+- Final yoga pose is now Uddiyana Bandha (replaces Savasana box breathing): 6 max-seconds holds without contractions, with a seconds input per set (saved as `yoga_holds`).
+
 ## Unreleased — Day picker scroll (2026-10-28)
 
 - Calendar day-type picker sheet is capped at 85% of the screen and scrolls; a ✕ button in the header closes it (backdrop tap still works).
