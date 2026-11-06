@@ -11,6 +11,8 @@ To view what's in a release: `git show <tag>:index.html`
 - Yoga check circles have a white outline.
 - Each yoga pose header has a timer button that starts the countdown preset to that pose's time.
 - Final yoga pose is now Uddiyana Bandha (replaces Savasana box breathing): 6 max-seconds holds without contractions, with a seconds input per set (saved as `yoga_holds`).
+- Uddiyana timer icon starts the stopwatch instead of a countdown.
+- Tapping "✓ Completed" undoes it: clears the end time and returns the button to "Mark Complete".
 
 ## Unreleased — Day picker scroll (2026-10-28)
 
