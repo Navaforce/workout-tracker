@@ -4010,7 +4010,15 @@ function markComplete() {
   const session = data.sessions[currentSessionId];
   if (!session) return;
 
-  if (session.completed) return;
+  if (session.completed) {
+    session.completed = false;
+    session.completed_at = null;
+    session.updated_at = Date.now();
+    save(data);
+    renderWorkout(currentSessionId);
+    syncNow(true);
+    return;
+  }
 
   const errors = validateDayForComplete(session);
   if (errors.length > 0) {
@@ -4370,6 +4378,13 @@ function cdSetPreset(secs) {
   renderCD();
   // Auto-start immediately
   cdToggle();
+}
+
+function startStopwatchFresh() {
+  swReset();
+  switchTimerTab('sw');
+  swToggle();
+  document.getElementById('sw-pip').classList.add('visible');
 }
 
 function startTimerForDuration(secs) {
@@ -5059,7 +5074,7 @@ const YOGA_POSES = [
   { name: 'Supine Spinal Twist — Right', secs: 60, dur: '1 min', cues: 'Same on the other side: left knee to chest, guide right, look left. Match both sides.', video: 'https://www.youtube.com/results?search_query=supine+spinal+twist+yoga+tutorial' },
   { name: 'Bridge Pose × 3', secs: 90, dur: '3 rounds', cues: 'Lie on back, feet hip-width, knees bent. Press feet and arms into floor, lift hips high. Hard glute squeeze at top. Hold 5 breaths, lower slowly. 3 rounds. Glute activation + thoracic extension for dive posture.', video: 'https://www.youtube.com/results?search_query=bridge+pose+setu+bandhasana+yoga+tutorial' },
   { name: 'Legs Up Wall (Viparita Karani)', secs: 300, dur: '5 min', cues: 'Sit sideways against wall, swing legs straight up. Arms by sides, eyes closed. Breathe slowly: 5 sec in, 5 sec hold, 5 sec out. Activates parasympathetic nervous system and lowers resting heart rate. Critical for pre-dive and recovery.', video: 'https://www.youtube.com/results?search_query=legs+up+wall+viparita+karani+yoga+tutorial' },
-  { name: 'Uddiyana Bandha', secs: 180, sets: 6, dur: '6 × max hold', cues: 'Stand or sit tall (or stay lying down). Exhale fully, then without inhaling draw the abdomen in and up under the ribcage. Hold for your maximum seconds without contractions, release slowly, then breathe normally for several breaths. 6 rounds. Never practice on a full stomach. Activates the diaphragm and primes breath control.', video: 'https://www.youtube.com/results?search_query=uddiyana+bandha+tutorial' },
+  { name: 'Uddiyana Bandha', secs: 180, sets: 6, stopwatch: true, dur: '6 × max hold', cues: 'Stand or sit tall (or stay lying down). Exhale fully, then without inhaling draw the abdomen in and up under the ribcage. Hold for your maximum seconds without contractions, release slowly, then breathe normally for several breaths. 6 rounds. Never practice on a full stomach. Activates the diaphragm and primes breath control.', video: 'https://www.youtube.com/results?search_query=uddiyana+bandha+tutorial' },
 ];
 
 function getNextWorkoutType() {
@@ -5149,7 +5164,7 @@ function renderYogaSession(session) {
       '<button class="yoga-check-btn' + (done ? ' done' : '') + '" onclick="event.stopPropagation();toggleYogaPose(\'' + esc(session.session_id) + '\',' + i + ')">' + (done ? '✓' : '') + '</button>' +
       '<span class="yoga-pose-name">' + esc(pose.name) + '</span>' +
       '<span class="yoga-pose-dur">' + esc(pose.dur) + '</span>' +
-      '<button class="yoga-timer-btn" aria-label="Start ' + esc(pose.dur) + ' timer" onclick="event.stopPropagation();startTimerForDuration(' + pose.secs + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></button>' +
+      '<button class="yoga-timer-btn" aria-label="Start ' + esc(pose.dur) + ' timer" onclick="event.stopPropagation();' + (pose.stopwatch ? 'startStopwatchFresh()' : 'startTimerForDuration(' + pose.secs + ')') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></button>' +
       '<span style="font-size:18px;color:var(--dim);margin-left:4px">›</span>' +
       '</div>' +
       '<div class="yoga-card-body" id="yoga-body-' + i + '">' +
