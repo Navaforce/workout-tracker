@@ -5333,7 +5333,7 @@ const Aquarium = (function () {
       this.q = this.spine.map(() => ({ x: 0, y: 0, a: 0 }));
       this.f = 1; this.phase = rnd(0, 6.28); this.speed = this.s.cruise;
       this.mode = 'wander'; this.cool = rnd(2, 8); this.thrash = 0; this.prey = null; this.threat = null;
-      this.fleeT = 0; this.huntT = 0; this.pair = null; this.speedT = this.s.cruise;
+      this.fleeT = 0; this.huntT = 0; this.hidden = false; this.heldBy = null; this.carrying = null; this.carryT = 0; this.respT = 0; this.pair = null; this.speedT = this.s.cruise;
       this.spawn(false);
     }
     get sc() { return 0.55 + 0.45 * this.z; }
@@ -5368,7 +5368,7 @@ const Aquarium = (function () {
         if (Math.hypot(this.tx - this.x, this.ty - this.y) < this.L * 0.5 || this.wpT <= 0) this.newWaypoint();
       } else if (this.mode === 'hunt') {
         const p = this.prey;
-        if (!p || p.dead || this.huntT > 11) { this.mode = 'wander'; this.cool = 14; this.prey = null; this.newWaypoint(); return; }
+        if (!p || p.hidden || p.heldBy || this.huntT > 11) { this.mode = 'wander'; this.cool = 14; this.prey = null; this.newWaypoint(); return; }
         this.huntT += dt;
         const lead = p.isBait ? 0.3 : 0.5;
         this.tx = p.x + Math.cos(p.a) * (p.speed || 0) * lead; this.ty = p.y + Math.sin(p.a) * (p.speed || 0) * lead;
@@ -5378,6 +5378,16 @@ const Aquarium = (function () {
           if (dist(this, p) < this.L * 1.6 && p.mode !== 'flee') p.startFlee(this, 5);
         }
         if (Math.hypot(this.x - p.x, this.y - p.y) < this.L * 0.28 && Math.abs(this.z - (p.z || this.z)) < 0.2) this.strike(p);
+      } else if (this.mode === 'carry') {
+        this.carryT += dt;
+        const left = this.x < W / 2;
+        if (this.carryT < 2.5) { this.tx = this.x + Math.cos(this.a) * 60; this.ty = this.y + Math.sin(this.a) * 60; this.speedT = s.cruise; }
+        else { this.tx = left ? -M * 1.6 : W + M * 1.6; this.ty = this.y; this.speedT = s.cruise * 1.3; }
+        if (this.x < -M * 1.1 || this.x > W + M * 1.1) {
+          const p = this.carrying; this.carrying = null; this.mode = 'wander'; this.cool = 40;
+          if (p) { p.heldBy = null; p.hidden = true; p.respT = rnd(25, 40); }
+        }
+        return;
       } else if (this.mode === 'flee') {
         this.fleeT -= dt;
         const th = this.threat;
@@ -5388,12 +5398,36 @@ const Aquarium = (function () {
       }
       if (this.x < -M * 1.4 || this.x > W + M * 1.4) { this.tx = W / 2; this.ty = rnd(60, H - 60); }
     }
+    catchPrey(p) {
+      if (p.pair) endPair(p.pair);
+      p.heldBy = this; p.mode = 'wander'; p.threat = null; this.carrying = p; this.carryT = 0;
+      this.mode = 'carry'; this.prey = null; this.thrash = 3; this.cool = 40;
+    }
     strike(p) {
       this.mode = 'wander'; this.prey = null; this.cool = 16; this.thrash = 0.7; this.newWaypoint();
       if (p.isBait) { removeBait(p); return; }
+      if (this.type === 'shark' && Math.random() < 0.3 && !p.heldBy) { this.catchPrey(p); return; }
       p.thrash = 1; p.startFlee(this, 6);
     }
     update(dt) {
+      if (this.heldBy) {
+        const s = this.heldBy;
+        this.a = s.a + Math.sin(s.phase * 3) * 0.7; this.speed = s.speed;
+        this.x = s.x + Math.cos(s.a) * s.L * 0.05; this.y = s.y + Math.sin(s.a) * s.L * 0.05;
+        this.z = s.z - 0.002; this.zT = this.z; this.thrash = 1; this.phase += dt * 14; this.f = s.f;
+        const sp = this.spine, seg = this.L / (this.s.n - 1);
+        sp[0].x = this.x; sp[0].y = this.y;
+        for (let i = 1; i < sp.length; i++) {
+          const dx = sp[i].x - sp[i - 1].x, dy = sp[i].y - sp[i - 1].y, d = Math.hypot(dx, dy) || 1;
+          sp[i].x = sp[i - 1].x + dx / d * seg; sp[i].y = sp[i - 1].y + dy / d * seg;
+        }
+        return;
+      }
+      if (this.hidden) {
+        this.respT -= dt;
+        if (this.respT <= 0) { this.hidden = false; this.zT = rnd(0.45, 1); this.z = this.zT; this.cool = 20; this.mode = 'wander'; this.spawn(true); }
+        return;
+      }
       this.behave(dt);
       this.z += (this.zT - this.z) * Math.min(1, dt * 0.6);
       const want = Math.atan2(this.ty - this.y, this.tx - this.x);
@@ -5434,6 +5468,7 @@ const Aquarium = (function () {
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.scale(1, this.f); fn(); ctx.restore();
     }
     draw() {
+      if (this.hidden) return;
       ctx.globalAlpha = 0.28 + 0.55 * this.z;
       this.shape();
       if (this.s.ray) this.drawManta(); else this.drawFish();
@@ -5652,7 +5687,7 @@ const Aquarium = (function () {
     if (school.t <= 0 || Math.hypot(school.tx - cx(), school.ty - cy()) < 60) { school.tx = rnd(-M * 0.2, W + M * 0.2); school.ty = rnd(60, H - 60); school.t = rnd(6, 11); }
     for (let i = baitQueue.length - 1; i >= 0; i--) { baitQueue[i] -= dt; if (baitQueue[i] <= 0) { baitQueue.splice(i, 1); baits.push(newBait(true)); } }
     const c = { x: cx(), y: cy() };
-    const preds = fishes.filter(f => f.type === 'shark' || f.type === 'barracuda');
+    const preds = fishes.filter(f => !f.hidden && (f.type === 'shark' || f.type === 'barracuda'));
     for (const b of baits) {
       let ax = (school.tx - b.x) * 0.0006 + (c.x - b.x) * 0.0012, ay = (school.ty - b.y) * 0.0006 + (c.y - b.y) * 0.0012;
       let fx = 0, fy = 0, panic = false;
@@ -5766,7 +5801,7 @@ const Aquarium = (function () {
     if (mgrT > 0 || pairs.length >= 2) return;
     mgrT = rnd(1.5, 3.5);
     if (Math.random() < 0.35) return;
-    const vis = f => f.mode === 'wander' && f.cool <= 0 && f.x > -40 && f.x < W + 40;
+    const vis = f => !f.hidden && !f.heldBy && f.mode === 'wander' && f.cool <= 0 && f.x > -40 && f.x < W + 40;
     const free = t => fishes.filter(f => f.type === t && vis(f));
     const opts = [];
     const sharks = free('shark'), bar = free('barracuda'), hog = free('hogfish'), mantas = free('manta');
