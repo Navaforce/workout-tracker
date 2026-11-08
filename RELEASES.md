@@ -6,6 +6,12 @@ To view what's in a release: `git show <tag>:index.html`
 
 ---
 
+## Unreleased — Ocean aquarium backdrop (2026-11-08)
+
+- Calendar screen has a live canvas aquarium behind it: shark, two manta rays, two barracuda, three hogfish, a baitfish school, light rays and drifting particles.
+- Creatures interact at random: sharks hunt barracuda and hogfish (some escape, some are eaten and respawn), barracuda hit the baitfish, mantas and hogfish play, hogfish and barracuda fight.
+- Pauses off the calendar screen and when the tab is hidden; disabled under reduced-motion.
+
 ## Unreleased — Yoga timers and Uddiyana (2026-11-06)
 
 - Yoga check circles have a white outline.
