@@ -5365,7 +5365,7 @@ const Aquarium = (function () {
       this.cool -= dt;
       if (this.mode === 'wander') {
         this.wpT -= dt;
-        if (Math.hypot(this.tx - this.x, this.ty - this.y) < this.L * 1.3 || this.wpT <= 0) this.newWaypoint();
+        if (Math.hypot(this.tx - this.x, this.ty - this.y) < this.L * 0.5 || this.wpT <= 0) this.newWaypoint();
       } else if (this.mode === 'hunt') {
         const p = this.prey;
         if (!p || p.hidden || p.heldBy || this.huntT > 11) { this.mode = 'wander'; this.cool = 14; this.prey = null; this.newWaypoint(); return; }
@@ -5377,7 +5377,7 @@ const Aquarium = (function () {
           this.zT = p.z;
           if (dist(this, p) < this.L * 1.6 && p.mode !== 'flee') p.startFlee(this, 5);
         }
-        if (Math.hypot(this.x - p.x, this.y - p.y) < this.L * 0.45 && Math.abs(this.z - (p.z || this.z)) < 0.2) this.strike(p);
+        if (Math.hypot(this.x - p.x, this.y - p.y) < this.L * 0.28 && Math.abs(this.z - (p.z || this.z)) < 0.2) this.strike(p);
       } else if (this.mode === 'carry') {
         this.carryT += dt;
         const left = this.x < W / 2;
@@ -5394,7 +5394,7 @@ const Aquarium = (function () {
         if (th) { this.tx = this.x + (this.x - th.x) * 2 + rnd(-10, 10); this.ty = this.y + (this.y - th.y) * 2; }
         this.tx = clamp(this.tx, -M, W + M); this.ty = clamp(this.ty, 20, H - 20);
         this.speedT = s.burst * 0.9;
-        if (this.fleeT <= 0 || (th && dist(this, th) > this.L * 4)) { this.mode = 'wander'; this.threat = null; this.cool = 6; this.newWaypoint(); }
+        if (this.fleeT <= 0) { this.mode = 'wander'; this.threat = null; this.cool = 6; this.newWaypoint(); }
       }
       if (this.x < -M * 1.4 || this.x > W + M * 1.4) { this.tx = W / 2; this.ty = rnd(60, H - 60); }
     }
@@ -5431,7 +5431,7 @@ const Aquarium = (function () {
       this.behave(dt);
       this.z += (this.zT - this.z) * Math.min(1, dt * 0.6);
       const want = Math.atan2(this.ty - this.y, this.tx - this.x);
-      const maxT = Math.min(this.s.turn * 0.6, this.speed / (this.L * (this.s.ray ? 0.9 : 1.25))) * dt;
+      const maxT = this.s.turn * (this.mode === 'flee' || this.mode === 'hunt' ? 1.7 : 1) * dt;
       this.a += clamp(angDiff(this.a, want), -maxT, maxT);
       this.speed += (this.speedT * this.sc - this.speed) * Math.min(1, dt * 1.6);
       this.x += Math.cos(this.a) * this.speed * dt; this.y += Math.sin(this.a) * this.speed * dt;
@@ -5440,7 +5440,7 @@ const Aquarium = (function () {
       const c = Math.cos(this.a);
       if (!this.s.ray) {
         const target = c > 0.25 ? 1 : c < -0.25 ? -1 : (this.f >= 0 ? 1 : -1);
-        this.f = target;
+        this.f += clamp(target - this.f, -3 * dt, 3 * dt);
       }
       const sp = this.spine, seg = this.L / (this.s.n - 1);
       sp[0].x = this.x; sp[0].y = this.y;

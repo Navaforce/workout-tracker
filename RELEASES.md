@@ -8,8 +8,6 @@ To view what's in a release: `git show <tag>:index.html`
 
 ## Unreleased — Ocean aquarium backdrop (2026-11-08)
 
-- Turning is slower with a minimum radius of about 1.2 body lengths, and the body no longer squashes during a turn (mirrors instantly instead).
-
 - Calendar screen has a live canvas aquarium behind it: shark, two manta rays, two barracuda, three hogfish, a baitfish school, light rays and drifting particles.
 - Creatures interact at random: sharks hunt barracuda and hogfish (about 30% of shark strikes land: the prey is carried off-screen in the shark's mouth and a new fish swims in from an edge 25-40s later; otherwise prey escapes), barracuda hit the baitfish, mantas and hogfish play, hogfish and barracuda fight in lunge-and-break passes. Play is leader/follower swimming rather than orbiting.
 - Pauses off the calendar screen and when the tab is hidden; disabled under reduced-motion.
