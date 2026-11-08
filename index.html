@@ -5319,7 +5319,7 @@ const Aquarium = (function () {
     barracuda: { len: 108, n: 16, cruise: 26, burst: 78, turn: 0.8, wave: 0.045, k: 3.8, freq: 2.8, eat: 0.3,
       prof: [[0, 0, 0], [0.03, .008, .01], [0.12, .02, .026], [0.25, .034, .034], [0.5, .04, .036], [0.78, .028, .024], [1, .011, .011]],
       stops: [[0, '#4a5d68'], [0.4, '#7f949e'], [0.62, '#c8d5da'], [1, '#f1f5f6']] },
-    hogfish: { len: 64, n: 12, cruise: 18, burst: 55, turn: 1.3, wave: 0.04, k: 3.0, freq: 3.2, eat: 0.4,
+    hogfish: { len: 64, n: 12, cruise: 18, burst: 55, turn: 1.9, wave: 0.04, k: 3.0, freq: 3.2, eat: 0.4,
       prof: [[0, 0, 0], [0.04, .04, .025], [0.12, .12, .075], [0.3, .21, .15], [0.5, .225, .16], [0.72, .16, .11], [0.9, .07, .055], [1, .05, .045]],
       stops: [[0, '#8f3a36'], [0.35, '#bf5d52'], [0.62, '#e0a496'], [1, '#f6e3da']] },
     manta: { len: 130, n: 8, cruise: 24, burst: 50, turn: 0.85, wave: 0.03, k: 2.4, freq: 1.4, eat: 0, ray: true }
@@ -5332,6 +5332,7 @@ const Aquarium = (function () {
       this.spine = []; for (let i = 0; i < this.s.n; i++) this.spine.push({ x: 0, y: 0 });
       this.q = this.spine.map(() => ({ x: 0, y: 0, a: 0 }));
       this.f = 1; this.phase = rnd(0, 6.28); this.speed = this.s.cruise;
+      this.dead = false; this.fade = 1; this.deadT = 0;
       this.mode = 'wander'; this.cool = rnd(2, 8); this.thrash = 0; this.prey = null; this.threat = null;
       this.fleeT = 0; this.huntT = 0; this.pair = null; this.speedT = this.s.cruise;
       this.spawn(false);
@@ -5359,6 +5360,7 @@ const Aquarium = (function () {
       if (Math.random() < 0.5) this.zT = rnd(0.4, 1);
       this.wpT = rnd(8, 18);
     }
+    die() { this.dead = true; this.deadT = 0; this.mode = 'wander'; this.pair = null; }
     startFlee(th, secs) { this.mode = 'flee'; this.threat = th; this.fleeT = secs; this.thrash = 0.8; if (this.pair) endPair(this.pair); }
     behave(dt) {
       const s = this.s;
@@ -5391,9 +5393,15 @@ const Aquarium = (function () {
     strike(p) {
       this.mode = 'wander'; this.prey = null; this.cool = 16; this.thrash = 0.7; this.newWaypoint();
       if (p.isBait) { removeBait(p); return; }
-      p.thrash = 1; p.startFlee(this, 6);
+      if (Math.random() < this.s.eat) { p.die(); } else { p.thrash = 1; p.startFlee(this, 6); }
     }
     update(dt) {
+      if (this.dead) {
+        this.deadT += dt; this.fade = Math.max(0, this.fade - dt * 1.8);
+        if (this.deadT > 9) { this.dead = false; this.fade = 0; this.cool = 10; this.zT = rnd(0.45, 1); this.spawn(true); }
+        return;
+      }
+      if (this.fade < 1) this.fade = Math.min(1, this.fade + dt * 0.7);
       this.behave(dt);
       this.z += (this.zT - this.z) * Math.min(1, dt * 0.6);
       const want = Math.atan2(this.ty - this.y, this.tx - this.x);
@@ -5406,7 +5414,7 @@ const Aquarium = (function () {
       const c = Math.cos(this.a);
       if (!this.s.ray) {
         const target = c > 0.25 ? 1 : c < -0.25 ? -1 : (this.f >= 0 ? 1 : -1);
-        this.f += clamp(target - this.f, -3 * dt, 3 * dt);
+        this.f += clamp(target - this.f, -4.5 * dt, 4.5 * dt);
       }
       const sp = this.spine, seg = this.L / (this.s.n - 1);
       sp[0].x = this.x; sp[0].y = this.y;
@@ -5434,7 +5442,8 @@ const Aquarium = (function () {
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a); ctx.scale(1, this.f); fn(); ctx.restore();
     }
     draw() {
-      ctx.globalAlpha = 0.28 + 0.55 * this.z;
+      if (this.fade <= 0.01) return;
+      ctx.globalAlpha = (0.28 + 0.55 * this.z) * this.fade;
       this.shape();
       if (this.s.ray) this.drawManta(); else this.drawFish();
       ctx.globalAlpha = 1;
@@ -5652,7 +5661,7 @@ const Aquarium = (function () {
     if (school.t <= 0 || Math.hypot(school.tx - cx(), school.ty - cy()) < 60) { school.tx = rnd(-M * 0.2, W + M * 0.2); school.ty = rnd(60, H - 60); school.t = rnd(6, 11); }
     for (let i = baitQueue.length - 1; i >= 0; i--) { baitQueue[i] -= dt; if (baitQueue[i] <= 0) { baitQueue.splice(i, 1); baits.push(newBait(true)); } }
     const c = { x: cx(), y: cy() };
-    const preds = fishes.filter(f => f.type === 'shark' || f.type === 'barracuda');
+    const preds = fishes.filter(f => !f.dead && (f.type === 'shark' || f.type === 'barracuda'));
     for (const b of baits) {
       let ax = (school.tx - b.x) * 0.0006 + (c.x - b.x) * 0.0012, ay = (school.ty - b.y) * 0.0006 + (c.y - b.y) * 0.0012;
       let fx = 0, fy = 0, panic = false;
@@ -5681,7 +5690,7 @@ const Aquarium = (function () {
   function cy() { let s = 0; baits.forEach(b => s += b.y); return baits.length ? s / baits.length : H / 2; }
   function drawBait(b) {
     const L = 11 * (0.6 + 0.4 * b.z), h = L * 0.17, w = Math.sin(b.wag) * L * 0.12;
-    const flash = 0.6 + 0.2 * Math.sin(T * 0.5 + b.z * 20);
+    const flash = 0.45 + 0.4 * Math.abs(Math.sin(b.a * 2 + T * 0.8 + b.wag * 0.02));
     ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.a); ctx.scale(1, b.f); ctx.globalAlpha = flash * (0.55 + 0.4 * b.z);
     ctx.fillStyle = '#c3d3da';
     ctx.beginPath(); ctx.moveTo(L * 0.5, 0);
@@ -5705,58 +5714,48 @@ const Aquarium = (function () {
   const snow = [];
 
   function startPair(type, a, b) {
-    const p = { type, a, b, t: 0, dur: rnd(9, 14), phase: 'approach', lead: a, wt: 0, lunger: a, sub: 'lunge', lunges: 0, lt: 0, zc: rnd(0.65, 0.9) };
+    const p = { type, a, b, t: 0, dur: rnd(10, 15), phase: 'approach', cx: clamp((a.x + b.x) / 2, 80, W - 80), cy: clamp((a.y + b.y) / 2, 100, H - 100),
+      vx: rnd(-7, 7), vy: rnd(-7, 7), lunger: a, lunges: 0, lt: 0, zc: rnd(0.65, 0.9) };
     a.mode = b.mode = type; a.pair = b.pair = p; pairs.push(p);
   }
   function endPair(p) {
     const i = pairs.indexOf(p); if (i >= 0) pairs.splice(i, 1);
-    [p.a, p.b].forEach(x => { if (x.pair === p) { x.pair = null; if (x.mode === 'play' || x.mode === 'fight') { x.mode = 'wander'; x.cool = rnd(30, 50); x.newWaypoint(); } } });
-  }
-  function awayPoint(x, o, d) {
-    const ang = Math.atan2(x.y - o.y, x.x - o.x);
-    return [clamp(x.x + Math.cos(ang) * d, 40, W - 40), clamp(x.y + Math.sin(ang) * d, 50, H - 50)];
+    [p.a, p.b].forEach(x => { if (x.pair === p) { x.pair = null; if (x.mode === 'play' || x.mode === 'fight') { x.mode = 'wander'; x.cool = rnd(12, 22); x.newWaypoint(); } } });
   }
   function updatePair(p, dt) {
     const a = p.a, b = p.b;
+    if (a.dead || b.dead) { endPair(p); return; }
     p.t += dt;
-    a.zT = b.zT = p.zc;
+    p.cx += p.vx * dt; p.cy += p.vy * dt;
+    if (p.cx < 90 || p.cx > W - 90) p.vx = -p.vx; if (p.cy < 110 || p.cy > H - 110) p.vy = -p.vy;
+    a.zT = b.zT = p.zc + (p.type === 'play' ? 0.12 * Math.sin(p.t * 0.9) : 0);
+    const meanL = (a.L + b.L) / 2;
     if (p.phase === 'approach') {
-      a.tx = b.x; a.ty = b.y; b.tx = a.x; b.ty = a.y;
-      a.speedT = a.s.cruise * 1.2; b.speedT = b.s.cruise * 1.2;
-      if (dist(a, b) < (a.L + b.L) * 1.1) { p.phase = 'main'; p.t = 0; p.lt = 0; p.wt = 0; }
-      else if (p.t > 12) endPair(p);
+      a.tx = b.tx = p.cx; a.ty = b.ty = p.cy; a.speedT = a.s.cruise * 1.2; b.speedT = b.s.cruise * 1.2;
+      if (dist(a, b) < meanL * 1.5 || p.t > 14) { p.phase = 'main'; p.t = 0; p.lt = 0; }
+      if (p.t > 14) endPair(p);
       return;
     }
     if (p.t > p.dur) { endPair(p); return; }
     if (p.type === 'play') {
-      p.wt += dt;
-      if (p.wt > 4.5) { p.wt = 0; p.lead = p.lead === a ? b : a; }
-      const l = p.lead, f = l === a ? b : a;
-      if (Math.hypot(l.tx - l.x, l.ty - l.y) < l.L || p.lt <= 0) { l.newWaypoint(); p.lt = 5; }
-      p.lt -= dt;
-      l.speedT = l.s.cruise * 1.15;
-      const side = Math.sin(p.t * 1.1) * f.L * 0.9;
-      f.tx = l.x - Math.cos(l.a) * f.L * 0.9 - Math.sin(l.a) * side;
-      f.ty = l.y - Math.sin(l.a) * f.L * 0.9 + Math.cos(l.a) * side;
-      f.speedT = dist(f, l) < f.L * 0.8 ? f.s.cruise * 0.9 : f.s.cruise * 1.5;
+      const R = clamp(meanL * 0.5, 38, 85);
+      for (const x of [a, b]) {
+        const ang = Math.atan2(x.y - p.cy, x.x - p.cx);
+        if (Math.hypot(x.x - p.cx, x.y - p.cy) > R * 2.6) { x.tx = p.cx; x.ty = p.cy; }
+        else { x.tx = p.cx + Math.cos(ang + 0.8) * R; x.ty = p.cy + Math.sin(ang + 0.8) * R; }
+        x.speedT = x.s.cruise * 1.3;
+      }
     } else {
       p.lt += dt;
       const x = p.lunger, o = x === a ? b : a;
-      if (p.sub === 'lunge') {
-        x.tx = o.x; x.ty = o.y; x.speedT = x.s.burst;
-        const e = awayPoint(o, x, 90); o.tx = e[0]; o.ty = e[1]; o.speedT = o.s.cruise * 1.6;
-        if (dist(x, o) < x.L * 0.45 || p.lt > 1.8) {
-          if (dist(x, o) < x.L * 0.6) { x.thrash = 0.5; o.thrash = 0.9; }
-          p.lunges++; p.sub = 'break'; p.lt = 0;
-        }
-      } else {
-        const ea = awayPoint(x, o, 220), eb = awayPoint(o, x, 220);
-        x.tx = ea[0]; x.ty = ea[1]; o.tx = eb[0]; o.ty = eb[1];
-        x.speedT = x.s.cruise * 1.3; o.speedT = o.s.cruise * 1.3;
-        if (p.lt > 2.4 || dist(x, o) > 240) {
-          if (p.lunges >= 4) { endPair(p); o.startFlee(x, 5); x.cool = 40; return; }
-          p.lunger = o; p.sub = 'lunge'; p.lt = 0;
-        }
+      x.tx = o.x; x.ty = o.y; x.speedT = x.s.burst;
+      const away = Math.atan2(o.y - x.y, o.x - x.x);
+      o.tx = o.x + Math.cos(away + 1.2) * 70; o.ty = o.y + Math.sin(away + 1.2) * 70;
+      o.tx = clamp(o.tx, 30, W - 30); o.ty = clamp(o.ty, 40, H - 40); o.speedT = o.s.cruise * 1.5;
+      if (dist(x, o) < x.L * 0.4 || p.lt > 2) {
+        if (dist(x, o) < x.L * 0.5) { x.thrash = 0.5; o.thrash = 0.9; }
+        p.lunges++; p.lunger = o; p.lt = 0;
+        if (p.lunges >= 6) { const loser = o; endPair(p); loser.startFlee(x, 5); x.cool = 15; }
       }
     }
   }
@@ -5766,14 +5765,14 @@ const Aquarium = (function () {
     if (mgrT > 0 || pairs.length >= 2) return;
     mgrT = rnd(1.5, 3.5);
     if (Math.random() < 0.35) return;
-    const vis = f => f.mode === 'wander' && f.cool <= 0 && f.x > -40 && f.x < W + 40;
+    const vis = f => !f.dead && f.mode === 'wander' && f.cool <= 0 && f.x > -40 && f.x < W + 40 && f.fade >= 1;
     const free = t => fishes.filter(f => f.type === t && vis(f));
     const opts = [];
     const sharks = free('shark'), bar = free('barracuda'), hog = free('hogfish'), mantas = free('manta');
     sharks.forEach(s => { [...free('barracuda'), ...hog].forEach(p => { if (dist(s, p) < 480) opts.push(() => { s.mode = 'hunt'; s.prey = p; s.huntT = 0; }); }); });
     bar.forEach(b => { if (baits.length > 6) opts.push(() => { b.mode = 'hunt'; b.huntT = 0; b.prey = baits.reduce((m, o) => Math.hypot(o.x - b.x, o.y - b.y) < Math.hypot(m.x - b.x, m.y - b.y) ? o : m, baits[0]); }); });
-    if (mantas.length >= 2) opts.push(() => startPair('play', mantas[0], mantas[1]));
-    if (hog.length >= 2) opts.push(() => startPair(Math.random() < 0.5 ? 'fight' : 'play', hog[0], hog[1]));
+    if (mantas.length >= 2) { opts.push(() => startPair('play', mantas[0], mantas[1])); opts.push(() => startPair('play', mantas[0], mantas[1])); }
+    if (hog.length >= 2) { opts.push(() => startPair('fight', hog[0], hog[1])); opts.push(() => startPair('play', hog[0], hog[1])); }
     if (bar.length >= 2) opts.push(() => startPair('fight', bar[0], bar[1]));
     if (opts.length) opts[Math.floor(Math.random() * opts.length)]();
   }
@@ -5833,7 +5832,7 @@ const Aquarium = (function () {
   document.addEventListener('visibilitychange', () => { if (active && !document.hidden && !raf) { lastTs = performance.now(); raf = requestAnimationFrame(frame); } });
   window.addEventListener('resize', () => { if (active) resize(); });
   function step(sec) { if (!fishes.length) { resize(); initWorld(); } for (let i = 0; i < sec * 30; i++) update(1 / 30); ctx.setTransform(1, 0, 0, 1, 0, 0); render(); }
-  return { setActive, step, _fishes: fishes, _update: update };
+  return { setActive, step, _fishes: fishes };
 })();
 
 init();
